@@ -5,7 +5,7 @@ import useGroupStore from './groupStore';
 import useExpenseStore from './expenseStore';
 import useSettlementStore from './settlementStore';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+const SOCKET_URL = import.meta.env.VITE_API_URL || 'https://balancio-backend-six.vercel.app';
 
 const getSocketUrl = () => {
     const url = SOCKET_URL;
