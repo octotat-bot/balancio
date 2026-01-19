@@ -44,11 +44,13 @@ export function AuthPage() {
     const loginForm = useForm({
         resolver: zodResolver(loginSchema),
         defaultValues: { identifier: '', password: '', rememberMe: false },
+        mode: 'onChange'
     });
 
     const signupForm = useForm({
         resolver: zodResolver(signupSchema),
         defaultValues: { name: '', email: '', phone: '', password: '', confirmPassword: '' },
+        mode: 'onChange'
     });
 
     const handleLogin = async (data) => {
