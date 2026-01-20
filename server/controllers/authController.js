@@ -98,24 +98,36 @@ export const updateProfile = async (req, res, next) => {
     try {
         const { name, username, phone, currency, notifications, avatar } = req.body;
 
-        if (username && username !== req.user.username) {
-            const existingUser = await User.findOne({ username });
-            if (existingUser) {
-                return res.status(400).json({ message: 'Username already taken' });
-            }
-        }
+        // Build update object with only provided fields
+        const updateData = {};
 
-        const normalizedPhone = phone ? normalizePhone(phone) : req.user.phone;
-        if (normalizedPhone && normalizedPhone !== req.user.phone) {
-            const existingUser = await User.findOne({ phone: normalizedPhone });
-            if (existingUser) {
-                return res.status(400).json({ message: 'Phone number already registered' });
+        if (name !== undefined) updateData.name = name;
+        if (username !== undefined) {
+            if (username !== req.user.username) {
+                const existingUser = await User.findOne({ username });
+                if (existingUser) {
+                    return res.status(400).json({ message: 'Username already taken' });
+                }
             }
+            updateData.username = username;
         }
+        if (phone !== undefined) {
+            const normalizedPhone = normalizePhone(phone);
+            if (normalizedPhone !== req.user.phone) {
+                const existingUser = await User.findOne({ phone: normalizedPhone });
+                if (existingUser) {
+                    return res.status(400).json({ message: 'Phone number already registered' });
+                }
+            }
+            updateData.phone = normalizedPhone;
+        }
+        if (currency !== undefined) updateData.currency = currency;
+        if (notifications !== undefined) updateData.notifications = notifications;
+        if (avatar !== undefined) updateData.avatar = avatar;
 
         const user = await User.findByIdAndUpdate(
             req.userId,
-            { name, username, phone: normalizedPhone, currency, notifications, avatar },
+            updateData,
             { new: true, runValidators: true }
         );
 
