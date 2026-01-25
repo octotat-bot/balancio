@@ -80,6 +80,7 @@ export function FriendDetail() {
 
     useEffect(() => {
         fetchFriends();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
@@ -88,6 +89,7 @@ export function FriendDetail() {
             fetchDirectExpenses(friendshipId);
             fetchDirectBalance(friendshipId);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [friendshipId]);
 
     useEffect(() => {

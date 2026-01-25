@@ -49,6 +49,12 @@ export const createSettlement = async (req, res, next) => {
             return res.status(400).json({ message: 'Cannot settle with yourself' });
         }
 
+        // Validate amount is a positive number
+        const parsedAmount = parseFloat(amount);
+        if (isNaN(parsedAmount) || parsedAmount <= 0) {
+            return res.status(400).json({ message: 'Amount must be a positive number' });
+        }
+
         const group = await Group.findById(req.params.groupId);
         if (!group) {
             return res.status(404).json({ message: 'Group not found' });
@@ -57,6 +63,31 @@ export const createSettlement = async (req, res, next) => {
         const isMember = group.members.some(m => m.toString() === req.userId.toString());
         if (!isMember) {
             return res.status(403).json({ message: 'You are not a member of this group' });
+        }
+
+        // Validate that both from and to are members of the group
+        const isFromMember = group.members.some(m => m.toString() === from.toString());
+        const isToMember = group.members.some(m => m.toString() === to.toString());
+        if (!isFromMember || !isToMember) {
+            return res.status(400).json({ message: 'Both participants must be members of this group' });
+        }
+
+        // Check if there's already a pending settlement between the same users
+        const existingPendingSettlement = await Settlement.findOne({
+            group: req.params.groupId,
+            from,
+            to,
+            confirmedByRecipient: false
+        });
+
+        if (existingPendingSettlement) {
+            return res.status(400).json({
+                message: 'There is already a pending payment between these users. Please wait for confirmation before creating another.',
+                pendingSettlement: {
+                    amount: existingPendingSettlement.amount,
+                    createdAt: existingPendingSettlement.createdAt
+                }
+            });
         }
 
         const settlement = await Settlement.create({
@@ -248,23 +279,33 @@ export const getBalances = async (req, res, next) => {
             }
 
             const pairKey = [fromId, toId].sort().join('_');
-            if (pairwiseDebts[pairKey]) {
-                if (fromId < toId) {
-                    pairwiseDebts[pairKey].aOwesB -= settlement.amount;
-                } else {
-                    pairwiseDebts[pairKey].bOwesA -= settlement.amount;
-                }
-
-                pairwiseDebts[pairKey].expenses.push({
-                    id: settlement._id,
-                    description: `Payment to ${settlement.to.name}`,
-                    amount: settlement.amount,
-                    paidBy: settlement.from.name,
-                    date: settlement.createdAt,
-                    category: 'payment',
-                    isPayment: true
-                });
+            
+            // Create pairwiseDebts entry if it doesn't exist (for settlements without prior expenses)
+            if (!pairwiseDebts[pairKey]) {
+                pairwiseDebts[pairKey] = {
+                    personA: fromId < toId ? fromId : toId,
+                    personB: fromId < toId ? toId : fromId,
+                    aOwesB: 0,
+                    bOwesA: 0,
+                    expenses: []
+                };
             }
+            
+            if (fromId < toId) {
+                pairwiseDebts[pairKey].aOwesB -= settlement.amount;
+            } else {
+                pairwiseDebts[pairKey].bOwesA -= settlement.amount;
+            }
+
+            pairwiseDebts[pairKey].expenses.push({
+                id: settlement._id,
+                description: `Payment to ${settlement.to.name}`,
+                amount: settlement.amount,
+                paidBy: settlement.from.name,
+                date: settlement.createdAt,
+                category: 'payment',
+                isPayment: true
+            });
         });
 
         const detailedDebts = [];
@@ -323,6 +364,7 @@ export const getBalances = async (req, res, next) => {
             });
         }
 
+        // Filter debts for non-admin users to only show their own debts
         if (!isAdmin) {
             simplifiedDebts = simplifiedDebts.filter(debt =>
                 debt.from._id.toString() === req.userId.toString() ||
@@ -330,87 +372,25 @@ export const getBalances = async (req, res, next) => {
             );
         }
 
+        // Also filter detailedDebts for non-admin users
+        let filteredDetailedDebts = detailedDebts;
+        if (!isAdmin) {
+            filteredDetailedDebts = detailedDebts.filter(pair =>
+                pair.personA._id.toString() === req.userId.toString() ||
+                pair.personB._id.toString() === req.userId.toString()
+            );
+        }
+
         res.json({
             balances: Object.values(balances),
             simplifiedDebts,
-            detailedDebts,
+            detailedDebts: filteredDetailedDebts,
             isAdmin,
         });
     } catch (error) {
         next(error);
     }
 };
-
-function calculateSimplifiedDebts(balances) {
-    const debts = [];
-
-    const debtors = balances
-        .filter(b => b.balance < -0.01)
-        .map(b => ({ userId: b.user._id, name: b.user.name, amount: -b.balance }))
-        .sort((a, b) => b.amount - a.amount);
-
-    const creditors = balances
-        .filter(b => b.balance > 0.01)
-        .map(b => ({ userId: b.user._id, name: b.user.name, amount: b.balance }))
-        .sort((a, b) => b.amount - a.amount);
-
-    let i = 0, j = 0;
-    while (i < debtors.length && j < creditors.length) {
-        const debtor = debtors[i];
-        const creditor = creditors[j];
-        const amount = Math.min(debtor.amount, creditor.amount);
-
-        if (amount > 0.01) {
-            debts.push({
-                from: { _id: debtor.userId, name: debtor.name },
-                to: { _id: creditor.userId, name: creditor.name },
-                amount: Math.round(amount * 100) / 100,
-            });
-        }
-
-        debtor.amount -= amount;
-        creditor.amount -= amount;
-
-        if (debtor.amount < 0.01) i++;
-        if (creditor.amount < 0.01) j++;
-    }
-
-    return debts;
-}
-
-function calculateDirectDebts(debtsMap, members, simplify = false) {
-    const debts = [];
-    const memberMap = members.reduce((acc, m) => ({ ...acc, [m._id.toString()]: m }), {});
-
-    Object.keys(debtsMap).forEach(fromId => {
-        const owesTo = debtsMap[fromId];
-        Object.keys(owesTo).forEach(toId => {
-            let amount = owesTo[toId];
-
-            if (simplify) {
-                if (debtsMap[toId] && debtsMap[toId][fromId]) {
-                    const reverseAmount = debtsMap[toId][fromId];
-                    if (amount >= reverseAmount) {
-                        amount -= reverseAmount;
-                        debtsMap[toId][fromId] = 0;
-                    } else {
-                        debtsMap[toId][fromId] -= amount;
-                        amount = 0;
-                    }
-                }
-            }
-
-            if (amount > 0.01) {
-                debts.push({
-                    from: { _id: fromId, name: memberMap[fromId]?.name },
-                    to: { _id: toId, name: memberMap[toId]?.name },
-                    amount: Math.round(amount * 100) / 100
-                });
-            }
-        });
-    });
-    return debts;
-}
 
 export default {
     getSettlements,
