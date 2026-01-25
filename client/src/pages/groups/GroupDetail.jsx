@@ -130,6 +130,7 @@ export function GroupDetail() {
             fetchSettlements(groupId);
             fetchBalances(groupId); // Uses store default/current state
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [groupId]);
 
     // Socket Connection & Realtime Updates

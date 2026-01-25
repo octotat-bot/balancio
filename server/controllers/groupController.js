@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Group from '../models/Group.js';
 import Expense from '../models/Expense.js';
 import User from '../models/User.js';

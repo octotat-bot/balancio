@@ -196,7 +196,8 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
     };
 
     // Use the correct debt data based on simplification state
-    const debtsToDisplay = isSimplified ? simplifiedDebts : simplifiedDebts; // Both use simplifiedDebts for now since backend handles it
+    // Backend returns detailedDebts for pairwise view and simplifiedDebts for simplified view
+    const debtsToDisplay = isSimplified ? simplifiedDebts : detailedDebts;
 
     // Filter debts based on admin toggle
     const filteredDebts = (isAdmin && showAllSettlements)

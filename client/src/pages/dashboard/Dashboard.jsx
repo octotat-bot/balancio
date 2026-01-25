@@ -454,7 +454,7 @@ export function Dashboard() {
                         {acceptedFriends.slice(0, 4).map(f => {
                             const bal = friendBalances[f._id] || 0;
 
-                            // Determind who is the friend
+                            // Determine who is the friend
                             let friendData = {};
                             const isRequester = f.requester?._id === user?._id || f.requester === user?._id;
 

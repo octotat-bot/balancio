@@ -63,6 +63,7 @@ export const addFriend = async (req, res) => {
             friendship
         });
     } catch (error) {
+        console.error('Add friend error:', error);
         if (error.code === 11000) {
             return res.status(400).json({ message: 'Friend request already exists' });
         }
@@ -130,6 +131,7 @@ export const getFriends = async (req, res) => {
             totalFriends: accepted.length
         });
     } catch (error) {
+        console.error('Fetch friends error:', error);
         res.status(500).json({ message: 'Failed to fetch friends' });
     }
 };
@@ -157,6 +159,7 @@ export const getPendingRequests = async (req, res) => {
 
         res.json({ pendingRequests, count: pendingRequests.length });
     } catch (error) {
+        console.error('Fetch pending requests error:', error);
         res.status(500).json({ message: 'Failed to fetch pending requests' });
     }
 };
@@ -199,6 +202,7 @@ export const acceptFriend = async (req, res) => {
             friendship
         });
     } catch (error) {
+        console.error('Accept friend error:', error);
         res.status(500).json({ message: 'Failed to accept friend request' });
     }
 };
@@ -224,6 +228,7 @@ export const rejectFriend = async (req, res) => {
 
         res.json({ message: 'Friend request rejected' });
     } catch (error) {
+        console.error('Reject friend error:', error);
         res.status(500).json({ message: 'Failed to reject friend request' });
     }
 };
@@ -272,6 +277,7 @@ export const removeFriend = async (req, res) => {
 
         res.json({ message: 'Friend removed and all associated data cleaned up' });
     } catch (error) {
+        console.error('Remove friend error:', error);
         res.status(500).json({ message: 'Failed to remove friend' });
     }
 };
@@ -333,6 +339,7 @@ export const createLinkedGroup = async (req, res) => {
             group
         });
     } catch (error) {
+        console.error('Create linked group error:', error);
         res.status(500).json({ message: 'Failed to create expense group' });
     }
 };
@@ -364,6 +371,7 @@ export const getMessages = async (req, res) => {
 
         res.json({ messages });
     } catch (error) {
+        console.error('Fetch messages error:', error);
         res.status(500).json({ message: 'Failed to fetch messages' });
     }
 };
@@ -399,6 +407,7 @@ export const sendMessage = async (req, res) => {
 
         res.status(201).json({ message });
     } catch (error) {
+        console.error('Send message error:', error);
         res.status(500).json({ message: 'Failed to send message' });
     }
 };
@@ -424,6 +433,7 @@ export const getUnreadCount = async (req, res) => {
 
         res.json({ unreadCount });
     } catch (error) {
+        console.error('Get unread count error:', error);
         res.status(500).json({ message: 'Failed to get unread count' });
     }
 };
@@ -482,6 +492,7 @@ export const getFriendBalance = async (req, res) => {
                 : friendship.requester
         });
     } catch (error) {
+        console.error('Get friend balance error:', error);
         res.status(500).json({ message: 'Failed to get friend balance' });
     }
 };
@@ -548,6 +559,7 @@ export const addDirectExpense = async (req, res) => {
             expense
         });
     } catch (error) {
+        console.error('Add direct expense error:', error);
         res.status(500).json({ message: 'Failed to add expense' });
     }
 };
@@ -581,6 +593,7 @@ export const getDirectExpenses = async (req, res) => {
 
         res.json({ expenses });
     } catch (error) {
+        console.error('Get direct expenses error:', error);
         res.status(500).json({ message: 'Failed to get expenses' });
     }
 };
@@ -706,6 +719,7 @@ export const getDirectBalance = async (req, res) => {
             totalExpenses: 0
         });
     } catch (error) {
+        console.error('Get direct balance error:', error);
         res.status(500).json({ message: 'Failed to get balance' });
     }
 };
@@ -733,6 +747,7 @@ export const deleteDirectExpense = async (req, res) => {
 
         res.json({ message: 'Expense deleted' });
     } catch (error) {
+        console.error('Delete direct expense error:', error);
         res.status(500).json({ message: 'Failed to delete expense' });
     }
 };
@@ -823,6 +838,7 @@ export const settleFriendship = async (req, res) => {
         });
 
     } catch (error) {
+        console.error('Settle friendship error:', error);
         res.status(500).json({ message: 'Failed to settle up' });
     }
 };
@@ -926,6 +942,7 @@ export const createDirectSettlement = async (req, res) => {
         }
 
     } catch (error) {
+        console.error('Create direct settlement error:', error);
         res.status(500).json({ message: 'Failed to create settlement' });
     }
 };
@@ -956,6 +973,7 @@ export const getDirectSettlements = async (req, res) => {
         res.json({ pending, confirmed, all: settlements });
 
     } catch (error) {
+        console.error('Get direct settlements error:', error);
         res.status(500).json({ message: 'Failed to get settlements' });
     }
 };
@@ -1013,6 +1031,7 @@ export const confirmDirectSettlement = async (req, res) => {
         });
 
     } catch (error) {
+        console.error('Confirm direct settlement error:', error);
         res.status(500).json({ message: 'Failed to confirm settlement' });
     }
 };
@@ -1045,6 +1064,7 @@ export const rejectDirectSettlement = async (req, res) => {
         res.json({ message: 'Payment rejected' });
 
     } catch (error) {
+        console.error('Reject direct settlement error:', error);
         res.status(500).json({ message: 'Failed to reject settlement' });
     }
 };
