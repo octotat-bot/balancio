@@ -24,9 +24,12 @@ export const useChatStore = create((set, get) => ({
         if (get().socket) return;
 
         const socket = io(getSocketUrl(), {
-            transports: ['websocket'],
+            transports: ['polling', 'websocket'],
             autoConnect: true,
             reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 2000,
+            timeout: 10000,
         });
 
         socket.on('connect', () => {

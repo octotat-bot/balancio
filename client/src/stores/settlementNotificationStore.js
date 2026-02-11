@@ -66,7 +66,7 @@ const useSettlementNotificationStore = create((set, get) => ({
 
                 for (const group of groups) {
                     try {
-                        const response = await api.get(`/groups/${group._id}/settlements`);
+                        const response = await api.get(`/settlements/${group._id}/settlements`);
                         const settlements = response.data?.settlements || response.data || [];
                         const pending = settlements
                             .filter(s => !s.confirmedByRecipient && s.to?._id === userId)
