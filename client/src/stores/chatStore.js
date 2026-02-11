@@ -5,7 +5,7 @@ import useGroupStore from './groupStore';
 import useExpenseStore from './expenseStore';
 import useSettlementStore from './settlementStore';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'https://balancio-backend-six.vercel.app';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL || 'https://balancio-backend-six.vercel.app';
 
 const getSocketUrl = () => {
     const url = SOCKET_URL;
@@ -19,25 +19,39 @@ export const useChatStore = create((set, get) => ({
     isLoading: false,
     error: null,
     typingUsers: {},
+    _connectionFailed: false, // Track if socket.io is unavailable (e.g. Vercel serverless)
 
     connect: () => {
-        if (get().socket) return;
+        if (get().socket || get()._connectionFailed) return;
 
         const socket = io(getSocketUrl(), {
             transports: ['polling', 'websocket'],
             autoConnect: true,
             reconnection: true,
-            reconnectionAttempts: 5,
-            reconnectionDelay: 2000,
-            timeout: 10000,
+            reconnectionAttempts: 2,  // Reduced: stop quickly if server doesn't support sockets
+            reconnectionDelay: 3000,
+            timeout: 8000,
         });
 
         socket.on('connect', () => {
-            set({ isConnected: true });
+            set({ isConnected: true, _connectionFailed: false });
         });
 
         socket.on('disconnect', () => {
             set({ isConnected: false });
+        });
+
+        // If server doesn't support socket.io (e.g. Vercel serverless), stop retrying
+        socket.on('connect_error', (err) => {
+            const isServerUnavailable = err?.message?.includes('xhr poll error') ||
+                err?.message?.includes('websocket error') ||
+                err?.description?.toString().includes('404');
+
+            if (isServerUnavailable) {
+                console.warn('Socket.io: server unavailable (serverless environment). Real-time features disabled.');
+                socket.disconnect();
+                set({ socket: null, isConnected: false, _connectionFailed: true });
+            }
         });
 
         socket.on('receive_message', (message) => {
@@ -170,8 +184,8 @@ export const useChatStore = create((set, get) => ({
         const { socket } = get();
         if (socket) {
             socket.emit('leave_group', { groupId });
-            set({ messages: [], typingUsers: {} });
         }
+        set({ messages: [], typingUsers: {} });
     },
 
     fetchMessages: async (groupId) => {
