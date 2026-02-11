@@ -73,16 +73,41 @@ export const getGroups = async (req, res, next) => {
                 let userBalance = 0;
 
                 expenses.forEach((expense) => {
-                    const isPayer = expense.paidBy._id.toString() === req.userId.toString();
+                    // Skip expenses paid by pending members for current user balance calculation
+                    // (pending members can't be the current user)
+                    if (expense.paidByPending) {
+                        // Check if current user is in the splits
+                        const mySplit = expense.splits.find(s => 
+                            s.user && (s.user._id?.toString() === req.userId.toString() || s.user.toString() === req.userId.toString())
+                        );
+                        if (mySplit) {
+                            userBalance -= mySplit.amount;
+                        }
+                        return;
+                    }
+                    
+                    // Handle regular expenses with paidBy
+                    if (!expense.paidBy) return;
+                    
+                    const payerId = expense.paidBy._id?.toString() || expense.paidBy.toString();
+                    const isPayer = payerId === req.userId.toString();
 
                     if (isPayer) {
                         expense.splits.forEach((split) => {
-                            if (split.user._id.toString() !== req.userId.toString()) {
+                            // Skip splits for pending members or if split.user is null
+                            if (split.pendingMemberId || !split.user) return;
+                            
+                            const splitUserId = split.user._id?.toString() || split.user.toString();
+                            if (splitUserId !== req.userId.toString()) {
                                 userBalance += split.amount;
                             }
                         });
                     } else {
-                        const mySplit = expense.splits.find(s => s.user._id.toString() === req.userId.toString());
+                        const mySplit = expense.splits.find(s => {
+                            if (s.pendingMemberId || !s.user) return false;
+                            const splitUserId = s.user._id?.toString() || s.user.toString();
+                            return splitUserId === req.userId.toString();
+                        });
                         if (mySplit) {
                             userBalance -= mySplit.amount;
                         }
@@ -282,16 +307,40 @@ export const removeMember = async (req, res, next) => {
         let memberBalance = 0;
 
         expenses.forEach((expense) => {
-            const isPayer = expense.paidBy._id.toString() === memberId;
+            // Skip expenses paid by pending members
+            if (expense.paidByPending) {
+                // Check if member is in the splits
+                const memberSplit = expense.splits.find(s => {
+                    if (s.pendingMemberId || !s.user) return false;
+                    const splitUserId = s.user._id?.toString() || s.user.toString();
+                    return splitUserId === memberId;
+                });
+                if (memberSplit) {
+                    memberBalance -= memberSplit.amount;
+                }
+                return;
+            }
+            
+            // Handle regular expenses
+            if (!expense.paidBy) return;
+            
+            const payerId = expense.paidBy._id?.toString() || expense.paidBy.toString();
+            const isPayer = payerId === memberId;
 
             if (isPayer) {
                 expense.splits.forEach((split) => {
-                    if (split.user._id.toString() !== memberId) {
+                    if (split.pendingMemberId || !split.user) return;
+                    const splitUserId = split.user._id?.toString() || split.user.toString();
+                    if (splitUserId !== memberId) {
                         memberBalance += split.amount;
                     }
                 });
             } else {
-                const memberSplit = expense.splits.find(s => s.user._id.toString() === memberId);
+                const memberSplit = expense.splits.find(s => {
+                    if (s.pendingMemberId || !s.user) return false;
+                    const splitUserId = s.user._id?.toString() || s.user.toString();
+                    return splitUserId === memberId;
+                });
                 if (memberSplit) {
                     memberBalance -= memberSplit.amount;
                 }

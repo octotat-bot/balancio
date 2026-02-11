@@ -258,9 +258,13 @@ export const getBalances = async (req, res, next) => {
             if (expense.paidByPending) {
                 payerId = expense.paidByPending.toString();
                 payerName = pendingMembersMap[payerId]?.name || 'Unknown';
-            } else if (expense.paidBy) {
+            } else if (expense.paidBy && expense.paidBy._id) {
                 payerId = expense.paidBy._id.toString();
-                payerName = expense.paidBy.name;
+                payerName = expense.paidBy.name || 'Unknown';
+            } else if (expense.paidBy) {
+                // paidBy might be just an ObjectId if not populated
+                payerId = expense.paidBy.toString();
+                payerName = 'Unknown';
             } else {
                 return; // Skip if no payer
             }
@@ -275,7 +279,11 @@ export const getBalances = async (req, res, next) => {
                 
                 if (split.pendingMemberId) {
                     userId = split.pendingMemberId.toString();
+                } else if (split.user && split.user._id) {
+                    // Populated user object
+                    userId = split.user._id.toString();
                 } else if (split.user) {
+                    // Just an ObjectId
                     userId = split.user.toString();
                 } else {
                     return; // Skip if no user
