@@ -135,6 +135,24 @@ export const useGroupStore = create((set, get) => ({
         }
     },
 
+    removePendingMember: async (groupId, pendingMemberId) => {
+        set({ isLoading: true, error: null });
+        try {
+            const response = await api.delete(`/groups/${groupId}/pending-members/${pendingMemberId}`);
+            const updatedGroup = response.data.group;
+            set((state) => ({
+                currentGroup: updatedGroup,
+                groups: state.groups.map((g) => (g._id === groupId ? updatedGroup : g)),
+                isLoading: false,
+            }));
+            return { success: true, message: response.data.message };
+        } catch (error) {
+            const message = error.response?.data?.message || 'Failed to remove pending member';
+            set({ isLoading: false, error: message });
+            return { success: false, message };
+        }
+    },
+
     promoteToAdmin: async (groupId, memberId) => {
         set({ isLoading: true, error: null });
         try {

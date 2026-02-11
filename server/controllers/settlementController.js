@@ -209,26 +209,78 @@ export const getBalances = async (req, res, next) => {
             .populate('from', 'name')
             .populate('to', 'name');
 
+        // Create a map of pending members for quick lookup
+        const pendingMembersMap = {};
+        (group.pendingMembers || []).forEach(pm => {
+            pendingMembersMap[pm._id.toString()] = {
+                _id: pm._id,
+                name: pm.name,
+                phone: pm.phone,
+                isPending: true
+            };
+        });
+
         const balances = {};
+        
+        // Initialize balances for registered members
         group.members.forEach(member => {
             balances[member._id.toString()] = {
                 user: member,
                 paid: 0,
                 owes: 0,
                 balance: 0,
+                isPending: false
+            };
+        });
+        
+        // Initialize balances for pending members
+        (group.pendingMembers || []).forEach(pm => {
+            balances[pm._id.toString()] = {
+                user: {
+                    _id: pm._id,
+                    name: pm.name,
+                    phone: pm.phone
+                },
+                paid: 0,
+                owes: 0,
+                balance: 0,
+                isPending: true
             };
         });
 
         const pairwiseDebts = {};
 
         expenses.forEach(expense => {
-            const payerId = expense.paidBy._id.toString();
+            // Handle payer - could be registered user or pending member
+            let payerId;
+            let payerName;
+            
+            if (expense.paidByPending) {
+                payerId = expense.paidByPending.toString();
+                payerName = pendingMembersMap[payerId]?.name || 'Unknown';
+            } else if (expense.paidBy) {
+                payerId = expense.paidBy._id.toString();
+                payerName = expense.paidBy.name;
+            } else {
+                return; // Skip if no payer
+            }
+            
             if (balances[payerId]) {
                 balances[payerId].paid += expense.amount;
             }
 
             expense.splits.forEach(split => {
-                const userId = split.user.toString();
+                // Handle split user - could be registered user or pending member
+                let userId;
+                
+                if (split.pendingMemberId) {
+                    userId = split.pendingMemberId.toString();
+                } else if (split.user) {
+                    userId = split.user.toString();
+                } else {
+                    return; // Skip if no user
+                }
+                
                 if (balances[userId]) {
                     balances[userId].owes += split.amount;
 
@@ -254,7 +306,7 @@ export const getBalances = async (req, res, next) => {
                             id: expense._id,
                             description: expense.description,
                             amount: split.amount,
-                            paidBy: expense.paidBy.name,
+                            paidBy: payerName,
                             date: expense.createdAt,
                             category: expense.category
                         });
@@ -308,18 +360,31 @@ export const getBalances = async (req, res, next) => {
             });
         });
 
+        // Helper to get member info (works for both registered and pending members)
+        const getMemberInfo = (memberId) => {
+            const registeredMember = group.members.find(m => m._id.toString() === memberId);
+            if (registeredMember) {
+                return { _id: memberId, name: registeredMember.name, isPending: false };
+            }
+            const pendingMember = pendingMembersMap[memberId];
+            if (pendingMember) {
+                return { _id: memberId, name: pendingMember.name, isPending: true };
+            }
+            return null;
+        };
+
         const detailedDebts = [];
         Object.values(pairwiseDebts).forEach(pair => {
-            const memberA = group.members.find(m => m._id.toString() === pair.personA);
-            const memberB = group.members.find(m => m._id.toString() === pair.personB);
+            const memberA = getMemberInfo(pair.personA);
+            const memberB = getMemberInfo(pair.personB);
 
             if (!memberA || !memberB) return;
 
             const netAmount = pair.aOwesB - pair.bOwesA;
 
             detailedDebts.push({
-                personA: { _id: pair.personA, name: memberA.name },
-                personB: { _id: pair.personB, name: memberB.name },
+                personA: memberA,
+                personB: memberB,
                 aOwesB: Math.round(pair.aOwesB * 100) / 100,
                 bOwesA: Math.round(pair.bOwesA * 100) / 100,
                 netAmount: Math.round(Math.abs(netAmount) * 100) / 100,

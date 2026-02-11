@@ -7,6 +7,7 @@ import {
     deleteGroup,
     addMember,
     removeMember,
+    removePendingMember,
     promoteToAdmin,
     getExpenses,
     createExpense,
@@ -36,6 +37,7 @@ router.put('/:groupId/budgets', updateGroupBudgets);
 
 router.post('/:groupId/members', addMember);
 router.delete('/:groupId/members/:memberId', removeMember);
+router.delete('/:groupId/pending-members/:pendingMemberId', removePendingMember);
 router.put('/:groupId/members/:memberId/promote', promoteToAdmin);
 
 router.route('/:groupId/expenses')

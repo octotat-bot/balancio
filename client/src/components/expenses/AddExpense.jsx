@@ -43,17 +43,20 @@ const splitTypes = [
     { id: 'itemized', label: 'By Item', icon: '🧾' },
 ];
 
-export function AddExpense({ groupId, members, onSuccess, onCancel, onSubmit, isAdmin = true, hidePaidBy = false }) {
+export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, onSubmit, isAdmin = true, hidePaidBy = false }) {
     const { createExpense, isLoading } = useExpenseStore();
     const { user } = useAuthStore();
     const toast = useToast();
+
+    // Use allMembers if provided (includes pending), otherwise fall back to members
+    const memberList = allMembers || members;
 
     // Mode State: 'simple' | 'receipt'
     const [mode, setMode] = useState('simple');
 
     // Split State
     const [splitType, setSplitType] = useState('equal');
-    const [selectedMembers, setSelectedMembers] = useState(members.map((m) => m._id));
+    const [selectedMembers, setSelectedMembers] = useState(memberList.map((m) => m._id));
     const [customSplits, setCustomSplits] = useState({});
 
     // Itemized State
@@ -73,7 +76,7 @@ export function AddExpense({ groupId, members, onSuccess, onCancel, onSubmit, is
         defaultValues: {
             description: '',
             amount: '',
-            paidBy: user?._id || members[0]?._id,
+            paidBy: user?._id || memberList[0]?._id,
             category: 'other',
             date: new Date().toISOString().split('T')[0],
             notes: '',
@@ -172,7 +175,10 @@ export function AddExpense({ groupId, members, onSuccess, onCancel, onSubmit, is
             return;
         }
 
-        // Generate Splits
+        // Helper to check if a member is pending
+        const getMemberById = (id) => memberList.find(m => m._id === id);
+
+        // Generate Splits - handle both registered and pending members
         let splits = [];
         if (mode === 'receipt') {
             const userDebts = {};
@@ -182,28 +188,62 @@ export function AddExpense({ groupId, members, onSuccess, onCancel, onSubmit, is
                     userDebts[uid] = (userDebts[uid] || 0) + share;
                 });
             });
-            splits = Object.keys(userDebts).map(uid => ({
-                user: uid,
-                amount: roundToTwo(userDebts[uid])
-            }));
+            splits = Object.keys(userDebts).map(uid => {
+                const member = getMemberById(uid);
+                if (member?.isPending) {
+                    return { pendingMemberId: uid, amount: roundToTwo(userDebts[uid]) };
+                }
+                return { user: uid, amount: roundToTwo(userDebts[uid]) };
+            });
         } else {
-            splits = selectedMembers.map((memberId) => ({
-                user: memberId,
-                amount: calculateSplit(memberId),
-            }));
+            splits = selectedMembers.map((memberId) => {
+                const member = getMemberById(memberId);
+                if (member?.isPending) {
+                    return { pendingMemberId: memberId, amount: calculateSplit(memberId) };
+                }
+                return { user: memberId, amount: calculateSplit(memberId) };
+            });
         }
+
+        // Check if paidBy is a pending member
+        const payer = getMemberById(data.paidBy);
+        const isPendingPayer = payer?.isPending;
 
         const expenseData = {
             description: data.description,
             amount, // Use the calculated/derived amount
-            paidBy: data.paidBy,
             category: data.category,
             date: data.date,
             notes: data.notes,
             splitType, // 'itemized' if receipt mode
             splits,
-            items: mode === 'receipt' ? items.map(i => ({ name: i.name, amount: i.amount, involved: i.involved })) : []
         };
+
+        // Set paidBy or paidByPending based on payer type
+        if (isPendingPayer) {
+            expenseData.paidByPending = data.paidBy;
+        } else {
+            expenseData.paidBy = data.paidBy;
+        }
+
+        // Handle items for receipt mode - separate involved and involvedPending
+        if (mode === 'receipt') {
+            expenseData.items = items.map(i => {
+                const involved = [];
+                const involvedPending = [];
+                i.involved.forEach(uid => {
+                    const member = getMemberById(uid);
+                    if (member?.isPending) {
+                        involvedPending.push(uid);
+                    } else {
+                        involved.push(uid);
+                    }
+                });
+                return { name: i.name, amount: i.amount, involved, involvedPending };
+            });
+        } else {
+            expenseData.items = [];
+        }
 
         if (onSubmit) {
             await onSubmit(expenseData);
@@ -284,7 +324,7 @@ export function AddExpense({ groupId, members, onSuccess, onCancel, onSubmit, is
                                     cursor: !isAdmin ? 'not-allowed' : 'pointer'
                                 }}
                             >
-                                {members.map(m => <option key={m._id} value={m._id}>{m.name}</option>)}
+                                {memberList.map(m => <option key={m._id} value={m._id}>{m.name}{m.isPending ? ' (pending)' : ''}</option>)}
                             </select>
                         </div>
                     )}
@@ -311,7 +351,7 @@ export function AddExpense({ groupId, members, onSuccess, onCancel, onSubmit, is
                                             <p style={{ margin: 0, fontWeight: '600', fontSize: '15px' }}>{item.name}</p>
                                             <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
                                                 {item.involved.map(uid => {
-                                                    const m = members.find(mem => mem._id === uid);
+                                                    const m = memberList.find(mem => mem._id === uid);
                                                     return <Avatar key={uid} name={m?.name} size="xs" />;
                                                 })}
                                             </div>
@@ -360,7 +400,7 @@ export function AddExpense({ groupId, members, onSuccess, onCancel, onSubmit, is
                         <div>
                             <label style={{ fontSize: '12px', fontWeight: '600', color: '#737373', marginBottom: '8px', display: 'block' }}>SPLIT BETWEEN</label>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                {members.map(m => {
+                                {memberList.map(m => {
                                     const active = newItemMembers.includes(m._id);
                                     return (
                                         <button
@@ -382,7 +422,7 @@ export function AddExpense({ groupId, members, onSuccess, onCancel, onSubmit, is
                                             }}
                                         >
                                             <Avatar name={m.name} size="xs" />
-                                            <span>{m.name.split(' ')[0]}</span>
+                                            <span>{m.name.split(' ')[0]}{m.isPending ? ' ⏳' : ''}</span>
                                             {active && <Check size={12} strokeWidth={3} />}
                                         </button>
                                     )
@@ -484,8 +524,10 @@ export function AddExpense({ groupId, members, onSuccess, onCancel, onSubmit, is
                                             opacity: !isAdmin ? 0.7 : 1
                                         }}
                                     >
-                                        {members.map((member) => (
-                                            <option key={member._id} value={member._id}>{member.name} {member._id === user?._id ? '(you)' : ''}</option>
+                                        {memberList.map((member) => (
+                                            <option key={member._id} value={member._id}>
+                                                {member.name} {member._id === user?._id ? '(you)' : ''}{member.isPending ? ' (pending)' : ''}
+                                            </option>
                                         ))}
                                     </select>
                                 </div>
@@ -532,12 +574,12 @@ export function AddExpense({ groupId, members, onSuccess, onCancel, onSubmit, is
                     <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                             <span style={{ fontSize: '13px', color: '#737373', fontWeight: '500' }}>{selectedMembers.length} selected</span>
-                            <button type="button" onClick={() => setSelectedMembers(selectedMembers.length === members.length ? [] : members.map(m => m._id))} style={{ background: 'none', border: 'none', fontSize: '13px', color: '#3b82f6', fontWeight: '600', cursor: 'pointer' }}>
-                                {selectedMembers.length === members.length ? 'Select None' : 'Select All'}
+                            <button type="button" onClick={() => setSelectedMembers(selectedMembers.length === memberList.length ? [] : memberList.map(m => m._id))} style={{ background: 'none', border: 'none', fontSize: '13px', color: '#3b82f6', fontWeight: '600', cursor: 'pointer' }}>
+                                {selectedMembers.length === memberList.length ? 'Select None' : 'Select All'}
                             </button>
                         </div>
 
-                        {members.map((member) => {
+                        {memberList.map((member) => {
                             const isSelected = selectedMembers.includes(member._id);
                             const splitVal = calculateSplit(member._id);
                             return (
@@ -555,7 +597,10 @@ export function AddExpense({ groupId, members, onSuccess, onCancel, onSubmit, is
                                     </div>
                                     <Avatar name={member.name} size="sm" />
                                     <div style={{ flex: 1, minWidth: 0 }}>
-                                        <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#0a0a0a' }}>{member.name}</p>
+                                        <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#0a0a0a' }}>
+                                            {member.name}
+                                            {member.isPending && <span style={{ marginLeft: '6px', fontSize: '11px', color: '#f59e0b' }}>⏳ pending</span>}
+                                        </p>
                                     </div>
                                     {isSelected && splitType === 'equal' && <span style={{ fontSize: '15px', fontWeight: '700', color: '#0a0a0a' }}>₹{splitVal}</span>}
                                     {isSelected && splitType !== 'equal' && (

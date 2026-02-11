@@ -130,7 +130,29 @@ export const getGroup = async (req, res, next) => {
             return res.status(403).json({ message: 'You are not a member of this group' });
         }
 
-        res.json({ group });
+        // Create a combined list of all members (registered + pending)
+        const groupObj = group.toObject();
+        
+        // Transform registered members
+        const registeredMembers = groupObj.members.map(m => ({
+            ...m,
+            isPending: false
+        }));
+        
+        // Transform pending members to look like regular members
+        const pendingMembersTransformed = (groupObj.pendingMembers || []).map(pm => ({
+            _id: pm._id, // MongoDB auto-generates _id for subdocuments
+            name: pm.name,
+            phone: pm.phone,
+            email: null,
+            isPending: true,
+            addedAt: pm.addedAt
+        }));
+        
+        // Combined list for frontend convenience
+        groupObj.allMembers = [...registeredMembers, ...pendingMembersTransformed];
+
+        res.json({ group: groupObj });
     } catch (error) {
         next(error);
     }
@@ -310,6 +332,76 @@ export const removeMember = async (req, res, next) => {
     }
 };
 
+export const removePendingMember = async (req, res, next) => {
+    try {
+        const group = await Group.findById(req.params.groupId);
+
+        if (!group) {
+            return res.status(404).json({ message: 'Group not found' });
+        }
+
+        const isAdmin = group.admins.some(adminId => adminId.toString() === req.userId.toString());
+        if (!isAdmin) {
+            return res.status(403).json({ message: 'Only admins can remove pending members' });
+        }
+
+        const pendingMemberId = req.params.pendingMemberId;
+        const pendingMemberIndex = group.pendingMembers.findIndex(
+            pm => pm._id.toString() === pendingMemberId
+        );
+        
+        if (pendingMemberIndex === -1) {
+            return res.status(404).json({ message: 'Pending member not found in group' });
+        }
+
+        // Check if pending member has any expenses
+        const expenses = await Expense.find({ group: group._id });
+        let pendingMemberBalance = 0;
+
+        expenses.forEach((expense) => {
+            // Check if pending member paid
+            if (expense.paidByPending && expense.paidByPending.toString() === pendingMemberId) {
+                expense.splits.forEach((split) => {
+                    if (split.pendingMemberId?.toString() !== pendingMemberId) {
+                        pendingMemberBalance += split.amount;
+                    }
+                });
+            }
+            
+            // Check if pending member is in splits
+            const memberSplit = expense.splits.find(
+                s => s.pendingMemberId?.toString() === pendingMemberId
+            );
+            if (memberSplit) {
+                if (expense.paidByPending?.toString() !== pendingMemberId) {
+                    pendingMemberBalance -= memberSplit.amount;
+                }
+            }
+        });
+
+        pendingMemberBalance = Math.round(pendingMemberBalance * 100) / 100;
+
+        if (Math.abs(pendingMemberBalance) > 0.01) {
+            const status = pendingMemberBalance > 0 ? 'is owed' : 'owes';
+            return res.status(400).json({
+                message: `Cannot remove pending member who ${status} $${Math.abs(pendingMemberBalance).toFixed(2)}. Please settle up first.`,
+                balance: pendingMemberBalance
+            });
+        }
+
+        // Remove from group
+        group.pendingMembers.splice(pendingMemberIndex, 1);
+
+        await group.save();
+        await group.populate('members', 'name email phone');
+        await group.populate('admins', 'name email phone');
+
+        res.json({ group, message: 'Pending member removed successfully' });
+    } catch (error) {
+        next(error);
+    }
+};
+
 export const promoteToAdmin = async (req, res, next) => {
     try {
         const group = await Group.findById(req.params.groupId);
@@ -351,13 +443,63 @@ export const promoteToAdmin = async (req, res, next) => {
 
 export const getExpenses = async (req, res, next) => {
     try {
+        const group = await Group.findById(req.params.groupId);
+        if (!group) {
+            return res.status(404).json({ message: 'Group not found' });
+        }
+
         const expenses = await Expense.find({ group: req.params.groupId })
             .populate('paidBy', 'name email')
             .populate('splits.user', 'name email')
             .populate('createdBy', 'name email')
             .sort({ date: -1 });
 
-        res.json({ expenses });
+        // Create a map of pending members for quick lookup
+        const pendingMembersMap = {};
+        (group.pendingMembers || []).forEach(pm => {
+            pendingMembersMap[pm._id.toString()] = {
+                _id: pm._id,
+                name: pm.name,
+                phone: pm.phone,
+                isPending: true
+            };
+        });
+
+        // Enrich expenses with pending member info
+        const enrichedExpenses = expenses.map(expense => {
+            const expenseObj = expense.toObject();
+            
+            // If paidByPending, add the pending member info
+            if (expenseObj.paidByPending) {
+                expenseObj.paidByPendingInfo = pendingMembersMap[expenseObj.paidByPending.toString()] || null;
+            }
+
+            // Enrich splits with pending member info
+            if (expenseObj.splits) {
+                expenseObj.splits = expenseObj.splits.map(split => {
+                    if (split.pendingMemberId) {
+                        split.pendingMemberInfo = pendingMembersMap[split.pendingMemberId.toString()] || null;
+                    }
+                    return split;
+                });
+            }
+
+            // Enrich items with pending member info
+            if (expenseObj.items) {
+                expenseObj.items = expenseObj.items.map(item => {
+                    if (item.involvedPending && item.involvedPending.length > 0) {
+                        item.involvedPendingInfo = item.involvedPending.map(
+                            pmId => pendingMembersMap[pmId.toString()] || null
+                        ).filter(Boolean);
+                    }
+                    return item;
+                });
+            }
+
+            return expenseObj;
+        });
+
+        res.json({ expenses: enrichedExpenses });
     } catch (error) {
         next(error);
     }
@@ -365,7 +507,7 @@ export const getExpenses = async (req, res, next) => {
 
 export const createExpense = async (req, res, next) => {
     try {
-        const { description, amount, paidBy, category, date, splitType, splits, notes, items } = req.body;
+        const { description, amount, paidBy, paidByPending, category, date, splitType, splits, notes, items } = req.body;
         const { groupId } = req.params;
 
         const group = await Group.findById(groupId);
@@ -379,21 +521,73 @@ export const createExpense = async (req, res, next) => {
         }
 
         const isAdmin = group.admins.some(adminId => adminId.toString() === req.userId.toString());
-        const finalPaidBy = isAdmin && paidBy ? paidBy : req.userId;
-
-        const expense = await Expense.create({
+        
+        // Handle paidBy - can be a registered user or pending member
+        let expenseData = {
             group: groupId,
             description,
             amount,
-            paidBy: finalPaidBy,
             category,
             date: date || new Date(),
             splitType,
-            splits,
-            items: items || [],
             notes,
             createdBy: req.userId,
-        });
+        };
+
+        // If paidByPending is provided (pending member paid), use it
+        if (paidByPending) {
+            // Verify the pending member exists in this group
+            const pendingMemberExists = group.pendingMembers.some(
+                pm => pm._id.toString() === paidByPending
+            );
+            if (!pendingMemberExists) {
+                return res.status(400).json({ message: 'Pending member not found in this group' });
+            }
+            expenseData.paidByPending = paidByPending;
+        } else {
+            // Regular user paid
+            const finalPaidBy = isAdmin && paidBy ? paidBy : req.userId;
+            expenseData.paidBy = finalPaidBy;
+        }
+
+        // Process splits - separate registered users from pending members
+        const processedSplits = [];
+        const processedItems = [];
+
+        if (splits && splits.length > 0) {
+            for (const split of splits) {
+                if (split.pendingMemberId) {
+                    // This is a pending member split
+                    processedSplits.push({
+                        pendingMemberId: split.pendingMemberId,
+                        amount: split.amount
+                    });
+                } else if (split.user) {
+                    // This is a registered user split
+                    processedSplits.push({
+                        user: split.user,
+                        amount: split.amount
+                    });
+                }
+            }
+        }
+
+        if (items && items.length > 0) {
+            for (const item of items) {
+                const processedItem = {
+                    name: item.name,
+                    amount: item.amount,
+                    involved: item.involved || [],
+                    involvedPending: item.involvedPending || []
+                };
+                processedItems.push(processedItem);
+            }
+        }
+
+        expenseData.splits = processedSplits;
+        expenseData.items = processedItems;
+
+        const expense = await Expense.create(expenseData);
 
         await expense.populate('paidBy', 'name email');
         await expense.populate('splits.user', 'name email');

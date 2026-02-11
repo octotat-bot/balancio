@@ -1,5 +1,6 @@
 import User from '../models/User.js';
 import Group from '../models/Group.js';
+import Expense from '../models/Expense.js';
 import { generateToken } from '../middleware/auth.js';
 import { normalizePhone } from '../utils/phone.js';
 
@@ -33,9 +34,77 @@ export const signup = async (req, res, next) => {
 
         if (groupsWithPendingMember.length > 0) {
             for (const group of groupsWithPendingMember) {
+                // Find the pending member entry to get its _id
+                const pendingMember = group.pendingMembers.find(
+                    pm => normalizePhone(pm.phone) === normalizedPhone || pm.phone === phone
+                );
+                
+                if (pendingMember) {
+                    const pendingMemberId = pendingMember._id;
+                    
+                    // Migrate expenses where this pending member paid
+                    await Expense.updateMany(
+                        { 
+                            group: group._id, 
+                            paidByPending: pendingMemberId 
+                        },
+                        { 
+                            $set: { paidBy: user._id },
+                            $unset: { paidByPending: 1 }
+                        }
+                    );
+                    
+                    // Migrate expenses where this pending member is in splits
+                    const expensesWithPendingSplits = await Expense.find({
+                        group: group._id,
+                        'splits.pendingMemberId': pendingMemberId
+                    });
+                    
+                    for (const expense of expensesWithPendingSplits) {
+                        expense.splits = expense.splits.map(split => {
+                            if (split.pendingMemberId?.toString() === pendingMemberId.toString()) {
+                                return {
+                                    user: user._id,
+                                    amount: split.amount
+                                };
+                            }
+                            return split;
+                        });
+                        await expense.save();
+                    }
+                    
+                    // Migrate itemized expenses where pending member was involved
+                    const expensesWithPendingItems = await Expense.find({
+                        group: group._id,
+                        'items.involvedPending': pendingMemberId
+                    });
+                    
+                    for (const expense of expensesWithPendingItems) {
+                        expense.items = expense.items.map(item => {
+                            if (item.involvedPending && item.involvedPending.some(
+                                pmId => pmId.toString() === pendingMemberId.toString()
+                            )) {
+                                // Add to involved (registered users)
+                                if (!item.involved.some(uid => uid.toString() === user._id.toString())) {
+                                    item.involved.push(user._id);
+                                }
+                                // Remove from involvedPending
+                                item.involvedPending = item.involvedPending.filter(
+                                    pmId => pmId.toString() !== pendingMemberId.toString()
+                                );
+                            }
+                            return item;
+                        });
+                        await expense.save();
+                    }
+                }
+                
+                // Add user to group members
                 if (!group.members.includes(user._id)) {
                     group.members.push(user._id);
                 }
+                
+                // Remove from pendingMembers
                 group.pendingMembers = group.pendingMembers.filter(
                     pm => normalizePhone(pm.phone) !== normalizedPhone
                 );

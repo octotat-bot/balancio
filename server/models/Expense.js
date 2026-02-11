@@ -4,7 +4,10 @@ const splitSchema = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true,
+    },
+    // For pending (unregistered) members - stores the pendingMember._id from Group
+    pendingMemberId: {
+        type: mongoose.Schema.Types.ObjectId,
     },
     amount: {
         type: Number,
@@ -16,7 +19,9 @@ const splitSchema = new mongoose.Schema({
 const itemSchema = new mongoose.Schema({
     name: { type: String, required: true },
     amount: { type: Number, required: true },
-    involved: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+    involved: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    // For pending members in itemized splits
+    involvedPending: [{ type: mongoose.Schema.Types.ObjectId }]
 });
 
 const expenseSchema = new mongoose.Schema(
@@ -37,10 +42,14 @@ const expenseSchema = new mongoose.Schema(
             required: [true, 'Amount is required'],
             min: [0.01, 'Amount must be greater than 0'],
         },
+        // For registered users
         paidBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
-            required: true,
+        },
+        // For pending (unregistered) members - stores the pendingMember._id from Group
+        paidByPending: {
+            type: mongoose.Schema.Types.ObjectId,
         },
         category: {
             type: String,
@@ -78,6 +87,18 @@ const expenseSchema = new mongoose.Schema(
 
 expenseSchema.index({ group: 1, date: -1 });
 expenseSchema.index({ paidBy: 1 });
+expenseSchema.index({ paidByPending: 1 });
+
+// Validation: Either paidBy or paidByPending must be set
+expenseSchema.pre('validate', function(next) {
+    if (!this.paidBy && !this.paidByPending) {
+        this.invalidate('paidBy', 'Either paidBy or paidByPending is required');
+    }
+    if (this.paidBy && this.paidByPending) {
+        this.invalidate('paidBy', 'Cannot have both paidBy and paidByPending');
+    }
+    next();
+});
 
 const Expense = mongoose.model('Expense', expenseSchema);
 

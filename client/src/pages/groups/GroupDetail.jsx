@@ -81,7 +81,7 @@ export function GroupDetail() {
     const navigate = useNavigate();
     const toast = useToast();
     const { user } = useAuthStore();
-    const { currentGroup, fetchGroup, deleteGroup, addMember, promoteToAdmin, removeMember, isLoading: groupLoading } = useGroupStore();
+    const { currentGroup, fetchGroup, deleteGroup, addMember, promoteToAdmin, removeMember, removePendingMember, isLoading: groupLoading } = useGroupStore();
     const { expenses, fetchExpenses, deleteExpense, isLoading: expenseLoading } = useExpenseStore();
     const { messages, fetchMessages, sendMessage, joinGroup, leaveGroup, isConnected, socket } = useChatStore();
     const {
@@ -428,10 +428,11 @@ export function GroupDetail() {
                                                 {month}
                                             </h3>
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                                {monthExpenses.map((expense) => {
-                                                    const { icon: CatIcon, bg, color } = getCategoryDetails(expense.category);
-                                                    const isPayer = (expense.paidBy?._id || expense.paidBy) === user?._id;
-                                                    const canEdit = (expense.createdBy?._id || expense.createdBy) === user?._id || isAdmin;
+                                                    {monthExpenses.map((expense) => {
+                                                        const { icon: CatIcon, bg, color } = getCategoryDetails(expense.category);
+                                                        // isPayer is true if user is the registered payer (pending members can't be current user)
+                                                        const isPayer = (expense.paidBy?._id || expense.paidBy) === user?._id;
+                                                        const canEdit = (expense.createdBy?._id || expense.createdBy) === user?._id || isAdmin;
 
                                                     return (
                                                         <motion.div
@@ -485,7 +486,8 @@ export function GroupDetail() {
                                                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                                         <span style={{ fontSize: '13px', color: '#737373' }}>
-                                                                            {isPayer ? 'You' : (expense.paidBy?.name || 'Unknown')} paid
+                                                                            {isPayer ? 'You' : (expense.paidBy?.name || expense.paidByPendingInfo?.name || 'Unknown')} paid
+                                                                            {expense.paidByPendingInfo && <span style={{ marginLeft: '4px', color: '#f59e0b' }}>⏳</span>}
                                                                         </span>
                                                                         <span style={{ fontSize: '13px', color: '#d4d4d4' }}>•</span>
                                                                         <span style={{ fontSize: '13px', color: '#737373' }}>
@@ -538,6 +540,7 @@ export function GroupDetail() {
                             <SettleUp
                                 groupId={groupId}
                                 members={currentGroup.members || []}
+                                allMembers={currentGroup.allMembers || currentGroup.members || []}
                                 isAdmin={isAdmin}
                             />
                         </div>
@@ -1002,8 +1005,8 @@ export function GroupDetail() {
                                         Pending Members ({currentGroup.pendingMembers.length})
                                     </h3>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                        {currentGroup.pendingMembers.map((member, index) => (
-                                            <Card key={index} hover={false} style={{ padding: '16px', backgroundColor: '#fafafa' }}>
+                                        {currentGroup.pendingMembers.map((member) => (
+                                            <Card key={member._id} hover={false} style={{ padding: '16px', backgroundColor: '#fafafa' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                                                     <Avatar name={member.name} size="md" />
                                                     <div style={{ flex: 1 }}>
@@ -1017,13 +1020,33 @@ export function GroupDetail() {
                                                             Added {formatDate(member.addedAt)}
                                                         </p>
                                                     </div>
-                                                    <Badge variant="warning">Pending</Badge>
+                                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                        <Badge variant="warning">Pending</Badge>
+                                                        {isAdmin && (
+                                                            <Button
+                                                                size="sm"
+                                                                variant="danger"
+                                                                icon={Trash2}
+                                                                onClick={async () => {
+                                                                    const result = await removePendingMember(groupId, member._id);
+                                                                    if (result.success) {
+                                                                        toast.success('👋 Pending member removed', result.message);
+                                                                        fetchGroup(groupId);
+                                                                    } else {
+                                                                        toast.error('Couldn\'t remove', result.message || 'Please try again');
+                                                                    }
+                                                                }}
+                                                            >
+                                                                Remove
+                                                            </Button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </Card>
                                         ))}
                                     </div>
                                     <p style={{ fontSize: '13px', color: '#737373', marginTop: '12px', fontStyle: 'italic' }}>
-                                        💡 These members will be automatically added when they sign up with their phone number
+                                        💡 These members will be automatically added when they sign up with their phone number. You can add expenses with them in the meantime!
                                     </p>
                                 </div>
                             )}
@@ -1122,6 +1145,7 @@ export function GroupDetail() {
                 <AddExpense
                     groupId={groupId}
                     members={currentGroup.members || []}
+                    allMembers={currentGroup.allMembers || currentGroup.members || []}
                     isAdmin={isAdmin}
                     onSuccess={() => {
                         setShowAddExpense(false);
@@ -1199,6 +1223,7 @@ export function GroupDetail() {
                 <SettleUp
                     groupId={groupId}
                     members={currentGroup.members || []}
+                    allMembers={currentGroup.allMembers || currentGroup.members || []}
                     isAdmin={isAdmin}
                     onClose={() => {
                         setShowSettleUp(false);
@@ -1222,6 +1247,7 @@ export function GroupDetail() {
                         groupId={groupId}
                         expense={selectedExpense}
                         members={currentGroup.members || []}
+                        allMembers={currentGroup.allMembers || currentGroup.members || []}
                         isAdmin={isAdmin}
                         onDelete={() => {
                             setExpenseToDelete(selectedExpense._id);
