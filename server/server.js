@@ -62,6 +62,55 @@ initializeSocket(io);
 app.use(cors(corsOptions));
 app.use(express.json());
 
+// ── Cached MongoDB connection for Vercel serverless ──
+// On Vercel, each request may cold-start the function.
+// We cache the connection promise so it's reused across warm invocations.
+let cachedDbPromise = null;
+
+function connectToDatabase() {
+    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/split-expense';
+
+    if (cachedDbPromise) {
+        return cachedDbPromise;
+    }
+
+    // If already connected (warm invocation), resolve immediately
+    if (mongoose.connection.readyState === 1) {
+        cachedDbPromise = Promise.resolve(mongoose.connection);
+        return cachedDbPromise;
+    }
+
+    cachedDbPromise = mongoose.connect(mongoUri, {
+        bufferCommands: false, // Fail fast instead of buffering for 10s
+    }).then((m) => {
+        console.log('MongoDB connected');
+        return m.connection;
+    }).catch((err) => {
+        // Reset cache so next request retries
+        cachedDbPromise = null;
+        throw err;
+    });
+
+    return cachedDbPromise;
+}
+
+// Middleware: ensure MongoDB is connected before handling API requests
+app.use('/api', async (req, res, next) => {
+    // Skip DB check for health endpoint
+    if (req.path === '/health') return next();
+
+    try {
+        await connectToDatabase();
+        next();
+    } catch (err) {
+        console.error('MongoDB connection error:', err.message);
+        res.status(503).json({
+            success: false,
+            message: 'Database connection unavailable. Please try again shortly.',
+        });
+    }
+});
+
 app.use((req, res, next) => {
     req.io = io;
     next();
@@ -75,7 +124,12 @@ app.use('/api/friends', friendRoutes);
 app.use('/api/messages', messageRoutes);
 
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+    const dbState = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+    res.json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        db: dbState[mongoose.connection.readyState] || 'unknown',
+    });
 });
 
 app.get('/', (req, res) => {
@@ -124,6 +178,12 @@ app.use((err, req, res, next) => {
         message = 'Session expired. Please log in again.';
     }
 
+    // Handle Mongoose buffering timeout (serverless cold start)
+    if (err.name === 'MongooseError' && err.message.includes('buffering timed out')) {
+        statusCode = 503;
+        message = 'Database temporarily unavailable. Please retry.';
+    }
+
     res.status(statusCode).json({
         success: false,
         message,
@@ -131,21 +191,27 @@ app.use((err, req, res, next) => {
     });
 });
 
-const startServer = async () => {
-    try {
-        const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/split-expense';
-        await mongoose.connect(mongoUri);
+// ── Start server (local development) ──
+// On Vercel, the exported `app` is used directly as the handler.
+// server.listen() is only needed for local development.
+const isVercel = process.env.VERCEL || process.env.VERCEL_ENV;
 
-        server.listen(PORT, () => {
-            console.log(`Server running on port ${PORT}`);
-        });
-    } catch (error) {
-        server.listen(PORT, () => {
-            console.log(`Server running on port ${PORT} (without MongoDB)`);
-        });
-    }
-};
+if (!isVercel) {
+    const startServer = async () => {
+        try {
+            await connectToDatabase();
+            server.listen(PORT, () => {
+                console.log(`Server running on port ${PORT}`);
+            });
+        } catch (error) {
+            console.error('Failed to connect to MongoDB:', error.message);
+            server.listen(PORT, () => {
+                console.log(`Server running on port ${PORT} (MongoDB will retry on first request)`);
+            });
+        }
+    };
 
-startServer();
+    startServer();
+}
 
 export default app;
