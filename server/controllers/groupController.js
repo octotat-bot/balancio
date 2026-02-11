@@ -762,7 +762,8 @@ export const deleteExpense = async (req, res, next) => {
 
         const isAdmin = group.admins.some(adminId => adminId.toString() === req.userId.toString());
 
-        if (expense.paidBy.toString() !== req.userId.toString() && !isAdmin) {
+        const isPayer = expense.paidBy && expense.paidBy.toString() === req.userId.toString();
+        if (!isPayer && !isAdmin) {
             return res.status(403).json({ message: 'Only the payer or an admin can delete this expense' });
         }
 

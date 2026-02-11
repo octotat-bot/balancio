@@ -199,32 +199,33 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
     // Backend returns detailedDebts for pairwise view and simplifiedDebts for simplified view
     const debtsToDisplay = isSimplified ? simplifiedDebts : detailedDebts;
 
-    // Filter debts based on admin toggle
-    const filteredDebts = (isAdmin && showAllSettlements)
-        ? debtsToDisplay // Show all debts for admin when toggle is ON
-        : debtsToDisplay.filter(d => d.from._id === user?._id || d.to._id === user?._id); // Show only user's debts
+    // Safe accessors: simplifiedDebts use from/to, detailedDebts use personA/personB
+    // Only compute filtered versions for simplifiedDebts (which have from/to structure)
+    const filteredDebts = isSimplified
+        ? ((isAdmin && showAllSettlements)
+            ? simplifiedDebts
+            : (simplifiedDebts || []).filter(d => d.from?._id === user?._id || d.to?._id === user?._id))
+        : [];
 
-    const myDebts = filteredDebts.filter(d => d.from._id === user?._id);
-    const owedToMe = filteredDebts.filter(d => d.to._id === user?._id);
+    const myDebts = filteredDebts.filter(d => d.from?._id === user?._id);
+    const owedToMe = filteredDebts.filter(d => d.to?._id === user?._id);
     const otherDebts = (isAdmin && showAllSettlements) ? filteredDebts.filter(d =>
-        d.from._id !== user?._id && d.to._id !== user?._id
+        d.from?._id !== user?._id && d.to?._id !== user?._id
     ) : [];
 
-
-
-    const pendingConfirmations = settlements.filter(s =>
-        s.to._id === user?._id && !s.confirmedByRecipient
+    const pendingConfirmations = (settlements || []).filter(s =>
+        s.to?._id === user?._id && !s.confirmedByRecipient
     );
 
-    const myPendingPayments = settlements.filter(s =>
-        s.from._id === user?._id && !s.confirmedByRecipient
+    const myPendingPayments = (settlements || []).filter(s =>
+        s.from?._id === user?._id && !s.confirmedByRecipient
     );
 
     // Helper function to check if there's a pending settlement for a specific debt
     const hasPendingSettlement = (fromUserId, toUserId) => {
-        return settlements.some(s =>
-            s.from._id === fromUserId &&
-            s.to._id === toUserId &&
+        return (settlements || []).some(s =>
+            s.from?._id === fromUserId &&
+            s.to?._id === toUserId &&
             !s.confirmedByRecipient
         );
     };
@@ -425,8 +426,9 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                                     </p>
                                 </div>
 
-                                {detailedDebts.map((pair, idx) => {
-                                    const isUserInvolved = pair.personA._id === user._id || pair.personB._id === user._id;
+                                {(detailedDebts || []).map((pair, idx) => {
+                                    if (!pair?.personA || !pair?.personB) return null;
+                                    const isUserInvolved = pair.personA._id === user?._id || pair.personB._id === user?._id;
                                     // Hide debts not involving user unless admin has "show all" toggle ON
                                     if (!isUserInvolved && !(isAdmin && showAllSettlements)) return null;
 
@@ -570,7 +572,7 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                                                     {(() => {
                                                         const debtor = pair.netDirection === 'AtoB' ? pair.personA : pair.personB;
                                                         const creditor = pair.netDirection === 'AtoB' ? pair.personB : pair.personA;
-                                                        const isPayer = debtor._id === user._id;
+                                                        const isPayer = debtor._id === user?._id;
                                                         const pending = hasPendingSettlement(debtor._id, creditor._id);
                                                         const isCustom = customPaymentId === pairKey;
 
@@ -721,11 +723,12 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                                     </p>
                                 </div>
 
-                                {detailedDebts.map((pair, idx) => {
+                                {(detailedDebts || []).map((pair, idx) => {
+                                    if (!pair?.personA || !pair?.personB) return null;
                                     // Only show pairs with net debt
                                     if (pair.netAmount <= 0.01) return null;
 
-                                    const isUserInvolved = pair.personA._id === user._id || pair.personB._id === user._id;
+                                    const isUserInvolved = pair.personA._id === user?._id || pair.personB._id === user?._id;
                                     // Hide debts not involving user unless admin has "show all" toggle ON
                                     if (!isUserInvolved && !(isAdmin && showAllSettlements)) return null;
 
@@ -734,7 +737,7 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
 
                                     const debtor = pair.netDirection === 'AtoB' ? pair.personA : pair.personB;
                                     const creditor = pair.netDirection === 'AtoB' ? pair.personB : pair.personA;
-                                    const isUserDebtor = debtor._id === user._id;
+                                    const isUserDebtor = debtor._id === user?._id;
                                     const isPendingPayment = hasPendingSettlement(debtor._id, creditor._id);
 
                                     return (
