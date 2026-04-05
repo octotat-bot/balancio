@@ -57,7 +57,7 @@ export function EditGroup({ group, onSuccess, onCancel }) {
         <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             {/* Icon Selection */}
             <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#0a0a0a' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#EDEAE4' }}>
                     Group Icon
                 </label>
                 <div style={{
@@ -65,7 +65,7 @@ export function EditGroup({ group, onSuccess, onCancel }) {
                     gridTemplateColumns: 'repeat(6, 1fr)',
                     gap: '8px',
                     padding: '16px',
-                    backgroundColor: '#fafafa',
+                    backgroundColor: '#16161B',
                     borderRadius: '16px',
                     border: '2px solid #e5e5e5'
                 }}>
@@ -108,7 +108,7 @@ export function EditGroup({ group, onSuccess, onCancel }) {
 
             {/* Description */}
             <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: '#0a0a0a' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: '#EDEAE4' }}>
                     Description (optional)
                 </label>
                 <textarea
@@ -137,11 +137,11 @@ export function EditGroup({ group, onSuccess, onCancel }) {
             {/* Preview */}
             <div style={{
                 padding: '20px',
-                backgroundColor: '#fafafa',
+                backgroundColor: '#16161B',
                 borderRadius: '16px',
                 border: '2px solid #e5e5e5'
             }}>
-                <p style={{ margin: '0 0 12px 0', fontSize: '12px', fontWeight: '600', color: '#737373', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <p style={{ margin: '0 0 12px 0', fontSize: '12px', fontWeight: '600', color: '#8A8680', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                     Preview
                 </p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -149,7 +149,7 @@ export function EditGroup({ group, onSuccess, onCancel }) {
                         width: '56px',
                         height: '56px',
                         borderRadius: '16px',
-                        backgroundColor: '#fff',
+                        backgroundColor: '#131316',
                         border: '2px solid #e5e5e5',
                         display: 'flex',
                         alignItems: 'center',
@@ -159,10 +159,10 @@ export function EditGroup({ group, onSuccess, onCancel }) {
                         {selectedIcon}
                     </div>
                     <div>
-                        <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#0a0a0a' }}>
+                        <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#EDEAE4' }}>
                             {watch('name') || 'Group Name'}
                         </h3>
-                        <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#737373' }}>
+                        <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#8A8680' }}>
                             {watch('description') || 'No description'}
                         </p>
                     </div>
@@ -170,7 +170,7 @@ export function EditGroup({ group, onSuccess, onCancel }) {
             </div>
 
             {/* Actions */}
-            <div style={{ display: 'flex', gap: '12px', paddingTop: '20px', borderTop: '1px solid #e5e5e5' }}>
+            <div style={{ display: 'flex', gap: '12px', paddingTop: '20px', borderTop: '1px solid #252530' }}>
                 <Button type="button" variant="secondary" style={{ flex: 1 }} onClick={onCancel}>
                     Cancel
                 </Button>

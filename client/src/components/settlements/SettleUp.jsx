@@ -148,7 +148,7 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
     // Shared styles
     const cardStyle = {
         borderRadius: '16px',
-        backgroundColor: '#fff',
+        backgroundColor: '#131316',
         border: '1px solid rgba(0,0,0,0.06)',
         boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02)',
         overflow: 'hidden',
@@ -292,7 +292,7 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                                 }}>
                                     <Avatar name={s.from?.name} size="sm" />
                                     <div style={{ flex: 1, minWidth: 0 }}>
-                                        <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#0a0a0a' }}>{s.from?.name}</p>
+                                        <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#EDEAE4' }}>{s.from?.name}</p>
                                         <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#78716c' }}>
                                             paid you <strong style={{ color: '#059669' }}>{formatCurrency(s.amount)}</strong>
                                         </p>
@@ -304,7 +304,7 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                                             onClick={() => handleReject(s._id)}
                                             style={{
                                                 padding: '7px 14px', borderRadius: '10px',
-                                                border: '1px solid #e5e7eb', backgroundColor: '#fff',
+                                                border: '1px solid #e5e7eb', backgroundColor: '#131316',
                                                 fontSize: '13px', fontWeight: '600', color: '#6b7280', cursor: 'pointer',
                                                 transition: 'all 0.15s',
                                             }}
@@ -437,7 +437,7 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                                     animate={{ left: isSimplified ? '20px' : '2px' }}
                                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                                     style={{
-                                        width: '18px', height: '18px', borderRadius: '50%', backgroundColor: '#fff',
+                                        width: '18px', height: '18px', borderRadius: '50%', backgroundColor: '#131316',
                                         position: 'absolute', top: '2px',
                                         boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
                                     }}
@@ -446,7 +446,7 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                             <div style={{ flex: 1 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                     <Sparkles size={13} color={isSimplified ? '#16a34a' : '#a1a1aa'} />
-                                    <span style={{ fontSize: '13px', color: '#0a0a0a', fontWeight: '600' }}>Simplify debts</span>
+                                    <span style={{ fontSize: '13px', color: '#EDEAE4', fontWeight: '600' }}>Simplify debts</span>
                                 </div>
                                 <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#a1a1aa' }}>
                                     {isSimplified ? 'Minimized number of payments' : 'Showing all individual debts'}
@@ -851,7 +851,7 @@ function DebtCard({
                     >
                         <div style={{
                             padding: '14px 18px', borderTop: '1px solid #f4f4f5',
-                            backgroundColor: '#fafafa',
+                            backgroundColor: '#16161B',
                             display: 'flex', gap: '8px', alignItems: 'center',
                         }}>
                             <div style={{ position: 'relative', flex: 1 }}>
@@ -869,7 +869,7 @@ function DebtCard({
                                         width: '100%', padding: '10px 10px 10px 28px',
                                         borderRadius: '10px', border: '1.5px solid #e4e4e7',
                                         outline: 'none', fontSize: '14px',
-                                        backgroundColor: '#fff',
+                                        backgroundColor: '#131316',
                                         transition: 'border-color 0.15s',
                                     }}
                                     onFocus={(e) => e.target.style.borderColor = '#a1a1aa'}
@@ -885,7 +885,7 @@ function DebtCard({
                                     width: '110px', padding: '10px 12px',
                                     borderRadius: '10px', border: '1.5px solid #e4e4e7',
                                     outline: 'none', fontSize: '14px',
-                                    backgroundColor: '#fff',
+                                    backgroundColor: '#131316',
                                     transition: 'border-color 0.15s',
                                 }}
                                 onFocus={(e) => e.target.style.borderColor = '#a1a1aa'}
@@ -1068,7 +1068,7 @@ function EmptyState({ icon: Icon, title, subtitle, color = '#a1a1aa' }) {
     return (
         <div style={{
             textAlign: 'center', padding: '48px 24px',
-            borderRadius: '16px', backgroundColor: '#fafafa',
+            borderRadius: '16px', backgroundColor: '#16161B',
             border: '1px dashed #e4e4e7',
         }}>
             <div style={{

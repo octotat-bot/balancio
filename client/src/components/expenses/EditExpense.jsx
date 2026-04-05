@@ -157,7 +157,7 @@ export function EditExpense({ groupId, expense, members, onSuccess, onCancel, is
         <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             {/* Amount */}
             <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#0a0a0a' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#EDEAE4' }}>
                     Amount
                 </label>
                 <div style={{ position: 'relative' }}>
@@ -168,7 +168,7 @@ export function EditExpense({ groupId, expense, members, onSuccess, onCancel, is
                         transform: 'translateY(-50%)',
                         fontSize: '32px',
                         fontWeight: '700',
-                        color: '#0a0a0a'
+                        color: '#EDEAE4'
                     }}>₹</span>
                     <input
                         type="number"
@@ -186,7 +186,7 @@ export function EditExpense({ groupId, expense, members, onSuccess, onCancel, is
                             borderRadius: '16px',
                             outline: 'none',
                             transition: 'all 0.2s',
-                            backgroundColor: '#fafafa'
+                            backgroundColor: '#16161B'
                         }}
                         onFocus={(e) => e.target.style.borderColor = '#000'}
                         onBlur={(e) => e.target.style.borderColor = errors.amount ? '#ef4444' : '#e5e5e5'}
@@ -208,7 +208,7 @@ export function EditExpense({ groupId, expense, members, onSuccess, onCancel, is
 
             {/* Category Selection */}
             <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#0a0a0a' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#EDEAE4' }}>
                     Category
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
@@ -252,7 +252,7 @@ export function EditExpense({ groupId, expense, members, onSuccess, onCancel, is
             {/* Paid By & Date */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
-                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: '#0a0a0a' }}>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: '#EDEAE4' }}>
                         Paid by
                     </label>
                     <select
@@ -289,7 +289,7 @@ export function EditExpense({ groupId, expense, members, onSuccess, onCancel, is
 
             {/* Participants */}
             <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#0a0a0a' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#EDEAE4' }}>
                     Split between ({selectedMembers.length} people)
                 </label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '200px', overflowY: 'auto' }}>
@@ -319,7 +319,7 @@ export function EditExpense({ groupId, expense, members, onSuccess, onCancel, is
                                             width: '20px',
                                             height: '20px',
                                             cursor: 'pointer',
-                                            accentColor: '#000'
+                                            accentcolor: '#EDEAE4'
                                         }}
                                     />
                                     <Avatar name={member.name} size="sm" />
@@ -340,7 +340,7 @@ export function EditExpense({ groupId, expense, members, onSuccess, onCancel, is
 
             {/* Notes */}
             <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: '#0a0a0a' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: '#EDEAE4' }}>
                     Notes (optional)
                 </label>
                 <textarea
@@ -361,7 +361,7 @@ export function EditExpense({ groupId, expense, members, onSuccess, onCancel, is
             </div>
 
             {/* Actions */}
-            <div style={{ display: 'flex', gap: '12px', paddingTop: '20px', borderTop: '1px solid #e5e5e5' }}>
+            <div style={{ display: 'flex', gap: '12px', paddingTop: '20px', borderTop: '1px solid #252530' }}>
                 <Button type="button" variant="secondary" style={{ flex: 1 }} onClick={onCancel}>
                     Cancel
                 </Button>

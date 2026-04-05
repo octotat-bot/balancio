@@ -436,7 +436,7 @@ export function Friends() {
                 {/* Header */}
                 <motion.div variants={itemVariants} className="friend-header mobile-flex-col" style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '32px' }}>
                     <motion.button
-                        whileHover={{ scale: 1.1, backgroundColor: '#f5f5f5' }}
+                        whileHover={{ scale: 1.1, backgroundColor: '#1A1A1F' }}
                         whileTap={{ scale: 0.9 }}
                         onClick={() => { clearSelectedFriend(); }}
                         style={{
@@ -445,7 +445,7 @@ export function Friends() {
                             backgroundColor: 'transparent',
                             border: 'none',
                             cursor: 'pointer',
-                            color: '#525252',
+                            color: '#B0ADA8',
                             marginTop: '4px',
                             display: 'flex',
                             alignItems: 'center',
@@ -458,10 +458,10 @@ export function Friends() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                             <Avatar name={friendData.name} size="lg" />
                             <div>
-                                <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#0a0a0a', margin: '0 0 4px' }}>
+                                <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#EDEAE4', margin: '0 0 4px' }}>
                                     {friendData.name}
                                 </h1>
-                                <p style={{ fontSize: '15px', color: '#737373', margin: 0 }}>
+                                <p style={{ fontSize: '15px', color: '#8A8680', margin: 0 }}>
                                     {friendData.phone}
                                 </p>
                             </div>
@@ -550,7 +550,7 @@ export function Friends() {
                             <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <TrendingUp size={20} color="#16a34a" />
                             </div>
-                            <span style={{ fontSize: '13px', color: '#737373', fontWeight: '500' }}>You Get</span>
+                            <span style={{ fontSize: '13px', color: '#8A8680', fontWeight: '500' }}>You Get</span>
                         </div>
                         <p style={{ margin: 0, fontSize: '28px', fontWeight: '700', color: '#16a34a' }}>
                             {formatCurrency(theyOwe)}
@@ -574,7 +574,7 @@ export function Friends() {
                             <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <TrendingDown size={20} color="#dc2626" />
                             </div>
-                            <span style={{ fontSize: '13px', color: '#737373', fontWeight: '500' }}>You Owe</span>
+                            <span style={{ fontSize: '13px', color: '#8A8680', fontWeight: '500' }}>You Owe</span>
                         </div>
                         <p style={{ margin: 0, fontSize: '28px', fontWeight: '700', color: '#dc2626' }}>
                             {formatCurrency(youOwe)}
@@ -588,24 +588,24 @@ export function Friends() {
                             gridColumn: 'span 5',
                             padding: '24px',
                             borderRadius: '24px',
-                            backgroundColor: '#fff',
-                            border: '1px solid #e5e5e5',
+                            backgroundColor: '#131316',
+                            border: '1px solid #252530',
                             display: 'flex',
                             flexDirection: 'column'
                         }}
                     >
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-                            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#0a0a0a' }}>Recent Expenses</h3>
-                            <span style={{ fontSize: '13px', color: '#737373' }}>{(directExpenses || []).length} total</span>
+                            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#EDEAE4' }}>Recent Expenses</h3>
+                            <span style={{ fontSize: '13px', color: '#8A8680' }}>{(directExpenses || []).length} total</span>
                         </div>
 
                         {recentExpenses.length === 0 ? (
                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px', textAlign: 'center' }}>
-                                <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                                <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: '#1A1A1F', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
                                     <Receipt size={28} color="#a3a3a3" />
                                 </div>
-                                <p style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#525252' }}>No expenses yet</p>
-                                <p style={{ margin: '8px 0 16px', fontSize: '13px', color: '#737373' }}>Add your first expense to start tracking</p>
+                                <p style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#B0ADA8' }}>No expenses yet</p>
+                                <p style={{ margin: '8px 0 16px', fontSize: '13px', color: '#8A8680' }}>Add your first expense to start tracking</p>
                                 <Button size="sm" onClick={() => setShowAddExpenseModal(true)} icon={Plus}>Add Expense</Button>
                             </div>
                         ) : (
@@ -618,7 +618,7 @@ export function Friends() {
                                     return (
                                         <motion.div
                                             key={expense._id}
-                                            whileHover={{ backgroundColor: '#fafafa' }}
+                                            whileHover={{ backgroundColor: '#16161B' }}
                                             style={{
                                                 display: 'flex',
                                                 alignItems: 'center',
@@ -636,10 +636,10 @@ export function Friends() {
                                                 <catInfo.icon size={22} color={catInfo.color} />
                                             </div>
                                             <div style={{ flex: 1, minWidth: 0 }}>
-                                                <p style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#0a0a0a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                <p style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#EDEAE4', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                                     {expense.description}
                                                 </p>
-                                                <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#737373' }}>
+                                                <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#8A8680' }}>
                                                     {isPayer ? 'You paid' : `${friendData.name} paid`} • {formatDate(expense.date || expense.createdAt, 'short')}
                                                 </p>
                                             </div>
@@ -647,7 +647,7 @@ export function Friends() {
                                                 <p style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: isPayer ? '#16a34a' : '#dc2626' }}>
                                                     {isPayer ? '+' : '-'}{formatCurrency(expense.amount - myShare)}
                                                 </p>
-                                                <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#a3a3a3' }}>
+                                                <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#6A6763' }}>
                                                     of {formatCurrency(expense.amount)}
                                                 </p>
                                             </div>
@@ -672,16 +672,16 @@ export function Friends() {
                             gridRow: 'span 2',
                             padding: '24px',
                             borderRadius: '24px',
-                            backgroundColor: '#fff',
-                            border: '1px solid #e5e5e5',
+                            backgroundColor: '#131316',
+                            border: '1px solid #252530',
                             display: 'flex',
                             flexDirection: 'column',
                             minHeight: '400px'
                         }}
                     >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-                            <MessageCircle size={20} color="#0a0a0a" />
-                            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#0a0a0a' }}>Chat</h3>
+                            <MessageCircle size={20} color='#EDEAE4' />
+                            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#EDEAE4' }}>Chat</h3>
                         </div>
 
                         {!friendData.isRegistered ? (
@@ -701,7 +701,7 @@ export function Friends() {
                                     marginBottom: '12px', paddingRight: '8px'
                                 }}>
                                     {(messages || []).length === 0 ? (
-                                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a3a3a3', fontSize: '14px' }}>
+                                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6A6763', fontSize: '14px' }}>
                                             No messages yet. Say hi! 👋
                                         </div>
                                     ) : (
@@ -753,7 +753,7 @@ export function Friends() {
                                 gridColumn: 'span 5',
                                 padding: '20px',
                                 borderRadius: '20px',
-                                backgroundColor: '#f5f5f5',
+                                backgroundColor: '#1A1A1F',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 gap: '16px'
@@ -762,14 +762,14 @@ export function Friends() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                     <Avatar name={balance > 0 ? friendData.name : user?.name} size="sm" />
-                                    <ArrowRight size={14} color="#737373" />
+                                    <ArrowRight size={14} color='#8A8680' />
                                     <Avatar name={balance > 0 ? user?.name : friendData.name} size="sm" />
                                 </div>
                                 <div style={{ flex: 1 }}>
-                                    <p style={{ margin: 0, fontSize: '13px', color: '#737373' }}>
+                                    <p style={{ margin: 0, fontSize: '13px', color: '#8A8680' }}>
                                         {balance > 0 ? 'Owes you' : 'You owe'}
                                     </p>
-                                    <p style={{ margin: '2px 0 0', fontSize: '18px', fontWeight: '700', color: '#0a0a0a' }}>
+                                    <p style={{ margin: '2px 0 0', fontSize: '18px', fontWeight: '700', color: '#EDEAE4' }}>
                                         {formatCurrency(Math.abs(balance))}
                                     </p>
                                 </div>
@@ -857,24 +857,24 @@ export function Friends() {
                                                 alignItems: 'center',
                                                 gap: '16px',
                                                 padding: '16px',
-                                                backgroundColor: '#fff',
+                                                backgroundColor: '#131316',
                                                 borderRadius: '16px',
                                                 boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
                                             }}
                                         >
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                 <Avatar name={fromName} size="sm" />
-                                                <ArrowRight size={16} color="#737373" />
+                                                <ArrowRight size={16} color='#8A8680' />
                                                 <Avatar name={toName} size="sm" />
                                             </div>
                                             <div style={{ flex: 1 }}>
-                                                <p style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#0a0a0a' }}>
+                                                <p style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#EDEAE4' }}>
                                                     {isReceiver ? `${fromName} paid you` : `You paid ${toName}`}
                                                 </p>
                                                 <p style={{ margin: '2px 0 0', fontSize: '18px', fontWeight: '700', color: '#16a34a' }}>
                                                     {formatCurrency(settlement.amount)}
                                                 </p>
-                                                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#737373' }}>
+                                                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#8A8680' }}>
                                                     {isReceiver ? '⏳ Awaiting your confirmation' : '⏳ Waiting for confirmation'}
                                                 </p>
                                             </div>
@@ -949,10 +949,10 @@ export function Friends() {
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '16px' }}>
                                 <Avatar name={balance > 0 ? friendData.name : user?.name} size="lg" />
-                                <ArrowRight size={24} color="#737373" />
+                                <ArrowRight size={24} color='#8A8680' />
                                 <Avatar name={balance > 0 ? user?.name : friendData.name} size="lg" />
                             </div>
-                            <p style={{ fontSize: '14px', color: '#737373', margin: '0 0 8px' }}>
+                            <p style={{ fontSize: '14px', color: '#8A8680', margin: '0 0 8px' }}>
                                 {balance > 0 ? `${friendData.name} owes you` : `You owe ${friendData.name}`}
                             </p>
                             <p style={{
@@ -1013,11 +1013,11 @@ export function Friends() {
                                             >
                                                 {/* Amount Input */}
                                                 <div>
-                                                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: '#525252' }}>
+                                                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: '#B0ADA8' }}>
                                                         Payment Amount
                                                     </label>
                                                     <div style={{ position: 'relative' }}>
-                                                        <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontSize: '18px', fontWeight: '600', color: '#737373' }}>₹</span>
+                                                        <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontSize: '18px', fontWeight: '600', color: '#8A8680' }}>₹</span>
                                                         <input
                                                             type="number"
                                                             placeholder="0.00"
@@ -1038,8 +1038,8 @@ export function Friends() {
                                                             onBlur={(e) => e.target.style.borderColor = '#e5e5e5'}
                                                         />
                                                     </div>
-                                                    <p style={{ margin: '8px 0 0', fontSize: '13px', color: '#737373' }}>
-                                                        Remaining: <span style={{ fontWeight: '600', color: '#0a0a0a' }}>
+                                                    <p style={{ margin: '8px 0 0', fontSize: '13px', color: '#8A8680' }}>
+                                                        Remaining: <span style={{ fontWeight: '600', color: '#EDEAE4' }}>
                                                             {formatCurrency(Math.abs(balance) - (parseFloat(settlementAmount) || 0))}
                                                         </span>
                                                     </p>
@@ -1115,8 +1115,8 @@ export function Friends() {
             {/* Header */}
             <motion.div variants={itemVariants} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
                 <div>
-                    <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#0a0a0a', margin: '0 0 4px' }}>Friends</h1>
-                    <p style={{ fontSize: '15px', color: '#737373', margin: 0 }}>
+                    <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#EDEAE4', margin: '0 0 4px' }}>Friends</h1>
+                    <p style={{ fontSize: '15px', color: '#8A8680', margin: 0 }}>
                         {acceptedFriends.length} friends
                     </p>
                 </div>
@@ -1128,7 +1128,7 @@ export function Friends() {
             {/* Pending Requests */}
             {pendingReceived.length > 0 && (
                 <motion.div variants={itemVariants} style={{ marginBottom: '32px' }}>
-                    <h2 style={{ fontSize: '16px', fontWeight: '600', color: '#737373', marginBottom: '16px' }}>
+                    <h2 style={{ fontSize: '16px', fontWeight: '600', color: '#8A8680', marginBottom: '16px' }}>
                         Pending Requests ({pendingReceived.length})
                     </h2>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -1140,7 +1140,7 @@ export function Friends() {
                                         <Avatar name={reqData.name} size="md" />
                                         <div style={{ flex: 1 }}>
                                             <p style={{ margin: 0, fontWeight: '600', fontSize: '15px' }}>{reqData.name}</p>
-                                            <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#737373' }}>{reqData.phone}</p>
+                                            <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#8A8680' }}>{reqData.phone}</p>
                                         </div>
                                         <div style={{ display: 'flex', gap: '8px' }}>
                                             <Button size="sm" icon={Check} onClick={() => handleAcceptFriend(request._id)}>
@@ -1169,7 +1169,7 @@ export function Friends() {
                 />
             ) : (
                 <motion.div variants={itemVariants}>
-                    <h2 style={{ fontSize: '16px', fontWeight: '600', color: '#737373', marginBottom: '16px' }}>
+                    <h2 style={{ fontSize: '16px', fontWeight: '600', color: '#8A8680', marginBottom: '16px' }}>
                         All Friends
                     </h2>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -1194,7 +1194,7 @@ export function Friends() {
                                                         {friendData.isRegistered ? 'Active' : 'Pending'}
                                                     </Badge>
                                                 </div>
-                                                <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#737373' }}>{friendData.phone}</p>
+                                                <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#8A8680' }}>{friendData.phone}</p>
                                             </div>
                                             <Button variant="ghost" size="sm">
                                                 View
@@ -1211,7 +1211,7 @@ export function Friends() {
             {/* Pending Sent */}
             {pendingSent.length > 0 && (
                 <motion.div variants={itemVariants} style={{ marginTop: '32px' }}>
-                    <h2 style={{ fontSize: '16px', fontWeight: '600', color: '#737373', marginBottom: '16px' }}>
+                    <h2 style={{ fontSize: '16px', fontWeight: '600', color: '#8A8680', marginBottom: '16px' }}>
                         Pending Invites ({pendingSent.length})
                     </h2>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -1221,7 +1221,7 @@ export function Friends() {
                                     <Avatar name={request.recipientName} size="md" />
                                     <div style={{ flex: 1 }}>
                                         <p style={{ margin: 0, fontWeight: '600', fontSize: '15px' }}>{request.recipientName}</p>
-                                        <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#737373' }}>{request.recipientPhone}</p>
+                                        <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#8A8680' }}>{request.recipientPhone}</p>
                                     </div>
                                     <Badge variant="secondary">Waiting...</Badge>
                                 </CardContent>
@@ -1238,7 +1238,7 @@ export function Friends() {
                 title="Add Friend"
             >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <p style={{ margin: 0, fontSize: '14px', color: '#737373' }}>
+                    <p style={{ margin: 0, fontSize: '14px', color: '#8A8680' }}>
                         Add a friend by entering their name and phone number.
                     </p>
                     <Input

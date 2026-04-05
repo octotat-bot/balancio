@@ -261,7 +261,7 @@ export function GroupDetail() {
             {/* Header */}
             <motion.div variants={itemVariants} className="friend-header mobile-flex-col" style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '24px' }}>
                 <motion.button
-                    whileHover={{ scale: 1.1, backgroundColor: '#f5f5f5' }}
+                    whileHover={{ scale: 1.1, backgroundColor: '#1A1A1F' }}
                     whileTap={{ scale: 0.9 }}
                     onClick={() => navigate('/groups')}
                     style={{
@@ -270,7 +270,7 @@ export function GroupDetail() {
                         backgroundColor: 'transparent',
                         border: 'none',
                         cursor: 'pointer',
-                        color: '#525252',
+                        color: '#B0ADA8',
                         marginTop: '4px',
                         display: 'flex',
                         alignItems: 'center',
@@ -283,12 +283,12 @@ export function GroupDetail() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                         <Avatar name={currentGroup.name} size="lg" />
                         <div>
-                            <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#0a0a0a', margin: '0 0 4px' }}>{currentGroup.name}</h1>
-                            <p style={{ fontSize: '15px', color: '#737373', margin: 0 }}>{currentGroup.members?.length || 0} members</p>
+                            <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#EDEAE4', margin: '0 0 4px' }}>{currentGroup.name}</h1>
+                            <p style={{ fontSize: '15px', color: '#8A8680', margin: 0 }}>{currentGroup.members?.length || 0} members</p>
                         </div>
                     </div>
                     {currentGroup.description && (
-                        <p style={{ fontSize: '15px', color: '#525252', marginTop: '12px', margin: '12px 0 0' }}>{currentGroup.description}</p>
+                        <p style={{ fontSize: '15px', color: '#B0ADA8', marginTop: '12px', margin: '12px 0 0' }}>{currentGroup.description}</p>
                     )}
                 </div>
                 <Button className="mobile-w-full" icon={Plus} onClick={() => setShowAddExpense(true)}>
@@ -297,7 +297,7 @@ export function GroupDetail() {
             </motion.div>
 
             {/* Tabs */}
-            <motion.div variants={itemVariants} className="scroll-hidden" style={{ display: 'flex', gap: '4px', borderBottom: '1px solid #e5e5e5', overflowX: 'auto', marginBottom: '24px', paddingBottom: '1px', WebkitOverflowScrolling: 'touch' }}>
+            <motion.div variants={itemVariants} className="scroll-hidden" style={{ display: 'flex', gap: '4px', borderBottom: '1px solid #252530', overflowX: 'auto', marginBottom: '24px', paddingBottom: '1px', WebkitOverflowScrolling: 'touch' }}>
                 {tabs.map((tab) => (
                     <button
                         key={tab.id}
@@ -392,21 +392,21 @@ export function GroupDetail() {
                                         minWidth: '160px',
                                         flex: 1
                                     }}>
-                                        <p style={{ margin: 0, fontSize: '13px', color: '#a3a3a3' }}>Total Spending</p>
+                                        <p style={{ margin: 0, fontSize: '13px', color: '#6A6763' }}>Total Spending</p>
                                         <p style={{ margin: '8px 0 0 0', fontSize: '24px', fontWeight: '700' }}>
                                             {formatCurrency(expenses.reduce((sum, e) => sum + e.amount, 0))}
                                         </p>
                                     </div>
                                     <div style={{
                                         padding: '16px',
-                                        backgroundColor: '#fff',
-                                        border: '1px solid #e5e5e5',
+                                        backgroundColor: '#131316',
+                                        border: '1px solid #252530',
                                         borderRadius: '16px',
                                         minWidth: '160px',
                                         flex: 1
                                     }}>
-                                        <p style={{ margin: 0, fontSize: '13px', color: '#737373' }}>Total Expenses</p>
-                                        <p style={{ margin: '8px 0 0 0', fontSize: '24px', fontWeight: '700', color: '#0a0a0a' }}>
+                                        <p style={{ margin: 0, fontSize: '13px', color: '#8A8680' }}>Total Expenses</p>
+                                        <p style={{ margin: '8px 0 0 0', fontSize: '24px', fontWeight: '700', color: '#EDEAE4' }}>
                                             {expenses.length}
                                         </p>
                                     </div>
@@ -419,7 +419,7 @@ export function GroupDetail() {
                                             <h3 style={{
                                                 fontSize: '12px',
                                                 fontWeight: '600',
-                                                color: '#a3a3a3',
+                                                color: '#6A6763',
                                                 textTransform: 'uppercase',
                                                 letterSpacing: '0.05em',
                                                 marginBottom: '16px',
@@ -448,7 +448,7 @@ export function GroupDetail() {
                                                                 }
                                                             }}
                                                             style={{
-                                                                backgroundColor: '#fff',
+                                                                backgroundColor: '#131316',
                                                                 borderRadius: '20px',
                                                                 padding: '16px 20px',
                                                                 border: '1px solid #f5f5f5',
@@ -485,12 +485,12 @@ export function GroupDetail() {
                                                                 </div>
                                                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                        <span style={{ fontSize: '13px', color: '#737373' }}>
+                                                                        <span style={{ fontSize: '13px', color: '#8A8680' }}>
                                                                             {isPayer ? 'You' : (expense.paidBy?.name || expense.paidByPendingInfo?.name || 'Unknown')} paid
                                                                             {expense.paidByPendingInfo && <span style={{ marginLeft: '4px', color: '#f59e0b' }}>⏳</span>}
                                                                         </span>
                                                                         <span style={{ fontSize: '13px', color: '#d4d4d4' }}>•</span>
-                                                                        <span style={{ fontSize: '13px', color: '#737373' }}>
+                                                                        <span style={{ fontSize: '13px', color: '#8A8680' }}>
                                                                             {formatDate(expense.date, 'short')}
                                                                         </span>
                                                                     </div>
@@ -593,10 +593,10 @@ export function GroupDetail() {
                         const getActivityIcon = (type) => {
                             switch (type) {
                                 case 'group_created': return { icon: '🎉', color: '#6366f1', bg: '#eef2ff' };
-                                case 'expense_added': return { icon: '💰', color: '#0a0a0a', bg: '#f5f5f5' };
+                                case 'expense_added': return { icon: '💰', color: '#EDEAE4', bg: '#f5f5f5' };
                                 case 'settlement_confirmed': return { icon: '✅', color: '#16a34a', bg: '#f0fdf4' };
                                 case 'settlement_pending': return { icon: '⏳', color: '#ca8a04', bg: '#fefce8' };
-                                default: return { icon: '📋', color: '#737373', bg: '#f5f5f5' };
+                                default: return { icon: '📋', color: '#8A8680', bg: '#f5f5f5' };
                             }
                         };
 
@@ -606,7 +606,7 @@ export function GroupDetail() {
                                     <h3 style={{
                                         fontSize: '14px',
                                         fontWeight: '600',
-                                        color: '#737373',
+                                        color: '#8A8680',
                                         textTransform: 'uppercase',
                                         letterSpacing: '0.05em',
                                         display: 'flex',
@@ -637,9 +637,9 @@ export function GroupDetail() {
                                                         alignItems: 'flex-start',
                                                         gap: '14px',
                                                         padding: '14px 16px',
-                                                        backgroundColor: '#fff',
+                                                        backgroundColor: '#131316',
                                                         borderRadius: '12px',
-                                                        border: '1px solid #e5e5e5'
+                                                        border: '1px solid #252530'
                                                     }}
                                                 >
                                                     {/* Icon */}
@@ -661,10 +661,10 @@ export function GroupDetail() {
                                                     <div style={{ flex: 1, minWidth: 0 }}>
                                                         {activity.type === 'group_created' && (
                                                             <>
-                                                                <p style={{ margin: 0, fontSize: '14px', color: '#0a0a0a' }}>
+                                                                <p style={{ margin: 0, fontSize: '14px', color: '#EDEAE4' }}>
                                                                     <strong>{activity.data.creator}</strong> created the group <strong>"{activity.data.groupName}"</strong>
                                                                 </p>
-                                                                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#737373' }}>
+                                                                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#8A8680' }}>
                                                                     {formatDate(activity.date, 'relative')}
                                                                 </p>
                                                             </>
@@ -672,10 +672,10 @@ export function GroupDetail() {
 
                                                         {activity.type === 'expense_added' && (
                                                             <>
-                                                                <p style={{ margin: 0, fontSize: '14px', color: '#0a0a0a' }}>
+                                                                <p style={{ margin: 0, fontSize: '14px', color: '#EDEAE4' }}>
                                                                     <strong>{activity.data.paidBy?.name || 'Someone'}</strong> added expense <strong>"{activity.data.description}"</strong>
                                                                 </p>
-                                                                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#737373' }}>
+                                                                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#8A8680' }}>
                                                                     {formatCurrency(activity.data.amount)} • {formatDate(activity.date, 'relative')}
                                                                 </p>
                                                             </>
@@ -683,7 +683,7 @@ export function GroupDetail() {
 
                                                         {activity.type === 'settlement_confirmed' && (
                                                             <>
-                                                                <p style={{ margin: 0, fontSize: '14px', color: '#0a0a0a' }}>
+                                                                <p style={{ margin: 0, fontSize: '14px', color: '#EDEAE4' }}>
                                                                     <strong>{activity.data.from?.name}</strong> paid <strong>{activity.data.to?.name}</strong>
                                                                     {(activity.data.from._id === user?._id || activity.data.to._id === user?._id) &&
                                                                         <span style={{ color: '#16a34a' }}> (you)</span>
@@ -697,7 +697,7 @@ export function GroupDetail() {
 
                                                         {activity.type === 'settlement_pending' && (
                                                             <>
-                                                                <p style={{ margin: 0, fontSize: '14px', color: '#0a0a0a' }}>
+                                                                <p style={{ margin: 0, fontSize: '14px', color: '#EDEAE4' }}>
                                                                     <strong>{activity.data.from?.name}</strong> marked payment to <strong>{activity.data.to?.name}</strong>
                                                                     {(activity.data.from._id === user?._id || activity.data.to._id === user?._id) &&
                                                                         <span style={{ color: '#ca8a04' }}> (you)</span>
@@ -735,15 +735,15 @@ export function GroupDetail() {
                                     <div style={{
                                         padding: '48px',
                                         textAlign: 'center',
-                                        backgroundColor: '#f5f5f5',
+                                        backgroundColor: '#1A1A1F',
                                         borderRadius: '20px',
                                         border: '2px dashed #d4d4d4'
                                     }}>
                                         <div style={{ fontSize: '48px', marginBottom: '16px' }}>📝</div>
-                                        <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#525252' }}>
+                                        <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#B0ADA8' }}>
                                             No Activity Yet
                                         </h3>
-                                        <p style={{ margin: 0, fontSize: '14px', color: '#737373' }}>
+                                        <p style={{ margin: 0, fontSize: '14px', color: '#8A8680' }}>
                                             Add an expense to see activity here
                                         </p>
                                     </div>
@@ -760,16 +760,16 @@ export function GroupDetail() {
                                         flexWrap: 'wrap',
                                         marginTop: '8px'
                                     }}>
-                                        <span style={{ fontSize: '12px', color: '#737373', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span style={{ fontSize: '12px', color: '#8A8680', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                             🎉 Group created
                                         </span>
-                                        <span style={{ fontSize: '12px', color: '#737373', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span style={{ fontSize: '12px', color: '#8A8680', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                             💰 Expense added
                                         </span>
-                                        <span style={{ fontSize: '12px', color: '#737373', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span style={{ fontSize: '12px', color: '#8A8680', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                             ✅ Payment confirmed
                                         </span>
-                                        <span style={{ fontSize: '12px', color: '#737373', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span style={{ fontSize: '12px', color: '#8A8680', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                             ⏳ Payment pending
                                         </span>
                                     </div>
@@ -814,18 +814,18 @@ export function GroupDetail() {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                                 {/* Stats Cards */}
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
-                                    <Card hover={false} style={{ padding: '24px', backgroundColor: '#fff', border: '1px solid #e5e5e5' }}>
+                                    <Card hover={false} style={{ padding: '24px', backgroundColor: '#131316', border: '1px solid #252530' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
                                             <div style={{ padding: '8px', borderRadius: '10px', backgroundColor: '#dbeafe', color: '#3b82f6' }}>
                                                 <TrendingUp size={20} />
                                             </div>
-                                            <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#737373' }}>Spent Today</p>
+                                            <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#8A8680' }}>Spent Today</p>
                                         </div>
-                                        <p style={{ margin: 0, fontSize: '32px', fontWeight: '800', color: '#0a0a0a' }}>
+                                        <p style={{ margin: 0, fontSize: '32px', fontWeight: '800', color: '#EDEAE4' }}>
                                             {formatCurrency(todaySpending)}
                                         </p>
                                         {todaySpending === 0 && (
-                                            <p style={{ margin: '8px 0 0', fontSize: '13px', color: '#a3a3a3' }}>No expenses recorded today</p>
+                                            <p style={{ margin: '8px 0 0', fontSize: '13px', color: '#6A6763' }}>No expenses recorded today</p>
                                         )}
                                     </Card>
                                     <Card hover={false} style={{ padding: '24px', backgroundColor: '#171717', color: '#fff', border: 'none' }}>
@@ -833,19 +833,19 @@ export function GroupDetail() {
                                             <div style={{ padding: '8px', borderRadius: '10px', backgroundColor: 'rgba(255,255,255,0.2)', color: '#fff' }}>
                                                 <Receipt size={20} />
                                             </div>
-                                            <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#a3a3a3' }}>Total Group Spend</p>
+                                            <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#6A6763' }}>Total Group Spend</p>
                                         </div>
                                         <p style={{ margin: 0, fontSize: '32px', fontWeight: '800' }}>
                                             {formatCurrency(totalSpending)}
                                         </p>
-                                        <p style={{ margin: '8px 0 0', fontSize: '13px', color: '#737373' }}>Lifetime</p>
+                                        <p style={{ margin: '8px 0 0', fontSize: '13px', color: '#8A8680' }}>Lifetime</p>
                                     </Card>
                                 </div>
 
                                 {/* Chart Section */}
                                 <Card hover={false} style={{ padding: '24px' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
-                                        <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#0a0a0a' }}>Spending Trend</h3>
+                                        <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#EDEAE4' }}>Spending Trend</h3>
                                         <Badge variant="secondary">{trendData.length} Months</Badge>
                                     </div>
 
@@ -874,22 +874,22 @@ export function GroupDetail() {
                                                                 marginBottom: '8px',
                                                                 fontSize: '11px',
                                                                 fontWeight: '600',
-                                                                color: '#0a0a0a',
+                                                                color: '#EDEAE4',
                                                                 display: heightPct > 10 ? 'block' : 'none' // Hide value if bar too small
                                                             }}>
                                                                 {formatCurrency(data.value, 'INR', 0)}
                                                             </div>
                                                         </div>
                                                         <div style={{ textAlign: 'center' }}>
-                                                            <span style={{ fontSize: '12px', fontWeight: '600', color: '#525252' }}>{data.month}</span>
-                                                            <div style={{ fontSize: '10px', color: '#a3a3a3' }}>{data.year}</div>
+                                                            <span style={{ fontSize: '12px', fontWeight: '600', color: '#B0ADA8' }}>{data.month}</span>
+                                                            <div style={{ fontSize: '10px', color: '#6A6763' }}>{data.year}</div>
                                                         </div>
                                                     </div>
                                                 );
                                             })}
                                         </div>
                                     ) : (
-                                        <div style={{ padding: '40px', textAlign: 'center', color: '#a3a3a3', fontSize: '14px' }}>
+                                        <div style={{ padding: '40px', textAlign: 'center', color: '#6A6763', fontSize: '14px' }}>
                                             Not enough data to show trends
                                         </div>
                                     )}
@@ -914,7 +914,7 @@ export function GroupDetail() {
 
                             {/* Registered Members */}
                             <div>
-                                <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: '#0a0a0a' }}>
+                                <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: '#EDEAE4' }}>
                                     Active Members ({currentGroup.members?.length || 0})
                                 </h3>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -934,10 +934,10 @@ export function GroupDetail() {
                                                             {member.name}
                                                             {isCurrentUser && ' (you)'}
                                                         </p>
-                                                        <p style={{ fontSize: '13px', color: '#737373', margin: '4px 0 0 0' }}>
+                                                        <p style={{ fontSize: '13px', color: '#8A8680', margin: '4px 0 0 0' }}>
                                                             {member.email}
                                                         </p>
-                                                        <p style={{ fontSize: '12px', color: '#a3a3a3', margin: '2px 0 0 0' }}>
+                                                        <p style={{ fontSize: '12px', color: '#6A6763', margin: '2px 0 0 0' }}>
                                                             {member.phone}
                                                         </p>
                                                     </div>
@@ -1001,22 +1001,22 @@ export function GroupDetail() {
                             {/* Pending Members */}
                             {currentGroup.pendingMembers && currentGroup.pendingMembers.length > 0 && (
                                 <div>
-                                    <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: '#0a0a0a' }}>
+                                    <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: '#EDEAE4' }}>
                                         Pending Members ({currentGroup.pendingMembers.length})
                                     </h3>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                         {currentGroup.pendingMembers.map((member) => (
-                                            <Card key={member._id} hover={false} style={{ padding: '16px', backgroundColor: '#fafafa' }}>
+                                            <Card key={member._id} hover={false} style={{ padding: '16px', backgroundColor: '#16161B' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                                                     <Avatar name={member.name} size="md" />
                                                     <div style={{ flex: 1 }}>
                                                         <p style={{ fontWeight: '500', margin: 0 }}>
                                                             {member.name}
                                                         </p>
-                                                        <p style={{ fontSize: '13px', color: '#737373', margin: '4px 0 0 0' }}>
+                                                        <p style={{ fontSize: '13px', color: '#8A8680', margin: '4px 0 0 0' }}>
                                                             {member.phone}
                                                         </p>
-                                                        <p style={{ fontSize: '12px', color: '#a3a3a3', margin: '2px 0 0 0' }}>
+                                                        <p style={{ fontSize: '12px', color: '#6A6763', margin: '2px 0 0 0' }}>
                                                             Added {formatDate(member.addedAt)}
                                                         </p>
                                                     </div>
@@ -1045,7 +1045,7 @@ export function GroupDetail() {
                                             </Card>
                                         ))}
                                     </div>
-                                    <p style={{ fontSize: '13px', color: '#737373', marginTop: '12px', fontStyle: 'italic' }}>
+                                    <p style={{ fontSize: '13px', color: '#8A8680', marginTop: '12px', fontStyle: 'italic' }}>
                                         💡 These members will be automatically added when they sign up with their phone number. You can add expenses with them in the meantime!
                                     </p>
                                 </div>
@@ -1059,18 +1059,18 @@ export function GroupDetail() {
                             <Card>
                                 <CardContent style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                     <div>
-                                        <label style={{ fontSize: '14px', fontWeight: '500', color: '#737373' }}>Group Name</label>
-                                        <p style={{ marginTop: '4px', fontSize: '16px', fontWeight: '500', color: '#0a0a0a' }}>{currentGroup.name}</p>
+                                        <label style={{ fontSize: '14px', fontWeight: '500', color: '#8A8680' }}>Group Name</label>
+                                        <p style={{ marginTop: '4px', fontSize: '16px', fontWeight: '500', color: '#EDEAE4' }}>{currentGroup.name}</p>
                                     </div>
                                     {currentGroup.description && (
                                         <div>
-                                            <label style={{ fontSize: '14px', fontWeight: '500', color: '#737373' }}>Description</label>
-                                            <p style={{ marginTop: '4px', fontSize: '16px', color: '#0a0a0a' }}>{currentGroup.description}</p>
+                                            <label style={{ fontSize: '14px', fontWeight: '500', color: '#8A8680' }}>Description</label>
+                                            <p style={{ marginTop: '4px', fontSize: '16px', color: '#EDEAE4' }}>{currentGroup.description}</p>
                                         </div>
                                     )}
                                     <div>
-                                        <label style={{ fontSize: '14px', fontWeight: '500', color: '#737373' }}>Created</label>
-                                        <p style={{ marginTop: '4px', fontSize: '16px', color: '#0a0a0a' }}>{formatDate(currentGroup.createdAt, 'long')}</p>
+                                        <label style={{ fontSize: '14px', fontWeight: '500', color: '#8A8680' }}>Created</label>
+                                        <p style={{ marginTop: '4px', fontSize: '16px', color: '#EDEAE4' }}>{formatDate(currentGroup.createdAt, 'long')}</p>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -1167,7 +1167,7 @@ export function GroupDetail() {
                 size="sm"
             >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    <p style={{ color: '#525252', lineHeight: '1.5' }}>
+                    <p style={{ color: '#B0ADA8', lineHeight: '1.5' }}>
                         Add a member by their name and phone number. They don't need to be registered yet!
                     </p>
 
@@ -1290,7 +1290,7 @@ export function GroupDetail() {
                 title={isCreator ? 'Delete Group' : 'Leave Group'}
                 size="sm"
             >
-                <p style={{ color: '#525252', marginBottom: '24px', lineHeight: '1.5' }}>
+                <p style={{ color: '#B0ADA8', marginBottom: '24px', lineHeight: '1.5' }}>
                     {isCreator
                         ? 'Are you sure you want to delete this group? This action cannot be undone and all expenses will be lost.'
                         : 'Are you sure you want to leave this group? You can be added back later.'}

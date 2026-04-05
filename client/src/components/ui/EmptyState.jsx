@@ -17,7 +17,7 @@ export function EmptyState({
             style={{
                 textAlign: 'center',
                 padding: '60px 20px',
-                backgroundColor: '#fafafa',
+                backgroundColor: '#16161B',
                 borderRadius: '20px',
                 border: '2px dashed #e5e5e5',
             }}
@@ -38,7 +38,7 @@ export function EmptyState({
                         margin: '0 auto 20px',
                     }}
                 >
-                    <Icon style={{ width: '32px', height: '32px', color: '#a3a3a3' }} />
+                    <Icon style={{ width: '32px', height: '32px', color: '#6A6763' }} />
                 </motion.div>
             )}
             <motion.h3
@@ -48,7 +48,7 @@ export function EmptyState({
                 style={{
                     fontSize: '18px',
                     fontWeight: '600',
-                    color: '#0a0a0a',
+                    color: '#EDEAE4',
                     margin: '0 0 8px',
                 }}
             >
@@ -60,7 +60,7 @@ export function EmptyState({
                 transition={{ delay: 0.35 }}
                 style={{
                     fontSize: '15px',
-                    color: '#737373',
+                    color: '#8A8680',
                     margin: '0 0 24px',
                     maxWidth: '300px',
                     marginLeft: 'auto',

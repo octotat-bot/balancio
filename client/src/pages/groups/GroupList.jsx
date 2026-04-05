@@ -81,7 +81,7 @@ export function GroupList() {
                     <motion.h1
                         initial={{ x: -20, opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
-                        style={{ fontSize: '28px', fontWeight: '700', color: '#0a0a0a', margin: '0 0 4px' }}
+                        style={{ fontSize: '28px', fontWeight: '700', color: '#EDEAE4', margin: '0 0 4px' }}
                     >
                         Groups
                     </motion.h1>
@@ -89,7 +89,7 @@ export function GroupList() {
                         initial={{ x: -20, opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
                         transition={{ delay: 0.1 }}
-                        style={{ fontSize: '15px', color: '#737373', margin: 0 }}
+                        style={{ fontSize: '15px', color: '#8A8680', margin: 0 }}
                     >
                         Manage your expense groups
                     </motion.p>
@@ -132,7 +132,7 @@ export function GroupList() {
                             transform: 'translateY(-50%)',
                             width: '20px',
                             height: '20px',
-                            color: '#a3a3a3',
+                            color: '#6A6763',
                         }}
                     />
                     <input
@@ -145,7 +145,7 @@ export function GroupList() {
                             height: '48px',
                             paddingLeft: '48px',
                             paddingRight: '16px',
-                            backgroundColor: '#fff',
+                            backgroundColor: '#131316',
                             border: '2px solid #e5e5e5',
                             borderRadius: '12px',
                             fontSize: '15px',
@@ -256,10 +256,10 @@ export function GroupList() {
                             whileHover="hover"
                             onClick={() => navigate(`/groups/${group._id}`)}
                             style={{
-                                backgroundColor: '#fff',
+                                backgroundColor: '#131316',
                                 borderRadius: '16px',
                                 padding: '20px 24px',
-                                border: '1px solid #e5e5e5',
+                                border: '1px solid #252530',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -274,7 +274,7 @@ export function GroupList() {
                                 <p style={{
                                     fontWeight: '600',
                                     fontSize: '17px',
-                                    color: '#0a0a0a',
+                                    color: '#EDEAE4',
                                     margin: '0 0 4px',
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
@@ -282,7 +282,7 @@ export function GroupList() {
                                 }}>
                                     {group.name}
                                 </p>
-                                <p style={{ fontSize: '14px', color: '#737373', margin: 0 }}>
+                                <p style={{ fontSize: '14px', color: '#8A8680', margin: 0 }}>
                                     {group.members?.length || 0} members
                                     {group.description && ` • ${group.description}`}
                                 </p>
@@ -304,7 +304,7 @@ export function GroupList() {
                                 >
                                     {(group.userBalance || 0) >= 0 ? '+' : ''}{formatCurrency(group.userBalance || 0)}
                                 </p>
-                                <p style={{ fontSize: '12px', color: '#a3a3a3', margin: 0 }}>
+                                <p style={{ fontSize: '12px', color: '#6A6763', margin: 0 }}>
                                     {(group.userBalance || 0) >= 0 ? 'you are owed' : 'you owe'}
                                 </p>
                             </motion.div>

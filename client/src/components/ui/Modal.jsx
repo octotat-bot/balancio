@@ -63,7 +63,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }) {
                         onClick={(e) => e.stopPropagation()}
                         className="modal-content"
                         style={{
-                            backgroundColor: '#ffffff',
+                            backgroundColor: '#131316',
                             borderRadius: '20px',
                             width: '100%',
                             maxWidth: sizes[size],
@@ -82,7 +82,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }) {
                                 borderBottom: '1px solid #f5f5f5',
                             }}
                         >
-                            <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#0a0a0a', margin: 0 }}>
+                            <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#EDEAE4', margin: 0 }}>
                                 {title}
                             </h2>
                             <motion.button
@@ -94,12 +94,12 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }) {
                                     height: '32px',
                                     borderRadius: '8px',
                                     border: 'none',
-                                    backgroundColor: '#f5f5f5',
+                                    backgroundColor: '#1A1A1F',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     cursor: 'pointer',
-                                    color: '#525252',
+                                    color: '#B0ADA8',
                                 }}
                             >
                                 <X style={{ width: '18px', height: '18px' }} />

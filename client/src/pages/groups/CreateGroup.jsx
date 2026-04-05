@@ -116,7 +116,7 @@ export function CreateGroup() {
                 style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px' }}
             >
                 <motion.button
-                    whileHover={{ scale: 1.1, backgroundColor: '#f5f5f5' }}
+                    whileHover={{ scale: 1.1, backgroundColor: '#1A1A1F' }}
                     whileTap={{ scale: 0.9 }}
                     onClick={() => navigate(-1)}
                     style={{
@@ -125,7 +125,7 @@ export function CreateGroup() {
                         backgroundColor: 'transparent',
                         border: 'none',
                         cursor: 'pointer',
-                        color: '#525252',
+                        color: '#B0ADA8',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -134,10 +134,10 @@ export function CreateGroup() {
                     <ArrowLeft style={{ width: '20px', height: '20px' }} />
                 </motion.button>
                 <div>
-                    <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#0a0a0a', margin: '0 0 4px' }}>
+                    <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#EDEAE4', margin: '0 0 4px' }}>
                         Create Group
                     </h1>
-                    <p style={{ fontSize: '15px', color: '#737373', margin: 0 }}>
+                    <p style={{ fontSize: '15px', color: '#8A8680', margin: 0 }}>
                         Start splitting expenses with friends
                     </p>
                 </div>
@@ -153,7 +153,7 @@ export function CreateGroup() {
                         <CardContent style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                             {/* Icon Selection */}
                             <div>
-                                <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#525252', marginBottom: '8px' }}>
+                                <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#B0ADA8', marginBottom: '8px' }}>
                                     Group Icon
                                 </label>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -193,14 +193,14 @@ export function CreateGroup() {
                                     error={errors.name?.message}
                                     {...register('name')}
                                 />
-                                <p style={{ position: 'absolute', right: 0, top: 0, fontSize: '12px', color: '#a3a3a3' }}>
+                                <p style={{ position: 'absolute', right: 0, top: 0, fontSize: '12px', color: '#6A6763' }}>
                                     {nameValue?.length || 0}/50
                                 </p>
                             </div>
 
                             {/* Description */}
                             <div>
-                                <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#0a0a0a', marginBottom: '8px' }}>
+                                <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#EDEAE4', marginBottom: '8px' }}>
                                     Description (optional)
                                 </label>
                                 <textarea
@@ -233,21 +233,21 @@ export function CreateGroup() {
                     <Card>
                         <CardHeader style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <CardTitle>Members</CardTitle>
-                            <span style={{ fontSize: '13px', color: '#737373' }}>
+                            <span style={{ fontSize: '13px', color: '#8A8680' }}>
                                 {fields.length + 1} members (including you)
                             </span>
                         </CardHeader>
                         <CardContent style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             {/* Current User */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', backgroundColor: '#f5f5f5', borderRadius: '12px' }}>
-                                <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', backgroundColor: '#1A1A1F', borderRadius: '12px' }}>
+                                <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#D4A853', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600' }}>
                                     {user?.name?.charAt(0).toUpperCase()}
                                 </div>
                                 <div style={{ flex: 1 }}>
                                     <p style={{ fontWeight: '500', margin: 0 }}>{user?.name}</p>
-                                    <p style={{ fontSize: '13px', color: '#737373', margin: 0 }}>{user?.email}</p>
+                                    <p style={{ fontSize: '13px', color: '#8A8680', margin: 0 }}>{user?.email}</p>
                                 </div>
-                                <span style={{ fontSize: '12px', color: '#a3a3a3', textTransform: 'uppercase', fontWeight: '600' }}>You</span>
+                                <span style={{ fontSize: '12px', color: '#6A6763', textTransform: 'uppercase', fontWeight: '600' }}>You</span>
                             </div>
 
                             {/* Member Inputs */}
@@ -284,7 +284,7 @@ export function CreateGroup() {
                                                     onClick={() => remove(index)}
                                                     style={{
                                                         padding: '10px',
-                                                        color: '#a3a3a3',
+                                                        color: '#6A6763',
                                                         borderRadius: '12px',
                                                         border: 'none',
                                                         backgroundColor: 'transparent',
@@ -309,14 +309,14 @@ export function CreateGroup() {
                             <Button
                                 type="button"
                                 variant="ghost"
-                                style={{ width: '100%', border: '2px dashed #e5e5e5', backgroundColor: '#fafafa' }}
+                                style={{ width: '100%', border: '2px dashed #e5e5e5', backgroundColor: '#16161B' }}
                                 icon={Plus}
                                 onClick={() => append({ name: '', phone: '' })}
                             >
                                 Add Another Member
                             </Button>
 
-                            <p style={{ fontSize: '12px', color: '#a3a3a3', textAlign: 'center', margin: 0 }}>
+                            <p style={{ fontSize: '12px', color: '#6A6763', textAlign: 'center', margin: 0 }}>
                                 Add members by name and phone number (registered or not)
                             </p>
                         </CardContent>

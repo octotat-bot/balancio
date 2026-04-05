@@ -219,7 +219,7 @@ export function FriendDetail() {
                 flexDirection: 'column',
                 gap: '16px'
             }}>
-                <p style={{ color: '#737373' }}>Loading...</p>
+                <p style={{ color: '#8A8680' }}>Loading...</p>
                 <Button variant="secondary" onClick={() => navigate('/friends')}>
                     Back to Friends
                 </Button>
@@ -262,7 +262,7 @@ export function FriendDetail() {
 
                 <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '700', color: '#0a0a0a' }}>
+                        <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '700', color: '#EDEAE4' }}>
                             {friendData.name}
                         </h2>
                         {friendData.isRegistered ? (
@@ -289,7 +289,7 @@ export function FriendDetail() {
                             </span>
                         )}
                     </div>
-                    <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#737373' }}>
+                    <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#8A8680' }}>
                         {friendData.phone}
                     </p>
                 </div>
@@ -411,7 +411,7 @@ export function FriendDetail() {
                     display: 'flex',
                     gap: '6px',
                     marginBottom: '20px',
-                    backgroundColor: '#f5f5f5',
+                    backgroundColor: '#1A1A1F',
                     padding: '6px',
                     borderRadius: '14px',
                     width: 'fit-content'
@@ -472,25 +472,25 @@ export function FriendDetail() {
                                         width: '80px',
                                         height: '80px',
                                         margin: '0 auto 20px',
-                                        backgroundColor: '#f5f5f5',
+                                        backgroundColor: '#1A1A1F',
                                         borderRadius: '20px',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center'
                                     }}>
-                                        <Receipt size={36} style={{ color: '#a3a3a3' }} />
+                                        <Receipt size={36} style={{ color: '#6A6763' }} />
                                     </div>
                                     <h3 style={{
                                         margin: '0 0 8px',
                                         fontSize: '18px',
                                         fontWeight: '600',
-                                        color: '#525252'
+                                        color: '#B0ADA8'
                                     }}>
                                         No expenses yet
                                     </h3>
                                     <p style={{
                                         margin: '0 0 20px',
-                                        color: '#737373',
+                                        color: '#8A8680',
                                         fontSize: '14px'
                                     }}>
                                         Add your first expense with {friendData.name}
@@ -541,7 +541,7 @@ export function FriendDetail() {
                                                                 margin: 0,
                                                                 fontSize: '16px',
                                                                 fontWeight: '600',
-                                                                color: '#0a0a0a',
+                                                                color: '#EDEAE4',
                                                                 whiteSpace: 'nowrap',
                                                                 overflow: 'hidden',
                                                                 textOverflow: 'ellipsis'
@@ -551,7 +551,7 @@ export function FriendDetail() {
                                                             <p style={{
                                                                 margin: '4px 0 0',
                                                                 fontSize: '13px',
-                                                                color: '#737373'
+                                                                color: '#8A8680'
                                                             }}>
                                                                 {isPayer ? 'You' : expense.paidBy?.name} paid {formatCurrency(expense.amount)}
                                                                 <span style={{ margin: '0 8px', color: '#d4d4d4' }}>•</span>
@@ -576,7 +576,7 @@ export function FriendDetail() {
                                                             <p style={{
                                                                 margin: '2px 0 0',
                                                                 fontSize: '12px',
-                                                                color: '#a3a3a3'
+                                                                color: '#6A6763'
                                                             }}>
                                                                 {isPayer ? `${friendData.name} owes` : 'You owe'}
                                                             </p>
@@ -638,7 +638,7 @@ export function FriendDetail() {
                                         justifyContent: 'center',
                                         flexDirection: 'column',
                                         gap: '12px',
-                                        color: '#737373'
+                                        color: '#8A8680'
                                     }}>
                                         <MessageCircle size={48} style={{ opacity: 0.3 }} />
                                         <p style={{ margin: 0, fontSize: '15px' }}>
@@ -674,7 +674,7 @@ export function FriendDetail() {
                                                 <p style={{
                                                     margin: '4px 8px 0',
                                                     fontSize: '11px',
-                                                    color: '#a3a3a3',
+                                                    color: '#6A6763',
                                                     textAlign: isMine ? 'right' : 'left'
                                                 }}>
                                                     {new Date(msg.createdAt).toLocaleTimeString([], {
@@ -695,7 +695,7 @@ export function FriendDetail() {
                                 gap: '12px',
                                 marginTop: '16px',
                                 padding: '16px',
-                                backgroundColor: '#fff',
+                                backgroundColor: '#131316',
                                 borderRadius: '16px',
                                 border: '2px solid #e5e5e5'
                             }}>
@@ -715,7 +715,7 @@ export function FriendDetail() {
                                         padding: '14px 18px',
                                         border: 'none',
                                         borderRadius: '12px',
-                                        backgroundColor: '#f5f5f5',
+                                        backgroundColor: '#1A1A1F',
                                         fontSize: '15px',
                                         outline: 'none',
                                         opacity: friendData.isRegistered ? 1 : 0.5
@@ -766,7 +766,7 @@ export function FriendDetail() {
                             fontSize: '14px',
                             fontWeight: '500',
                             marginBottom: '10px',
-                            color: '#0a0a0a'
+                            color: '#EDEAE4'
                         }}>
                             How to split?
                         </label>
@@ -853,13 +853,13 @@ export function FriendDetail() {
                                 <div style={{
                                     marginTop: '16px',
                                     padding: '14px',
-                                    backgroundColor: '#fff',
+                                    backgroundColor: '#131316',
                                     borderRadius: '12px',
                                     display: 'flex',
                                     justifyContent: 'space-between',
                                     alignItems: 'center'
                                 }}>
-                                    <span style={{ color: '#737373', fontSize: '14px' }}>
+                                    <span style={{ color: '#8A8680', fontSize: '14px' }}>
                                         {friendData.name}'s share:
                                     </span>
                                     <span style={{ fontWeight: '700', fontSize: '16px' }}>
@@ -885,7 +885,7 @@ export function FriendDetail() {
                             }}
                         >
                             <div>
-                                <p style={{ margin: 0, fontSize: '13px', color: '#737373' }}>You</p>
+                                <p style={{ margin: 0, fontSize: '13px', color: '#8A8680' }}>You</p>
                                 <p style={{ margin: '6px 0 0', fontSize: '22px', fontWeight: '700' }}>
                                     ₹{(parseFloat(expenseAmount) / 2).toFixed(2)}
                                 </p>
@@ -896,7 +896,7 @@ export function FriendDetail() {
                                 alignSelf: 'stretch'
                             }} />
                             <div>
-                                <p style={{ margin: 0, fontSize: '13px', color: '#737373' }}>
+                                <p style={{ margin: 0, fontSize: '13px', color: '#8A8680' }}>
                                     {friendData.name}
                                 </p>
                                 <p style={{ margin: '6px 0 0', fontSize: '22px', fontWeight: '700' }}>
@@ -959,7 +959,7 @@ export function FriendDetail() {
                     <p style={{
                         margin: '24px 0',
                         fontSize: '14px',
-                        color: '#737373',
+                        color: '#8A8680',
                         lineHeight: 1.6
                     }}>
                         Mark this balance as settled? This will record a settlement transaction

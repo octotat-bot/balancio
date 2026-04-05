@@ -118,7 +118,7 @@ export function Settlements() {
                     animate={{ rotate: 360 }}
                     transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
                 >
-                    <RefreshCw size={32} style={{ color: '#a3a3a3' }} />
+                    <RefreshCw size={32} style={{ color: '#6A6763' }} />
                 </motion.div>
             </div>
         );
@@ -137,7 +137,7 @@ export function Settlements() {
                     <div style={{
                         width: '48px',
                         height: '48px',
-                        backgroundColor: '#000',
+                        backgroundColor: '#D4A853',
                         borderRadius: '14px',
                         display: 'flex',
                         alignItems: 'center',
@@ -146,10 +146,10 @@ export function Settlements() {
                         <Wallet style={{ width: '24px', height: '24px', color: '#fff' }} />
                     </div>
                     <div>
-                        <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#0a0a0a', margin: 0 }}>
+                        <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#EDEAE4', margin: 0 }}>
                             Settlements
                         </h1>
-                        <p style={{ fontSize: '15px', color: '#737373', margin: '4px 0 0 0' }}>
+                        <p style={{ fontSize: '15px', color: '#8A8680', margin: '4px 0 0 0' }}>
                             All your debts and credits across groups
                         </p>
                     </div>
@@ -174,7 +174,7 @@ export function Settlements() {
                         : 'linear-gradient(135deg, #fef2f2 0%, #fecaca 100%)',
                     border: 'none'
                 }}>
-                    <p style={{ fontSize: '13px', fontWeight: '600', color: '#737373', margin: '0 0 8px 0', textTransform: 'uppercase' }}>
+                    <p style={{ fontSize: '13px', fontWeight: '600', color: '#8A8680', margin: '0 0 8px 0', textTransform: 'uppercase' }}>
                         Net Balance
                     </p>
                     <p style={{
@@ -185,7 +185,7 @@ export function Settlements() {
                     }}>
                         {netBalance >= 0 ? '+' : ''}{formatCurrency(netBalance)}
                     </p>
-                    <p style={{ fontSize: '13px', color: '#737373', margin: '8px 0 0 0' }}>
+                    <p style={{ fontSize: '13px', color: '#8A8680', margin: '8px 0 0 0' }}>
                         {netBalance >= 0 ? 'You are owed overall' : 'You owe overall'}
                     </p>
                 </Card>
@@ -330,7 +330,7 @@ export function Settlements() {
                                                             margin: 0,
                                                             fontWeight: '700',
                                                             fontSize: '16px',
-                                                            color: '#0a0a0a'
+                                                            color: '#EDEAE4'
                                                         }}>
                                                             {isIOwe ? settlement.to.name : settlement.from.name}
                                                         </p>
@@ -347,7 +347,7 @@ export function Settlements() {
                                                     </div>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                         <span style={{ fontSize: '18px' }}>{settlement.groupIcon}</span>
-                                                        <span style={{ fontSize: '14px', color: '#737373' }}>
+                                                        <span style={{ fontSize: '14px', color: '#8A8680' }}>
                                                             {settlement.groupName}
                                                         </span>
                                                     </div>
@@ -366,7 +366,7 @@ export function Settlements() {
                                                 </div>
 
                                                 {/* Arrow */}
-                                                <ArrowRight size={20} style={{ color: '#a3a3a3' }} />
+                                                <ArrowRight size={20} style={{ color: '#6A6763' }} />
                                             </div>
                                         </Card>
                                     </motion.div>

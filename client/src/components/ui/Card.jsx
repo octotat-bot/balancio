@@ -12,10 +12,10 @@ export function Card({
         <motion.div
             whileHover={hover ? { y: -4, transition: { duration: 0.2 } } : {}}
             style={{
-                backgroundColor: '#ffffff',
+                backgroundColor: '#131316',
                 borderRadius: '16px',
                 padding: '24px',
-                border: '1px solid #e5e5e5',
+                border: '1px solid #252530',
                 cursor: hover ? 'pointer' : 'default',
                 ...style
             }}
@@ -37,7 +37,7 @@ export function CardHeader({ children, className = '', style = {} }) {
 
 export function CardTitle({ children, className = '', style = {} }) {
     return (
-        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#0a0a0a', margin: 0, ...style }} className={className}>
+        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#EDEAE4', margin: 0, ...style }} className={className}>
             {children}
         </h3>
     );
@@ -45,7 +45,7 @@ export function CardTitle({ children, className = '', style = {} }) {
 
 export function CardDescription({ children, className = '', style = {} }) {
     return (
-        <p style={{ fontSize: '14px', color: '#737373', marginTop: '4px', margin: 0, ...style }} className={className}>
+        <p style={{ fontSize: '14px', color: '#8A8680', marginTop: '4px', margin: 0, ...style }} className={className}>
             {children}
         </p>
     );

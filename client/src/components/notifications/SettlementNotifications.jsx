@@ -97,7 +97,7 @@ function NotificationCard({ notification, onConfirm, onReject, onDismiss }) {
             exit={{ x: 400, opacity: 0, scale: 0.8 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             style={{
-                backgroundColor: '#fff',
+                backgroundColor: '#131316',
                 borderRadius: '20px',
                 padding: '20px',
                 boxShadow: '0 10px 40px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05)',
@@ -131,14 +131,14 @@ function NotificationCard({ notification, onConfirm, onReject, onDismiss }) {
                     padding: '6px',
                     borderRadius: '50%',
                     border: 'none',
-                    backgroundColor: '#f5f5f5',
+                    backgroundColor: '#1A1A1F',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
                 }}
             >
-                <X size={14} color="#737373" />
+                <X size={14} color='#8A8680' />
             </button>
 
             {/* Header */}
@@ -155,10 +155,10 @@ function NotificationCard({ notification, onConfirm, onReject, onDismiss }) {
                     <IconComponent size={18} color="#fff" />
                 </div>
                 <div>
-                    <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#0a0a0a' }}>
+                    <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#EDEAE4' }}>
                         {details.title}
                     </p>
-                    <p style={{ margin: 0, fontSize: '12px', color: '#737373' }}>
+                    <p style={{ margin: 0, fontSize: '12px', color: '#8A8680' }}>
                         {details.subtitle}
                     </p>
                 </div>
@@ -170,16 +170,16 @@ function NotificationCard({ notification, onConfirm, onReject, onDismiss }) {
                 alignItems: 'center',
                 gap: '12px',
                 padding: '16px',
-                backgroundColor: '#f5f5f5',
+                backgroundColor: '#1A1A1F',
                 borderRadius: '14px',
                 marginBottom: '16px'
             }}>
                 <Avatar name={details.name} size="md" />
                 <div style={{ flex: 1 }}>
-                    <p style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#0a0a0a' }}>
+                    <p style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#EDEAE4' }}>
                         {details.name}
                     </p>
-                    <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#737373' }}>
+                    <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#8A8680' }}>
                         {details.message}
                     </p>
                     {details.amount && (

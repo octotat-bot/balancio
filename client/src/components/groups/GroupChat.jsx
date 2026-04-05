@@ -73,21 +73,21 @@ export function GroupChat({ groupId }) {
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '600px', backgroundColor: '#f9f9f9', borderRadius: '16px', overflow: 'hidden', border: '1px solid #e5e5e5' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '600px', backgroundColor: '#f9f9f9', borderRadius: '16px', overflow: 'hidden', border: '1px solid #252530' }}>
 
             {/* Messages Area */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column-reverse', gap: '16px' }}>
                 {/* Typing Indicator */}
                 {Object.keys(typingUsers).length > 0 && (
                     <div style={{ alignSelf: 'flex-start', marginLeft: '48px', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '12px', color: '#737373', fontStyle: 'italic' }}>
+                        <span style={{ fontSize: '12px', color: '#8A8680', fontStyle: 'italic' }}>
                             {Object.values(typingUsers).map(u => u.userName).join(', ')} is typing...
                         </span>
                     </div>
                 )}
 
                 {messages.length === 0 && !isLoading && (
-                    <div style={{ textAlign: 'center', color: '#a3a3a3', marginTop: 'auto', marginBottom: 'auto' }}>
+                    <div style={{ textAlign: 'center', color: '#6A6763', marginTop: 'auto', marginBottom: 'auto' }}>
                         <p>No messages yet. Start the conversation!</p>
                     </div>
                 )}
@@ -115,7 +115,7 @@ export function GroupChat({ groupId }) {
 
                             <div>
                                 {!isMe && showAvatar && (
-                                    <p style={{ margin: '0 0 2px 4px', fontSize: '11px', color: '#737373' }}>
+                                    <p style={{ margin: '0 0 2px 4px', fontSize: '11px', color: '#8A8680' }}>
                                         {msg.sender?.name}
                                     </p>
                                 )}
@@ -136,7 +136,7 @@ export function GroupChat({ groupId }) {
                                 <p style={{
                                     margin: '2px 0 0 0',
                                     fontSize: '10px',
-                                    color: '#a3a3a3',
+                                    color: '#6A6763',
                                     textAlign: isMe ? 'right' : 'left',
                                     paddingRight: isMe ? '4px' : 0,
                                     paddingLeft: !isMe ? '4px' : 0
@@ -154,8 +154,8 @@ export function GroupChat({ groupId }) {
                 onSubmit={handleSend}
                 style={{
                     padding: '16px',
-                    backgroundColor: '#fff',
-                    borderTop: '1px solid #e5e5e5',
+                    backgroundColor: '#131316',
+                    borderTop: '1px solid #252530',
                     display: 'flex',
                     gap: '12px'
                 }}
@@ -168,7 +168,7 @@ export function GroupChat({ groupId }) {
                         flex: 1,
                         padding: '12px 16px',
                         borderRadius: '24px',
-                        border: '1px solid #e5e5e5',
+                        border: '1px solid #252530',
                         outline: 'none',
                         fontSize: '14px',
                         backgroundColor: '#f9f9f9',

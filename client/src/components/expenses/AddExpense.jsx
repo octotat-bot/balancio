@@ -280,12 +280,12 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
                 {/* Header / Mode Switch */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid #f0f0f0' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: '#000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: '#D4A853', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <Receipt size={20} />
                         </div>
                         <div>
                             <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700' }}>Receipt Mode</h3>
-                            <p style={{ margin: 0, fontSize: '12px', color: '#737373' }}>Add items one by one</p>
+                            <p style={{ margin: 0, fontSize: '12px', color: '#8A8680' }}>Add items one by one</p>
                         </div>
                     </div>
                     <Button variant="secondary" size="sm" icon={ArrowLeft} onClick={() => { setSplitType('equal'); setMode('simple'); }}>
@@ -300,7 +300,7 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
                     <div style={{ position: 'relative' }}>
                         <select
                             {...register('category')}
-                            style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #e5e5e5', backgroundColor: '#fff', appearance: 'none', fontSize: '14px', fontWeight: '500' }}
+                            style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #252530', backgroundColor: '#131316', appearance: 'none', fontSize: '14px', fontWeight: '500' }}
                         >
                             {categories.map(c => <option key={c.value} value={c.value}>{c.emoji} {c.label}</option>)}
                         </select>
@@ -316,7 +316,7 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
                                     width: '100%',
                                     padding: '10px',
                                     borderRadius: '10px',
-                                    border: '1px solid #e5e5e5',
+                                    border: '1px solid #252530',
                                     backgroundColor: !isAdmin ? '#f5f5f5' : '#fff',
                                     appearance: 'none',
                                     fontSize: '14px',
@@ -337,14 +337,14 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
 
                     {/* Left: Item List */}
                     <div style={{ flex: 1, overflowY: 'auto', paddingRight: '8px' }}>
-                        <h4 style={{ fontSize: '13px', fontWeight: '600', color: '#737373', marginBottom: '12px' }}>
+                        <h4 style={{ fontSize: '13px', fontWeight: '600', color: '#8A8680', marginBottom: '12px' }}>
                             ITEMS ({items.length})
                         </h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {items.map(item => (
-                                <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', borderRadius: '16px', border: '1px solid #e5e5e5', backgroundColor: '#fff' }}>
+                                <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', borderRadius: '16px', border: '1px solid #252530', backgroundColor: '#131316' }}>
                                     <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                                        <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>
+                                        <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#1A1A1F', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>
                                             🥣
                                         </div>
                                         <div>
@@ -366,7 +366,7 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
                                 </div>
                             ))}
                             {items.length === 0 && (
-                                <div style={{ textAlign: 'center', padding: '40px', border: '2px dashed #e5e5e5', borderRadius: '16px', color: '#a3a3a3' }}>
+                                <div style={{ textAlign: 'center', padding: '40px', border: '2px dashed #e5e5e5', borderRadius: '16px', color: '#6A6763' }}>
                                     <Receipt size={40} style={{ marginBottom: '12px', opacity: 0.5 }} />
                                     <p>No items added yet</p>
                                 </div>
@@ -383,22 +383,22 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
                                 placeholder="Item Name"
                                 value={newItemName}
                                 onChange={e => setNewItemName(e.target.value)}
-                                style={{ flex: 2, padding: '12px', borderRadius: '12px', border: '1px solid #e5e5e5', outline: 'none' }}
+                                style={{ flex: 2, padding: '12px', borderRadius: '12px', border: '1px solid #252530', outline: 'none' }}
                             />
                             <div style={{ flex: 1, position: 'relative' }}>
-                                <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#737373', fontWeight: '600' }}>₹</span>
+                                <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#8A8680', fontWeight: '600' }}>₹</span>
                                 <input
                                     type="number"
                                     placeholder="0.00"
                                     value={newItemAmount}
                                     onChange={e => setNewItemAmount(e.target.value)}
-                                    style={{ width: '100%', padding: '12px 12px 12px 28px', borderRadius: '12px', border: '1px solid #e5e5e5', outline: 'none' }}
+                                    style={{ width: '100%', padding: '12px 12px 12px 28px', borderRadius: '12px', border: '1px solid #252530', outline: 'none' }}
                                 />
                             </div>
                         </div>
 
                         <div>
-                            <label style={{ fontSize: '12px', fontWeight: '600', color: '#737373', marginBottom: '8px', display: 'block' }}>SPLIT BETWEEN</label>
+                            <label style={{ fontSize: '12px', fontWeight: '600', color: '#8A8680', marginBottom: '8px', display: 'block' }}>SPLIT BETWEEN</label>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                 {memberList.map(m => {
                                     const active = newItemMembers.includes(m._id);
@@ -411,7 +411,7 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
                                                 padding: '6px 12px 6px 8px', borderRadius: '20px',
                                                 border: active ? '1px solid #000' : '1px solid #e5e5e5',
                                                 backgroundColor: active ? '#fff' : '#fff',
-                                                color: '#0a0a0a',
+                                                color: '#EDEAE4',
                                                 fontSize: '13px', fontWeight: '500', cursor: 'pointer',
                                                 boxShadow: active ? '0 0 0 2px #f5f5f5' : '0 1px 2px rgba(0,0,0,0.05)',
                                                 transition: 'all 0.2s',
@@ -435,14 +435,14 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
                         </Button>
 
                         {/* Running Total */}
-                        <div style={{ marginTop: 'auto', borderTop: '1px solid #e5e5e5', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ color: '#737373', fontWeight: '500' }}>Receipt Total</span>
+                        <div style={{ marginTop: 'auto', borderTop: '1px solid #252530', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ color: '#8A8680', fontWeight: '500' }}>Receipt Total</span>
                             <span style={{ fontSize: '24px', fontWeight: '800' }}>{formatCurrency(totalItemsAmount)}</span>
                         </div>
                     </div>
                 </div>
 
-                <div style={{ paddingTop: '20px', marginTop: '10px', borderTop: '1px solid #e5e5e5', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                <div style={{ paddingTop: '20px', marginTop: '10px', borderTop: '1px solid #252530', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                     <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
                     <Button type="submit" loading={isLoading} icon={Check}>Save Receipt</Button>
                 </div>
@@ -457,9 +457,9 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
                 {/* LEFT COLUMN */}
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px', overflowY: 'auto', paddingRight: '12px' }}>
                     <div>
-                        <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: '#525252' }}>Amount</label>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: '#B0ADA8' }}>Amount</label>
                         <div style={{ position: 'relative' }}>
-                            <span style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', fontSize: '32px', fontWeight: '700', color: '#0a0a0a' }}>₹</span>
+                            <span style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', fontSize: '32px', fontWeight: '700', color: '#EDEAE4' }}>₹</span>
                             <input
                                 autoFocus
                                 type="number"
@@ -469,7 +469,7 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
                                 style={{
                                     padding: '24px 24px 24px 60px', fontSize: '48px', fontWeight: '800',
                                     border: 'none', borderRadius: '24px', outline: 'none', transition: 'all 0.2s',
-                                    backgroundColor: '#f5f5f5', color: '#0a0a0a'
+                                    backgroundColor: '#1A1A1F', color: '#EDEAE4'
                                 }}
                                 onFocus={(e) => e.target.style.backgroundColor = '#fff'}
                                 onBlur={(e) => e.target.style.backgroundColor = '#f5f5f5'}
@@ -481,7 +481,7 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
                     <Input label="Description" placeholder="What's this for?" icon={FileText} error={errors.description?.message} style={{ height: '56px', fontSize: '18px' }} {...register('description')} />
 
                     <div>
-                        <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#525252' }}>Category</label>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#B0ADA8' }}>Category</label>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
                             {categories.map((cat) => (
                                 <motion.button
@@ -495,7 +495,7 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
                                     }}
                                 >
                                     <span style={{ fontSize: '20px' }}>{cat.emoji}</span>
-                                    <span style={{ fontSize: '11px', fontWeight: watchCategory === cat.value ? '600' : '500', color: '#0a0a0a' }}>{cat.label}</span>
+                                    <span style={{ fontSize: '11px', fontWeight: watchCategory === cat.value ? '600' : '500', color: '#EDEAE4' }}>{cat.label}</span>
                                 </motion.button>
                             ))}
                         </div>
@@ -504,9 +504,9 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
                     <div style={{ display: 'grid', gridTemplateColumns: hidePaidBy ? '1fr' : '1fr 1fr', gap: '16px' }}>
                         {!hidePaidBy && (
                             <div>
-                                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: '#525252' }}>Paid by</label>
+                                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: '#B0ADA8' }}>Paid by</label>
                                 <div style={{ position: 'relative' }}>
-                                    <User size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#737373' }} />
+                                    <User size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#8A8680' }} />
                                     <select
                                         {...register('paidBy')}
                                         disabled={!isAdmin}
@@ -540,7 +540,7 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
                 {/* RIGHT COLUMN */}
                 <div style={{ width: '450px', borderLeft: '1px solid #f0f0f0', paddingLeft: '40px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
                     <div>
-                        <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#525252' }}>Split Method</label>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#B0ADA8' }}>Split Method</label>
                         <div style={{ display: 'flex', padding: '4px', backgroundColor: '#f1f1f1', borderRadius: '14px' }}>
                             {splitTypes.map((type) => (
                                 <button
@@ -573,7 +573,7 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
 
                     <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                            <span style={{ fontSize: '13px', color: '#737373', fontWeight: '500' }}>{selectedMembers.length} selected</span>
+                            <span style={{ fontSize: '13px', color: '#8A8680', fontWeight: '500' }}>{selectedMembers.length} selected</span>
                             <button type="button" onClick={() => setSelectedMembers(selectedMembers.length === memberList.length ? [] : memberList.map(m => m._id))} style={{ background: 'none', border: 'none', fontSize: '13px', color: '#3b82f6', fontWeight: '600', cursor: 'pointer' }}>
                                 {selectedMembers.length === memberList.length ? 'Select None' : 'Select All'}
                             </button>
@@ -597,24 +597,24 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
                                     </div>
                                     <Avatar name={member.name} size="sm" />
                                     <div style={{ flex: 1, minWidth: 0 }}>
-                                        <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#0a0a0a' }}>
+                                        <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#EDEAE4' }}>
                                             {member.name}
                                             {member.isPending && <span style={{ marginLeft: '6px', fontSize: '11px', color: '#f59e0b' }}>⏳ pending</span>}
                                         </p>
                                     </div>
-                                    {isSelected && splitType === 'equal' && <span style={{ fontSize: '15px', fontWeight: '700', color: '#0a0a0a' }}>₹{splitVal}</span>}
+                                    {isSelected && splitType === 'equal' && <span style={{ fontSize: '15px', fontWeight: '700', color: '#EDEAE4' }}>₹{splitVal}</span>}
                                     {isSelected && splitType !== 'equal' && (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }} onClick={e => e.stopPropagation()}>
-                                            {splitType === 'unequal' && <span style={{ fontSize: '14px', color: '#737373' }}>₹</span>}
+                                            {splitType === 'unequal' && <span style={{ fontSize: '14px', color: '#8A8680' }}>₹</span>}
                                             <input
                                                 type="number" step={splitType === 'shares' ? '1' : '0.01'} min="0"
                                                 value={customSplits[member._id] ?? (splitType === 'shares' ? 1 : '')}
                                                 onChange={(e) => setCustomSplits({ ...customSplits, [member._id]: parseFloat(e.target.value) || 0 })}
                                                 placeholder={splitType === 'unequal' ? '0.00' : '1'}
-                                                style={{ width: '70px', padding: '8px', borderRadius: '8px', border: '1px solid #d4d4d4', fontSize: '14px', fontWeight: '600', textAlign: 'right', outline: 'none' }}
+                                                style={{ width: '70px', padding: '8px', borderRadius: '8px', border: '1px solid #353540', fontSize: '14px', fontWeight: '600', textAlign: 'right', outline: 'none' }}
                                             />
-                                            {splitType === 'percentage' && <span style={{ fontSize: '12px', color: '#737373' }}>%</span>}
-                                            {splitType === 'shares' && <span style={{ fontSize: '12px', color: '#737373' }}>sh</span>}
+                                            {splitType === 'percentage' && <span style={{ fontSize: '12px', color: '#8A8680' }}>%</span>}
+                                            {splitType === 'shares' && <span style={{ fontSize: '12px', color: '#8A8680' }}>sh</span>}
                                         </div>
                                     )}
                                 </motion.div>
@@ -623,7 +623,7 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
                     </div>
                 </div>
             </div>
-            <div style={{ paddingTop: '20px', marginTop: '10px', borderTop: '1px solid #e5e5e5', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+            <div style={{ paddingTop: '20px', marginTop: '10px', borderTop: '1px solid #252530', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                 <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
                 <Button type="submit" loading={isLoading} icon={Check}>Save Expense</Button>
             </div>

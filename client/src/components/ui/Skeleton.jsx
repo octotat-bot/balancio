@@ -31,10 +31,10 @@ export function Skeleton({ className = '', variant = 'text', style = {}, width, 
 export function SkeletonCard() {
     return (
         <div style={{
-            backgroundColor: '#ffffff',
+            backgroundColor: '#131316',
             borderRadius: '16px',
             padding: '24px',
-            border: '1px solid #e5e5e5',
+            border: '1px solid #252530',
             display: 'flex',
             flexDirection: 'column',
             gap: '16px'

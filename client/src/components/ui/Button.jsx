@@ -3,18 +3,18 @@ import { motion } from 'framer-motion';
 
 const variants = {
     primary: {
-        backgroundColor: '#000000',
+        backgroundColor: '#D4A853',
         color: '#ffffff',
         border: 'none',
     },
     secondary: {
-        backgroundColor: '#ffffff',
-        color: '#0a0a0a',
+        backgroundColor: '#131316',
+        color: '#EDEAE4',
         border: '2px solid #e5e5e5',
     },
     ghost: {
         backgroundColor: 'transparent',
-        color: '#525252',
+        color: '#B0ADA8',
         border: 'none',
     },
     danger: {

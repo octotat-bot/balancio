@@ -169,7 +169,7 @@ export function Profile() {
                 alignItems: 'center',
                 gap: '16px',
                 padding: '16px 20px',
-                backgroundColor: '#fff',
+                backgroundColor: '#131316',
                 border: 'none',
                 borderBottom: '1px solid #f5f5f5',
                 cursor: 'pointer',
@@ -193,7 +193,7 @@ export function Profile() {
                 <p style={{ margin: 0, fontWeight: '500', fontSize: '15px', color: danger ? '#dc2626' : '#0a0a0a' }}>
                     {label}
                 </p>
-                {value && <p style={{ margin: 0, fontSize: '13px', color: '#a3a3a3' }}>{value}</p>}
+                {value && <p style={{ margin: 0, fontSize: '13px', color: '#6A6763' }}>{value}</p>}
             </div>
             <ChevronRight style={{ width: '20px', height: '20px', color: '#d4d4d4' }} />
         </motion.button>
@@ -208,10 +208,10 @@ export function Profile() {
         >
             {/* Header */}
             <motion.div variants={itemVariants} style={{ marginBottom: '32px' }}>
-                <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#0a0a0a', margin: '0 0 4px' }}>
+                <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#EDEAE4', margin: '0 0 4px' }}>
                     Profile
                 </h1>
-                <p style={{ fontSize: '15px', color: '#737373', margin: 0 }}>
+                <p style={{ fontSize: '15px', color: '#8A8680', margin: 0 }}>
                     Manage your account settings
                 </p>
             </motion.div>
@@ -221,10 +221,10 @@ export function Profile() {
                 variants={cardVariants}
                 whileHover={{ y: -4 }}
                 style={{
-                    backgroundColor: '#fff',
+                    backgroundColor: '#131316',
                     borderRadius: '20px',
                     padding: '32px',
-                    border: '1px solid #e5e5e5',
+                    border: '1px solid #252530',
                     marginBottom: '24px',
                     textAlign: 'center',
                 }}
@@ -253,7 +253,7 @@ export function Profile() {
                             right: 0,
                             width: '36px',
                             height: '36px',
-                            backgroundColor: '#000',
+                            backgroundColor: '#D4A853',
                             border: '3px solid #fff',
                             borderRadius: '50%',
                             display: 'flex',
@@ -270,7 +270,7 @@ export function Profile() {
                     initial={{ y: 10, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.3 }}
-                    style={{ fontSize: '24px', fontWeight: '700', color: '#0a0a0a', margin: '0 0 4px' }}
+                    style={{ fontSize: '24px', fontWeight: '700', color: '#EDEAE4', margin: '0 0 4px' }}
                 >
                     {user?.name}
                 </motion.h2>
@@ -278,7 +278,7 @@ export function Profile() {
                     initial={{ y: 10, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.35 }}
-                    style={{ fontSize: '15px', color: '#737373', margin: 0 }}
+                    style={{ fontSize: '15px', color: '#8A8680', margin: 0 }}
                 >
                     {user?.email}
                 </motion.p>
@@ -297,31 +297,31 @@ export function Profile() {
                     }}
                 >
                     <div>
-                        <p style={{ fontSize: '24px', fontWeight: '700', color: '#0a0a0a', margin: 0 }}>{expenseCount}</p>
-                        <p style={{ fontSize: '13px', color: '#737373', margin: 0 }}>Expenses</p>
+                        <p style={{ fontSize: '24px', fontWeight: '700', color: '#EDEAE4', margin: 0 }}>{expenseCount}</p>
+                        <p style={{ fontSize: '13px', color: '#8A8680', margin: 0 }}>Expenses</p>
                     </div>
                     <div>
-                        <p style={{ fontSize: '24px', fontWeight: '700', color: '#0a0a0a', margin: 0 }}>{groups.length}</p>
-                        <p style={{ fontSize: '13px', color: '#737373', margin: 0 }}>Groups</p>
+                        <p style={{ fontSize: '24px', fontWeight: '700', color: '#EDEAE4', margin: 0 }}>{groups.length}</p>
+                        <p style={{ fontSize: '13px', color: '#8A8680', margin: 0 }}>Groups</p>
                     </div>
                     <div>
-                        <p style={{ fontSize: '24px', fontWeight: '700', color: '#0a0a0a', margin: 0 }}>{friends.accepted.length}</p>
-                        <p style={{ fontSize: '13px', color: '#737373', margin: 0 }}>Friends</p>
+                        <p style={{ fontSize: '24px', fontWeight: '700', color: '#EDEAE4', margin: 0 }}>{friends.accepted.length}</p>
+                        <p style={{ fontSize: '13px', color: '#8A8680', margin: 0 }}>Friends</p>
                     </div>
                 </motion.div>
             </motion.div>
 
             {/* Personal Info */}
             <motion.div variants={itemVariants} style={{ marginBottom: '24px' }}>
-                <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#a3a3a3', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#6A6763', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     Personal Information
                 </h3>
                 <form onSubmit={profileForm.handleSubmit(handleProfileUpdate)}>
                     <div
                         style={{
-                            backgroundColor: '#fff',
+                            backgroundColor: '#131316',
                             borderRadius: '16px',
-                            border: '1px solid #e5e5e5',
+                            border: '1px solid #252530',
                             overflow: 'hidden',
                         }}
                     >
@@ -360,14 +360,14 @@ export function Profile() {
 
             {/* Security */}
             <motion.div variants={itemVariants} style={{ marginBottom: '24px' }}>
-                <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#a3a3a3', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#6A6763', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     Security
                 </h3>
                 <div
                     style={{
-                        backgroundColor: '#fff',
+                        backgroundColor: '#131316',
                         borderRadius: '16px',
-                        border: '1px solid #e5e5e5',
+                        border: '1px solid #252530',
                         overflow: 'hidden',
                     }}
                 >
@@ -383,7 +383,7 @@ export function Profile() {
                 </h3>
                 <div
                     style={{
-                        backgroundColor: '#fff',
+                        backgroundColor: '#131316',
                         borderRadius: '16px',
                         border: '1px solid #fecaca',
                         overflow: 'hidden',
@@ -440,7 +440,7 @@ export function Profile() {
                 title="Delete Account"
                 size="sm"
             >
-                <p style={{ color: '#525252', marginBottom: '24px' }}>
+                <p style={{ color: '#B0ADA8', marginBottom: '24px' }}>
                     Are you sure you want to delete your account? This action cannot be undone.
                 </p>
                 <div style={{ display: 'flex', gap: '12px' }}>

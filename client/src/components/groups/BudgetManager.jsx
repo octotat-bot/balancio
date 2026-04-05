@@ -65,7 +65,7 @@ export function BudgetManager({ groupId, budgets = [], isAdmin }) {
 
     if (!isAdmin && localBudgets.length === 0) {
         return (
-            <div style={{ textAlign: 'center', padding: '20px', color: '#737373', fontSize: '14px' }}>
+            <div style={{ textAlign: 'center', padding: '20px', color: '#8A8680', fontSize: '14px' }}>
                 No budgets set for this group.
             </div>
         );
@@ -90,7 +90,7 @@ export function BudgetManager({ groupId, budgets = [], isAdmin }) {
                 )}
             </div>
 
-            <p style={{ margin: 0, fontSize: '13px', color: '#737373' }}>
+            <p style={{ margin: 0, fontSize: '13px', color: '#8A8680' }}>
                 Get warned when group spending exceeds these monthly limits.
             </p>
 
@@ -105,10 +105,10 @@ export function BudgetManager({ groupId, budgets = [], isAdmin }) {
                             display: 'flex',
                             gap: '12px',
                             alignItems: 'center',
-                            backgroundColor: '#fff',
+                            backgroundColor: '#131316',
                             padding: '12px',
                             borderRadius: '12px',
-                            border: '1px solid #e5e5e5'
+                            border: '1px solid #252530'
                         }}
                     >
                         {isAdmin ? (
@@ -120,7 +120,7 @@ export function BudgetManager({ groupId, budgets = [], isAdmin }) {
                                         flex: 1,
                                         padding: '8px',
                                         borderRadius: '6px',
-                                        border: '1px solid #e5e5e5',
+                                        border: '1px solid #252530',
                                         fontSize: '14px'
                                     }}
                                 >
@@ -129,7 +129,7 @@ export function BudgetManager({ groupId, budgets = [], isAdmin }) {
                                     ))}
                                 </select>
                                 <div style={{ position: 'relative', width: '100px' }}>
-                                    <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: '#737373', fontSize: '12px' }}>₹</span>
+                                    <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: '#8A8680', fontSize: '12px' }}>₹</span>
                                     <input
                                         type="number"
                                         value={budget.limit}
@@ -138,7 +138,7 @@ export function BudgetManager({ groupId, budgets = [], isAdmin }) {
                                             width: '100%',
                                             padding: '8px 8px 8px 20px',
                                             borderRadius: '6px',
-                                            border: '1px solid #e5e5e5',
+                                            border: '1px solid #252530',
                                             fontSize: '14px'
                                         }}
                                     />
@@ -160,7 +160,7 @@ export function BudgetManager({ groupId, budgets = [], isAdmin }) {
                             // Read-only view for non-admins
                             <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
                                 <span style={{ fontWeight: '500' }}>{budget.category}</span>
-                                <span style={{ fontWeight: '600', color: '#525252' }}>Limit: ₹{budget.limit}</span>
+                                <span style={{ fontWeight: '600', color: '#B0ADA8' }}>Limit: ₹{budget.limit}</span>
                             </div>
                         )}
                     </motion.div>

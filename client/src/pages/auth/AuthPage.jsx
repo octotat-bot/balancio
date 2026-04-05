@@ -140,7 +140,7 @@ export function AuthPage() {
                 minHeight: '100vh',
                 display: 'flex',
                 flexDirection: 'column',
-                backgroundColor: '#fafafa',
+                backgroundColor: '#16161B',
                 overflow: 'auto',
             }}>
                 {/* Dark Branding Header */}
@@ -170,7 +170,7 @@ export function AuthPage() {
                             boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
                         }}
                     >
-                        <Sparkles size={28} style={{ color: '#0a0a0a' }} />
+                        <Sparkles size={28} style={{ color: '#EDEAE4' }} />
                     </motion.div>
                     <h1 style={{ fontSize: '24px', fontWeight: '800', margin: 0 }}>Balancio</h1>
                     <p style={{ fontSize: '14px', opacity: 0.8, margin: '8px 0 0' }}>
@@ -185,7 +185,7 @@ export function AuthPage() {
                     style={{
                         flex: 1,
                         padding: '32px 24px',
-                        backgroundColor: '#fff',
+                        backgroundColor: '#131316',
                     }}
                 >
                     <AnimatePresence mode="wait">
@@ -197,7 +197,7 @@ export function AuthPage() {
                                 exit={{ opacity: 0, x: -20 }}
                             >
                                 <h2 style={{ fontSize: '24px', fontWeight: '700', margin: '0 0 8px' }}>Sign In</h2>
-                                <p style={{ fontSize: '14px', color: '#737373', margin: '0 0 24px' }}>
+                                <p style={{ fontSize: '14px', color: '#8A8680', margin: '0 0 24px' }}>
                                     Enter your credentials to access your account
                                 </p>
 
@@ -228,7 +228,7 @@ export function AuthPage() {
                                                 background: 'none',
                                                 border: 'none',
                                                 cursor: 'pointer',
-                                                color: '#737373',
+                                                color: '#8A8680',
                                                 padding: '4px',
                                             }}
                                         >
@@ -238,7 +238,7 @@ export function AuthPage() {
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                                             <input type="checkbox" {...loginForm.register('rememberMe')} style={{ width: '18px', height: '18px' }} />
-                                            <span style={{ fontSize: '14px', color: '#525252' }}>Remember me</span>
+                                            <span style={{ fontSize: '14px', color: '#B0ADA8' }}>Remember me</span>
                                         </label>
                                     </div>
                                     <Button type="submit" loading={isLoading} icon={ArrowRight} iconPosition="right" style={{ width: '100%', padding: '14px' }}>
@@ -254,7 +254,7 @@ export function AuthPage() {
                                 exit={{ opacity: 0, x: -20 }}
                             >
                                 <h2 style={{ fontSize: '24px', fontWeight: '700', margin: '0 0 8px' }}>Create Account</h2>
-                                <p style={{ fontSize: '14px', color: '#737373', margin: '0 0 24px' }}>
+                                <p style={{ fontSize: '14px', color: '#8A8680', margin: '0 0 24px' }}>
                                     Fill in your details to get started
                                 </p>
 
@@ -300,7 +300,7 @@ export function AuthPage() {
                                                 background: 'none',
                                                 border: 'none',
                                                 cursor: 'pointer',
-                                                color: '#737373',
+                                                color: '#8A8680',
                                             }}
                                         >
                                             {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -325,7 +325,7 @@ export function AuthPage() {
                                                 background: 'none',
                                                 border: 'none',
                                                 cursor: 'pointer',
-                                                color: '#737373',
+                                                color: '#8A8680',
                                             }}
                                         >
                                             {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -340,14 +340,14 @@ export function AuthPage() {
                     </AnimatePresence>
 
                     {/* Toggle Link */}
-                    <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '14px', color: '#737373' }}>
+                    <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '14px', color: '#8A8680' }}>
                         {isLogin ? "Don't have an account? " : "Already have an account? "}
                         <button
                             onClick={toggleMode}
                             style={{
                                 background: 'none',
                                 border: 'none',
-                                color: '#0a0a0a',
+                                color: '#EDEAE4',
                                 fontWeight: '600',
                                 cursor: 'pointer',
                                 textDecoration: 'underline',
@@ -368,7 +368,7 @@ export function AuthPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: '#fafafa',
+            backgroundColor: '#16161B',
             padding: '20px',
             overflow: 'hidden',
         }}>
@@ -381,7 +381,7 @@ export function AuthPage() {
                     width: '100%',
                     maxWidth: '1000px',
                     minHeight: '650px',
-                    backgroundColor: '#fff',
+                    backgroundColor: '#131316',
                     borderRadius: '32px',
                     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05)',
                     display: 'flex',
@@ -486,7 +486,7 @@ export function AuthPage() {
                                     boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
                                 }}
                             >
-                                <Sparkles size={36} style={{ color: '#0a0a0a' }} />
+                                <Sparkles size={36} style={{ color: '#EDEAE4' }} />
                             </motion.div>
 
                             <h2 style={{
@@ -549,8 +549,8 @@ export function AuthPage() {
                                 style={{
                                     marginTop: '40px',
                                     padding: '16px 36px',
-                                    backgroundColor: '#fff',
-                                    color: '#0a0a0a',
+                                    backgroundColor: '#131316',
+                                    color: '#EDEAE4',
                                     border: 'none',
                                     borderRadius: '14px',
                                     fontSize: '15px',
@@ -593,14 +593,14 @@ export function AuthPage() {
                                     <h1 style={{
                                         fontSize: '28px',
                                         fontWeight: '800',
-                                        color: '#0a0a0a',
+                                        color: '#EDEAE4',
                                         margin: '0 0 8px',
                                     }}>
                                         Sign In
                                     </h1>
                                     <p style={{
                                         fontSize: '15px',
-                                        color: '#737373',
+                                        color: '#8A8680',
                                         margin: '0 0 32px',
                                     }}>
                                         Enter your credentials to access your account
@@ -638,7 +638,7 @@ export function AuthPage() {
                                                     background: 'none',
                                                     border: 'none',
                                                     cursor: 'pointer',
-                                                    color: '#737373',
+                                                    color: '#8A8680',
                                                     padding: '4px',
                                                 }}
                                             >
@@ -652,11 +652,11 @@ export function AuthPage() {
                                             <input
                                                 type="checkbox"
                                                 {...loginForm.register('rememberMe')}
-                                                style={{ width: '18px', height: '18px', accentColor: '#0a0a0a' }}
+                                                style={{ width: '18px', height: '18px', accentcolor: '#EDEAE4' }}
                                             />
-                                            <span style={{ fontSize: '14px', color: '#525252' }}>Remember me</span>
+                                            <span style={{ fontSize: '14px', color: '#B0ADA8' }}>Remember me</span>
                                         </label>
-                                        <a href="#" style={{ fontSize: '14px', color: '#0a0a0a', fontWeight: '500', textDecoration: 'none' }}>
+                                        <a href="#" style={{ fontSize: '14px', color: '#EDEAE4', fontWeight: '500', textDecoration: 'none' }}>
                                             Forgot password?
                                         </a>
                                     </motion.div>
@@ -680,7 +680,7 @@ export function AuthPage() {
                                         textAlign: 'center',
                                         marginTop: '24px',
                                         fontSize: '14px',
-                                        color: '#737373',
+                                        color: '#8A8680',
                                     }}
                                 >
                                     Don't have an account?{' '}
@@ -689,7 +689,7 @@ export function AuthPage() {
                                         style={{
                                             background: 'none',
                                             border: 'none',
-                                            color: '#0a0a0a',
+                                            color: '#EDEAE4',
                                             fontWeight: '600',
                                             cursor: 'pointer',
                                             textDecoration: 'underline',
@@ -728,14 +728,14 @@ export function AuthPage() {
                                     <h1 style={{
                                         fontSize: '28px',
                                         fontWeight: '800',
-                                        color: '#0a0a0a',
+                                        color: '#EDEAE4',
                                         margin: '0 0 8px',
                                     }}>
                                         Create Account
                                     </h1>
                                     <p style={{
                                         fontSize: '15px',
-                                        color: '#737373',
+                                        color: '#8A8680',
                                         margin: '0 0 24px',
                                     }}>
                                         Fill in your details to get started
@@ -794,7 +794,7 @@ export function AuthPage() {
                                                     background: 'none',
                                                     border: 'none',
                                                     cursor: 'pointer',
-                                                    color: '#737373',
+                                                    color: '#8A8680',
                                                     padding: '4px',
                                                 }}
                                             >
@@ -820,7 +820,7 @@ export function AuthPage() {
                                                     background: 'none',
                                                     border: 'none',
                                                     cursor: 'pointer',
-                                                    color: '#737373',
+                                                    color: '#8A8680',
                                                     padding: '4px',
                                                 }}
                                             >
@@ -848,7 +848,7 @@ export function AuthPage() {
                                         textAlign: 'center',
                                         marginTop: '20px',
                                         fontSize: '14px',
-                                        color: '#737373',
+                                        color: '#8A8680',
                                     }}
                                 >
                                     Already have an account?{' '}
@@ -857,7 +857,7 @@ export function AuthPage() {
                                         style={{
                                             background: 'none',
                                             border: 'none',
-                                            color: '#0a0a0a',
+                                            color: '#EDEAE4',
                                             fontWeight: '600',
                                             cursor: 'pointer',
                                             textDecoration: 'underline',

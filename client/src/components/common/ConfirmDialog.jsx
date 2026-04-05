@@ -68,7 +68,7 @@ const ConfirmDialog = ({
                             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                             onClick={(e) => e.stopPropagation()}
                             style={{
-                                backgroundColor: '#fff',
+                                backgroundColor: '#131316',
                                 borderRadius: '20px',
                                 padding: '24px',
                                 maxWidth: '400px',
@@ -93,7 +93,7 @@ const ConfirmDialog = ({
                                     justifyContent: 'center'
                                 }}
                             >
-                                <X size={20} color="#737373" />
+                                <X size={20} color='#8A8680' />
                             </button>
 
                             {/* Icon */}
@@ -115,7 +115,7 @@ const ConfirmDialog = ({
                                 textAlign: 'center',
                                 fontSize: '18px',
                                 fontWeight: '700',
-                                color: '#0a0a0a',
+                                color: '#EDEAE4',
                                 margin: '0 0 8px'
                             }}>
                                 {title}
@@ -125,7 +125,7 @@ const ConfirmDialog = ({
                             <p style={{
                                 textAlign: 'center',
                                 fontSize: '14px',
-                                color: '#737373',
+                                color: '#8A8680',
                                 margin: '0 0 24px',
                                 lineHeight: '1.5'
                             }}>

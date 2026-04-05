@@ -13,7 +13,7 @@ export const Input = forwardRef(({
     return (
         <div className={className} style={{ display: 'flex', flexDirection: 'column', gap: '6px', ...containerStyle }}>
             {label && (
-                <label style={{ fontSize: '14px', fontWeight: '500', color: '#0a0a0a' }}>
+                <label style={{ fontSize: '14px', fontWeight: '500', color: '#EDEAE4' }}>
                     {label}
                     {required && <span style={{ color: '#dc2626', marginLeft: '4px' }}>*</span>}
                 </label>
@@ -29,7 +29,7 @@ export const Input = forwardRef(({
                         border: '2px solid',
                         borderColor: error ? '#dc2626' : '#e5e5e5',
                         fontSize: '15px',
-                        color: '#0a0a0a',
+                        color: '#EDEAE4',
                         outline: 'none',
                         transition: 'border-color 0.2s',
                         backgroundColor: error ? '#fef2f2' : '#fff',
