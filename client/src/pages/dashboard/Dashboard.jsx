@@ -1,536 +1,693 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import {
-    TrendingUp,
-    TrendingDown,
-    Wallet,
-    Users,
-    Receipt,
-    Plus,
-    ArrowRight,
-    Zap,
-    UserPlus,
-    X,
-    Heart,
-    Phone,
-    PieChart
-} from 'lucide-react';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
-import { Avatar } from '../../components/ui/Avatar';
-import { Badge } from '../../components/ui/Badge';
-import { Modal } from '../../components/ui/Modal';
-import { useGroupStore } from '../../stores/groupStore';
-import { useFriendStore } from '../../stores/friendStore';
-import { useAuthStore } from '../../stores/authStore';
-import { useToast } from '../../components/ui/Toast';
-import { formatCurrency } from '../../utils/helpers';
-import api from '../../services/api';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../../stores/authStore";
+import { useGroupStore } from "../../stores/groupStore";
+import { useFriendStore } from "../../stores/friendStore";
+import api from "../../services/api";
 
-const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.08 } }
-};
-
-const itemVariants = {
-    hidden: { y: 15, opacity: 0 },
-    visible: { y: 0, opacity: 1, transition: { duration: 0.4 } }
-};
-
-const BentoItem = ({ children, className, style, span = 1, dark = false }) => (
-    <motion.div
-        variants={itemVariants}
-        style={{
-            gridColumn: `span ${span}`,
-            backgroundColor: dark ? '#171717' : '#ffffff',
-            color: dark ? '#ffffff' : '#0a0a0a',
-            borderRadius: '24px',
-            padding: '24px',
-            border: dark ? 'none' : '1px solid #f0f0f0',
-            boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.02)',
-            overflow: 'hidden',
-            position: 'relative',
-            display: 'flex',
-            flexDirection: 'column',
-            ...style
-        }}
-        className={className}
-    >
-        {children}
-    </motion.div>
+// ─── tiny SVG icon helpers ───────────────────────────────────────────────────
+const Icon = ({ d, size = 16, stroke = "currentColor", strokeWidth = 2, fill = "none", extra = "" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={stroke}
+    strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+    <path d={extra || d} />
+    {extra && <path d={d} />}
+  </svg>
 );
 
-export function Dashboard() {
-    const navigate = useNavigate();
-    const { user } = useAuthStore();
-    const { groups = [], fetchGroups } = useGroupStore();
-    const { friends, fetchFriends, addFriend, acceptFriend, rejectFriend, setSelectedFriend, isLoading: friendsLoading } = useFriendStore();
-    const toast = useToast();
-    const [friendBalances, setFriendBalances] = useState({});
-    const [showAddFriendModal, setShowAddFriendModal] = useState(false);
-    const [newFriendName, setNewFriendName] = useState('');
-    const [newFriendPhone, setNewFriendPhone] = useState('');
-    const [analytics, setAnalytics] = useState(null);
-    const [analyticsLoading, setAnalyticsLoading] = useState(true);
-    const [analyticsError, setAnalyticsError] = useState(null);
+const icons = {
+  logo:       { d: "M12 2L2 7l10 5 10-5-10-5z", extra: "M2 17l10 5 10-5 M2 12l10 5 10-5" },
+  grid:       null,
+  groups:     { d: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2", extra: "M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75" },
+  friends:    { d: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2", extra: "M12 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0-8 0" },
+  settle:     { d: "M3 10h18M3 14h18", extra: "M2 5h20a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" },
+  profile:    { d: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" },
+  plus:       { d: "M12 5v14M5 12h14" },
+  addFriend:  { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", extra: "M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M19 8v6 M16 11h6" },
+  trendUp:    { d: "M23 6L13.5 15.5 8.5 10.5 1 18", extra: "M17 6h6v6" },
+  trendDown:  { d: "M23 18L13.5 8.5 8.5 13.5 1 6", extra: "M17 18h6v-6" },
+  logout:     { d: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4", extra: "M16 17l5-5-5-5 M21 12H9" },
+};
 
-    // Safeguard for friends object
-    const acceptedFriends = friends?.accepted || [];
-    const pendingReceived = friends?.pendingReceived || [];
+const GridIcon = ({ size = 16, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round">
+    <rect x="3" y="3" width="7" height="7" rx="1" />
+    <rect x="14" y="3" width="7" height="7" rx="1" />
+    <rect x="3" y="14" width="7" height="7" rx="1" />
+    <rect x="14" y="14" width="7" height="7" rx="1" />
+  </svg>
+);
 
-    useEffect(() => {
-        fetchGroups();
-        fetchFriends();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    // Listen for real-time updates
-    useEffect(() => {
-        const handleFriendsUpdated = () => {
-            fetchFriends();
-        };
-
-        const handleGroupsUpdated = () => {
-            fetchGroups();
-        };
-
-        window.addEventListener('app:friends-updated', handleFriendsUpdated);
-        window.addEventListener('app:groups-updated', handleGroupsUpdated);
-
-        return () => {
-            window.removeEventListener('app:friends-updated', handleFriendsUpdated);
-            window.removeEventListener('app:groups-updated', handleGroupsUpdated);
-        };
-    }, [fetchFriends, fetchGroups]);
-
-    useEffect(() => {
-        const fetchAllFriendBalances = async () => {
-            const balances = {};
-            for (const friend of acceptedFriends) {
-                try {
-                    const response = await api.get(`/friends/${friend._id}/direct-balance`);
-                    balances[friend._id] = response.data.balance || 0;
-                } catch (error) {
-                    balances[friend._id] = 0;
-                }
-            }
-            setFriendBalances(balances);
-        };
-        if (acceptedFriends.length > 0) fetchAllFriendBalances();
-    }, [acceptedFriends]);
-
-    useEffect(() => {
-        const fetchAnalytics = async () => {
-            setAnalyticsLoading(true);
-            try {
-                const res = await api.get('/users/analytics');
-                setAnalytics(res.data);
-                setAnalyticsError(null);
-            } catch (error) {
-                setAnalyticsError('Failed to load analytics data.');
-            } finally {
-                setAnalyticsLoading(false);
-            }
-        };
-        // Small delay to ensure auth header is ready if hydrating
-        const timeout = setTimeout(fetchAnalytics, 500);
-        return () => clearTimeout(timeout);
-    }, []);
-
-    // Calculate totals
-    const groupTotals = (groups || []).reduce((acc, g) => {
-        const b = g.userBalance || 0;
-        if (b > 0) acc.owed += b; else acc.owes += Math.abs(b);
-        return acc;
-    }, { owed: 0, owes: 0 });
-
-    const friendTotals = Object.values(friendBalances).reduce((acc, b) => {
-        if (b > 0) acc.owed += b; else acc.owes += Math.abs(b);
-        return acc;
-    }, { owed: 0, owes: 0 });
-
-    const totals = { owed: groupTotals.owed + friendTotals.owed, owes: groupTotals.owes + friendTotals.owes };
-    const netBalance = totals.owed - totals.owes;
-
-    const getGreeting = () => {
-        const hour = new Date().getHours();
-        if (hour < 12) return 'Good morning';
-        if (hour < 18) return 'Good afternoon';
-        return 'Good evening';
-    };
-
-    const handleAddFriend = async () => {
-        if (!newFriendName.trim() || !newFriendPhone.trim()) {
-            toast.error('Missing info', 'Please enter name and phone number');
-            return;
-        }
-        const result = await addFriend(newFriendName, newFriendPhone);
-        if (result.success) {
-            toast.success('🎉 Friend request sent!', `Request sent to ${newFriendName}`);
-            setNewFriendName('');
-            setNewFriendPhone('');
-            setShowAddFriendModal(false);
-        } else {
-            toast.error('Failed', result.message || 'Could not add friend');
-        }
-    };
-
-    // Calculate Conic Gradient for Categories
-    const getCategoryGradient = () => {
-        if (!analytics?.categories || analytics.categories.length === 0) return 'conic-gradient(#f5f5f5 0% 100%)';
-
-        let gradientString = 'conic-gradient(';
-        let runningPercentage = 0;
-        const total = analytics.total || 1;
-        const colors = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'];
-
-        analytics.categories.slice(0, 5).forEach((cat, i) => {
-            const percentage = (cat.value / total) * 100;
-            const start = runningPercentage;
-            const end = runningPercentage + percentage;
-            const color = colors[i % colors.length];
-            gradientString += `${color} ${start}% ${end}%, `;
-            runningPercentage = end;
-        });
-
-        // Fill remainder if any (e.g. "Other")
-        if (runningPercentage < 100) {
-            gradientString += `#e5e5e5 ${runningPercentage}% 100%)`;
-        } else {
-            gradientString = gradientString.slice(0, -2) + ')';
-        }
-
-        return gradientString;
-    };
-
-    return (
-        <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="bento-grid responsive-grid"
-            style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
-                gap: '16px',
-                paddingBottom: '40px',
-                maxWidth: '1200px',
-                margin: '0 auto'
-            }}
-        >
-            {/* 1. Hero Card */}
-            <BentoItem span={2} dark style={{ justifyContent: 'space-between', minHeight: '220px' }}>
-                <div>
-                    <h1 style={{ fontSize: '28px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.5px' }}>
-                        {getGreeting()},<br />
-                        <span style={{ color: '#a3a3a3' }}>{user?.name?.split(' ')[0]}</span>
-                    </h1>
-                </div>
-                <div>
-                    <p style={{ fontSize: '13px', color: '#737373', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '1px' }}>Net Balance</p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <h2 style={{ fontSize: '36px', fontWeight: '700', margin: 0, letterSpacing: '-1px' }}>
-                            {formatCurrency(Math.abs(netBalance))}
-                        </h2>
-                        <Badge variant={netBalance >= 0 ? 'success' : 'destructive'} size="lg">
-                            {netBalance >= 0 ? 'You are owed' : 'You owe'}
-                        </Badge>
-                    </div>
-                </div>
-                <div style={{
-                    position: 'absolute',
-                    top: '-40px',
-                    right: '-40px',
-                    width: '180px',
-                    height: '180px',
-                    borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)',
-                    pointerEvents: 'none'
-                }} />
-            </BentoItem>
-
-            {/* 2. Inflow */}
-            <BentoItem span={1}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-                    <div style={{ padding: '10px', backgroundColor: '#f0fdf4', borderRadius: '12px' }}>
-                        <TrendingUp size={20} color="#16a34a" />
-                    </div>
-                </div>
-                <p style={{ fontSize: '13px', color: '#737373', fontWeight: '500' }}>You are owed</p>
-                <p style={{ fontSize: '24px', fontWeight: '700', color: '#0a0a0a', marginTop: '4px' }}>
-                    {formatCurrency(totals.owed)}
-                </p>
-            </BentoItem>
-
-            {/* 3. Outflow */}
-            <BentoItem span={1}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-                    <div style={{ padding: '10px', backgroundColor: '#fef2f2', borderRadius: '12px' }}>
-                        <TrendingDown size={20} color="#dc2626" />
-                    </div>
-                </div>
-                <p style={{ fontSize: '13px', color: '#737373', fontWeight: '500' }}>You owe</p>
-                <p style={{ fontSize: '24px', fontWeight: '700', color: '#0a0a0a', marginTop: '4px' }}>
-                    {formatCurrency(totals.owes)}
-                </p>
-            </BentoItem>
-
-            {/* 4. Spending Trend */}
-            <BentoItem span={2} style={{ minHeight: '320px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-                    <h3 style={{ fontSize: '16px', fontWeight: '600' }}>Spending Trend</h3>
-                    <div style={{ padding: '6px 12px', backgroundColor: '#f5f5f5', borderRadius: '20px', fontSize: '12px', fontWeight: '500' }}>This Year</div>
-                </div>
-                {analyticsLoading ? (
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a3a3a3' }}>Loading...</div>
-                ) : (
-                    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', height: '100%', paddingBottom: '10px', gap: '8px' }}>
-                        {analytics?.history?.map((item, i) => {
-                            const max = Math.max(...(analytics.history.map(h => h.amount) || [1]), 1);
-                            const height = (item.amount / max) * 100;
-                            return (
-                                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', flex: 1 }}>
-                                    <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center', height: '100%' }}>
-                                        <motion.div
-                                            initial={{ height: 0 }}
-                                            animate={{ height: `${height}%` }}
-                                            transition={{ duration: 1, delay: i * 0.1, type: 'spring' }}
-                                            style={{
-                                                width: '100%',
-                                                maxWidth: '32px',
-                                                backgroundColor: i === (analytics.history.length - 1) ? '#0a0a0a' : '#f0f0f0',
-                                                borderRadius: '8px',
-                                                minHeight: item.amount > 0 ? '6px' : '0'
-                                            }}
-                                        />
-                                    </div>
-                                    <span style={{ fontSize: '11px', color: '#a3a3a3', fontWeight: '500' }}>{item.month.split(' ')[0]}</span>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-            </BentoItem>
-
-            {/* 5. Top Categories with Donut Chart */}
-            <BentoItem span={1}>
-                <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px' }}>Categories</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', flex: 1, justifyContent: 'center' }}>
-                    {/* Donut Chart */}
-                    <div style={{
-                        width: '140px',
-                        height: '140px',
-                        borderRadius: '50%',
-                        background: getCategoryGradient(),
-                        position: 'relative',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                    }}>
-                        <div style={{ width: '100px', height: '100px', backgroundColor: '#fff', borderRadius: '50%' }} />
-                    </div>
-
-                    {/* Compact Legend */}
-                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {analytics?.categories?.slice(0, 3).map((cat, i) => (
-                            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'][i % 5] }} />
-                                    <span style={{ color: '#525252', textTransform: 'capitalize' }}>{cat.name}</span>
-                                </div>
-                                <span style={{ fontWeight: '600' }}>{((cat.value / (analytics.total || 1)) * 100).toFixed(0)}%</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </BentoItem>
-
-            {/* 6. Quick Actions */}
-            <BentoItem span={1} style={{ gap: '12px' }}>
-                <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '4px' }}>Quick Actions</h3>
-                <Button
-                    onClick={() => navigate('/groups/new')}
-                    style={{ justifyContent: 'flex-start', backgroundColor: '#000' }}
-                    icon={Plus}
-                >
-                    New Group
-                </Button>
-                <Button
-                    variant="outline"
-                    onClick={() => setShowAddFriendModal(true)}
-                    style={{ justifyContent: 'flex-start' }}
-                    icon={UserPlus}
-                >
-                    Add Friend
-                </Button>
-
-                {pendingReceived.length > 0 && (
-                    <div style={{ marginTop: 'auto', paddingTop: '12px', borderTop: '1px solid #f5f5f5' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                            <span style={{ fontSize: '12px', fontWeight: '600', color: '#d97706' }}>
-                                {pendingReceived.length} Pending
-                            </span>
-                            <Button size="sm" variant="ghost" style={{ fontSize: '11px', height: '24px' }}>View</Button>
-                        </div>
-                        {pendingReceived.slice(0, 1).map(r => (
-                            <div key={r._id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
-                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#d97706' }} />
-                                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.friend?.name || 'New Request'}</span>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </BentoItem>
-
-
-            {/* 7. Groups */}
-            <BentoItem span={2} style={{ minHeight: '300px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ padding: '8px', backgroundColor: '#f5f5f5', borderRadius: '10px' }}>
-                            <Users size={18} />
-                        </div>
-                        <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0 }}>Groups</h3>
-                    </div>
-                    <Button variant="ghost" size="sm" onClick={() => navigate('/groups')}>View All</Button>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto' }}>
-                    {groups.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '20px', color: '#a3a3a3' }}>
-                            <p style={{ fontSize: '13px' }}>No groups yet</p>
-                        </div>
-                    ) : (
-                        groups.slice(0, 4).map(g => (
-                            <motion.div
-                                key={g._id}
-                                whileHover={{ scale: 1.01 }}
-                                onClick={() => navigate(`/groups/${g._id}`)}
-                                style={{
-                                    padding: '12px', borderRadius: '16px', border: '1px solid #f5f5f5',
-                                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
-                                }}
-                            >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <Avatar name={g.name} size="md" />
-                                    <div>
-                                        <p style={{ fontSize: '14px', fontWeight: '600', margin: 0 }}>{g.name}</p>
-                                        <p style={{ fontSize: '12px', color: '#a3a3a3', margin: 0 }}>{g.members?.length} members</p>
-                                    </div>
-                                </div>
-                                <span style={{ fontSize: '13px', fontWeight: '600', color: (g.userBalance || 0) >= 0 ? '#16a34a' : '#dc2626' }}>
-                                    {(g.userBalance || 0) >= 0 ? '+' : ''}{formatCurrency(g.userBalance || 0)}
-                                </span>
-                            </motion.div>
-                        ))
-                    )}
-                </div>
-            </BentoItem>
-
-            {/* 8. Friends - Enhanced Grid Layout */}
-            <BentoItem span={2} style={{ minHeight: '300px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ padding: '8px', backgroundColor: '#fdf2f8', borderRadius: '10px' }}>
-                            <Heart size={18} color="#ec4899" />
-                        </div>
-                        <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0 }}>Friends</h3>
-                    </div>
-                    <Button variant="ghost" size="sm" onClick={() => navigate('/friends')}>View All</Button>
-                </div>
-
-                {acceptedFriends.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '30px', color: '#a3a3a3', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <p style={{ fontSize: '13px', marginBottom: '12px' }}>No friends yet</p>
-                        <Button size="sm" onClick={() => setShowAddFriendModal(true)}>Add Friend</Button>
-                    </div>
-                ) : (
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 1fr',
-                        gap: '12px',
-                        overflowY: 'auto'
-                    }}>
-                        {acceptedFriends.slice(0, 4).map(f => {
-                            const bal = friendBalances[f._id] || 0;
-
-                            // Determine who is the friend
-                            let friendData = {};
-                            const isRequester = f.requester?._id === user?._id || f.requester === user?._id;
-
-                            if (isRequester) {
-                                friendData = {
-                                    name: f.recipient?.name || f.recipientName,
-                                    phone: f.recipient?.phone || f.recipientPhone
-                                };
-                            } else {
-                                friendData = {
-                                    name: f.requester?.name,
-                                    phone: f.requester?.phone
-                                };
-                            }
-
-                            return (
-                                <motion.div
-                                    key={f._id}
-                                    whileHover={{ y: -2, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
-                                    onClick={() => { setSelectedFriend(f); navigate('/friends'); }}
-                                    style={{
-                                        padding: '16px',
-                                        borderRadius: '16px',
-                                        border: '1px solid #f5f5f5',
-                                        backgroundColor: bal > 0 ? '#f0fdf4' : bal < 0 ? '#fef2f2' : '#ffffff',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'center',
-                                        gap: '12px',
-                                        textAlign: 'center',
-                                        transition: 'all 0.2s'
-                                    }}
-                                >
-                                    <Avatar name={friendData.name} size="md" />
-                                    <div>
-                                        <p style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 2px', maxWidth: '100px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{friendData.name}</p>
-                                        <p style={{ fontSize: '11px', color: '#737373', margin: 0 }}>{friendData.phone}</p>
-                                    </div>
-
-                                    {bal !== 0 ? (
-                                        <Badge variant={bal >= 0 ? 'success' : 'destructive'} size="sm">
-                                            {bal >= 0 ? 'Owes you ' : 'You owe '} {formatCurrency(Math.abs(bal))}
-                                        </Badge>
-                                    ) : (
-                                        <Badge variant="secondary" size="sm">Settled</Badge>
-                                    )}
-                                </motion.div>
-                            );
-                        })}
-                    </div>
-                )}
-            </BentoItem>
-
-            {/* Add Friend Modal */}
-            <Modal isOpen={showAddFriendModal} onClose={() => { setShowAddFriendModal(false); setNewFriendName(''); setNewFriendPhone(''); }} title="Add Friend">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <p style={{ margin: 0, fontSize: '14px', color: '#737373' }}>
-                        Add a friend to split expenses directly.
-                    </p>
-                    <Input label="Friend's Name" placeholder="Enter name" value={newFriendName}
-                        onChange={(e) => setNewFriendName(e.target.value)} icon={UserPlus} />
-                    <Input label="Phone Number" placeholder="Enter phone number" value={newFriendPhone}
-                        onChange={(e) => setNewFriendPhone(e.target.value)} icon={Phone} />
-                    <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
-                        <Button variant="ghost" onClick={() => { setShowAddFriendModal(false); setNewFriendName(''); setNewFriendPhone(''); }} style={{ flex: 1 }}>
-                            Cancel
-                        </Button>
-                        <Button onClick={handleAddFriend} disabled={!newFriendName.trim() || !newFriendPhone.trim() || friendsLoading} style={{ flex: 1 }}>
-                            {friendsLoading ? 'Sending...' : 'Send Request'}
-                        </Button>
-                    </div>
-                </div>
-            </Modal>
-        </motion.div>
-    );
+// ─── Donut chart ─────────────────────────────────────────────────────────────
+function DonutChart({ segments }) {
+  const r = 46;
+  const circ = 2 * Math.PI * r;
+  let offset = 0;
+  return (
+    <svg width={120} height={120} viewBox="0 0 120 120" style={{ transform: "rotate(-90deg)" }}>
+      <circle cx="60" cy="60" r={r} fill="none" stroke="#1A1A1F" strokeWidth={18} />
+      {segments.map((seg, i) => {
+        const dash = (Math.max(seg.pct, 0.1) / 100) * circ;
+        const gap  = circ - dash;
+        const el = (
+          <circle
+            key={i}
+            cx="60" cy="60" r={r}
+            fill="none"
+            stroke={seg.color}
+            strokeWidth={18}
+            strokeDasharray={`${dash.toFixed(1)} ${gap.toFixed(1)}`}
+            strokeDashoffset={-offset}
+          />
+        );
+        offset += dash;
+        return el;
+      })}
+    </svg>
+  );
 }
 
-export default Dashboard;
+// ─── Bar chart ───────────────────────────────────────────────────────────────
+function BarChart({ data, labels, highlightIndex }) {
+  const max = Math.max(...data, 80);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 5, height: 120 }}>
+        {data.map((v, i) => {
+          const h = Math.max(3, Math.round((v / max) * 110));
+          const isHi = i === highlightIndex;
+          return (
+            <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div style={{
+                width: "100%", height: h,
+                borderRadius: "3px 3px 0 0",
+                background: isHi ? "#D4A853" : "#222228",
+                cursor: "pointer",
+                transition: "background 0.15s",
+              }}
+                title={`₹${v}`}
+                onMouseEnter={e => { if (!isHi) e.currentTarget.style.background = "#8A6520"; }}
+                onMouseLeave={e => { if (!isHi) e.currentTarget.style.background = "#222228"; }}
+              />
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ display: "flex", gap: 5, overflowX: "hidden" }}>
+        {labels.map((l, i) => (
+          <span key={i} style={{
+            flex: 1, textAlign: "center",
+            fontSize: 10, color: "#4A4845",
+            fontFamily: "'JetBrains Mono', monospace",
+            overflow: "hidden", textOverflow: "ellipsis"
+          }}>{l}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Dashboard ──────────────────────────────────────────────────────────
+export default function Dashboard() {
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const { groups = [], fetchGroups } = useGroupStore();
+  const { friends, fetchFriends } = useFriendStore();
+  
+  const [activeDock, setActiveDock] = useState("Home");
+  const [activeFilter, setActiveFilter] = useState("This year");
+  const [time, setTime] = useState("");
+  const [friendBalances, setFriendBalances] = useState({});
+  const [analytics, setAnalytics] = useState(null);
+
+  const acceptedFriends = friends?.accepted || [];
+
+  useEffect(() => {
+    fetchGroups();
+    fetchFriends();
+  }, [fetchGroups, fetchFriends]);
+
+  useEffect(() => {
+    const fetchAllFriendBalances = async () => {
+      const balances = {};
+      for (const friend of acceptedFriends) {
+        try {
+          const response = await api.get(`/friends/${friend._id}/direct-balance`);
+          balances[friend._id] = response.data.balance || 0;
+        } catch (error) {
+          balances[friend._id] = 0;
+        }
+      }
+      setFriendBalances(balances);
+    };
+    if (acceptedFriends.length > 0) fetchAllFriendBalances();
+  }, [acceptedFriends]);
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        const res = await api.get('/users/analytics');
+        setAnalytics(res.data);
+      } catch (error) {
+        console.error("Error loading analytics");
+      }
+    };
+    const timeout = setTimeout(fetchAnalytics, 500);
+    return () => clearTimeout(timeout);
+  }, []);
+
+  useEffect(() => {
+    const fmt = () => {
+      const n = new Date();
+      let h = n.getHours(), m = n.getMinutes();
+      const ap = h >= 12 ? "PM" : "AM";
+      h = h % 12 || 12;
+      setTime(`${h}:${m < 10 ? "0" + m : m} ${ap}`);
+    };
+    fmt();
+    const id = setInterval(fmt, 30000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Compute Totals
+  const groupTotals = (groups || []).reduce((acc, g) => {
+    const b = g.userBalance || 0;
+    if (b > 0) acc.owed += b; else acc.owes += Math.abs(b);
+    return acc;
+  }, { owed: 0, owes: 0 });
+
+  const friendTotals = Object.values(friendBalances).reduce((acc, b) => {
+    if (b > 0) acc.owed += b; else acc.owes += Math.abs(b);
+    return acc;
+  }, { owed: 0, owes: 0 });
+
+  const totals = { owed: groupTotals.owed + friendTotals.owed, owes: groupTotals.owes + friendTotals.owes };
+  const netBalance = totals.owed - totals.owes;
+
+  // Compute Analytics Data for charts
+  const spendData = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  
+  if (analytics?.history) {
+    analytics.history.forEach((item, i) => {
+      if(i < 12) spendData[i] = item.amount;
+    });
+  }
+
+  const categoryColors = ["#D4A853", "#D95555", "#45C285", "#3b82f6", "#8b5cf6"];
+  const categories = (analytics?.categories || []).slice(0, 3).map((c, i) => ({
+    name: c.name,
+    pct: analytics.total ? Math.round((c.value / analytics.total) * 100) : 0,
+    color: categoryColors[i % categoryColors.length]
+  }));
+
+  const mappedGroups = groups.slice(0, 4).map(g => ({
+    _id: g._id,
+    name: g.name || "Group",
+    members: g.members?.length || 1,
+    amount: g.userBalance || 0
+  }));
+
+  const mappedFriends = acceptedFriends.slice(0, 4).map(f => {
+    const bal = friendBalances[f._id] || 0;
+    const isRequester = f.requester?._id === user?._id || f.requester === user?._id;
+    let friendName = isRequester ? (f.recipient?.name || f.recipientName) : (f.requester?.name);
+    return {
+      _id: f._id,
+      name: friendName || "Friend",
+      amount: bal
+    };
+  });
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  const dockItems = [
+    { label: "Home",    href: "/dashboard", icon: <GridIcon size={16} color="currentColor" /> },
+    { label: "Groups",  href: "/groups",    icon: <Icon {...icons.groups}  size={16} /> },
+    { label: "Friends", href: "/friends",   icon: <Icon {...icons.friends} size={16} /> },
+    { label: "Settle",  href: "/settlements", icon: <Icon {...icons.settle}  size={16} /> },
+    { label: "Profile", href: "/profile",   icon: <Icon {...icons.profile} size={16} /> },
+  ];
+
+  // ── styles ──────────────────────────────────────────────────────────────────
+  const s = {
+    root: {
+      position: 'fixed',
+      inset: 0,
+      zIndex: 100,
+      overflowY: 'auto',
+      fontFamily: "'Syne', sans-serif",
+      background: "#0C0C0F",
+      color: "#EDEAE4",
+      minHeight: "100vh",
+      display: "flex",
+      flexDirection: "column",
+    },
+    topbar: {
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      padding: "14px 28px",
+      background: "#131316",
+      borderBottom: "1px solid #252530",
+      position: "sticky", top: 0, zIndex: 50,
+    },
+    logoWrap: { display: "flex", alignItems: "center", gap: 10 },
+    logoMark: {
+      width: 32, height: 32, borderRadius: 8, background: "#D4A853",
+      display: "flex", alignItems: "center", justifyContent: "center",
+    },
+    logoName: { fontSize: 16, fontWeight: 800, letterSpacing: "0.02em" },
+    topRight: { display: "flex", alignItems: "center", gap: 10 },
+    timeText: { fontSize: 11, color: "#4A4845", fontFamily: "'JetBrains Mono', monospace" },
+    avatarCircle: {
+      width: 32, height: 32, borderRadius: "50%",
+      background: "#5C3A10", border: "1.5px solid #8A6520",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: 12, fontWeight: 700, color: "#F0C878", cursor: "pointer",
+    },
+    hero: {
+      display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
+      borderBottom: "1px solid #252530",
+    },
+    heroMain: { padding: "28px 32px", borderRight: "1px solid #252530" },
+    heroGreeting: {
+      fontSize: 11, color: "#4A4845", letterSpacing: "0.1em",
+      textTransform: "uppercase", fontFamily: "'JetBrains Mono', monospace",
+      marginBottom: 6,
+    },
+    heroName: { fontSize: 42, fontWeight: 800, lineHeight: 1, marginBottom: 10 },
+    heroBadgeRow: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" },
+    heroBal: { fontSize: 14, color: "#8A8680" },
+    heroBalNum: { fontSize: 14, fontFamily: "'JetBrains Mono', monospace", color: netBalance >= 0 ? "#45C285" : "#D95555" },
+    heroBadge: {
+      fontSize: 10, fontWeight: 700, background: netBalance >= 0 ? "#45C285" : "#D95555", color: "#fff",
+      padding: "3px 10px", borderRadius: 999, letterSpacing: "0.06em", textTransform: "uppercase",
+    },
+    statCard: {
+      padding: "24px 28px", display: "flex", flexDirection: "column",
+      justifyContent: "center", borderRight: "1px solid #252530",
+    },
+    statIcon: {
+      width: 28, height: 28, borderRadius: 8,
+      display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10,
+    },
+    statLabel: {
+      fontSize: 10, color: "#4A4845", textTransform: "uppercase",
+      letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", marginBottom: 8,
+    },
+    statVal: { fontSize: 36, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" },
+    body: {
+      display: "grid", gridTemplateColumns: "1fr 300px",
+      flex: 1,
+    },
+    left: { borderRight: "1px solid #252530", display: "flex", flexDirection: "column" },
+    right: { display: "flex", flexDirection: "column" },
+    section: { padding: "22px 26px", borderBottom: "1px solid #252530" },
+    secHeader: {
+      display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16,
+    },
+    secTitle: {
+      fontSize: 11, fontWeight: 700, letterSpacing: "0.1em",
+      textTransform: "uppercase", color: "#8A8680",
+      display: "flex", alignItems: "center", gap: 6,
+    },
+    viewAll: { fontSize: 11, color: "#D4A853", cursor: "pointer", fontWeight: 500 },
+    twoCol: { display: "grid", gridTemplateColumns: "1fr 1fr", flex: 1 },
+    halfSec: { padding: "20px 22px" },
+    listRow: {
+      display: "flex", alignItems: "center", gap: 10,
+      padding: "9px 0", borderBottom: "1px solid #252530",
+      cursor: "pointer"
+    },
+    lav: {
+      width: 34, height: 34, borderRadius: 10, background: "#222228",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: 12, fontWeight: 700, color: "#D4A853",
+      border: "1px solid #252530", flexShrink: 0,
+    },
+    catBody: { padding: "22px 22px 18px", borderBottom: "1px solid #252530", flex: 1 },
+    donutWrap: { position: "relative", width: 120, height: 120, margin: "0 auto 18px" },
+    donutCenter: {
+      position: "absolute", top: "50%", left: "50%",
+      transform: "translate(-50%,-50%)", textAlign: "center",
+    },
+    catRow: { display: "flex", alignItems: "center", gap: 8, marginBottom: 10 },
+    catDot: { width: 7, height: 7, borderRadius: "50%", flexShrink: 0 },
+    catBarBg: { flex: 2, height: 4, background: "#222228", borderRadius: 2 },
+    qaSec: { padding: "18px 22px" },
+    qaBtn: {
+      display: "flex", alignItems: "center", gap: 10,
+      padding: "12px 16px", borderRadius: 12,
+      border: "1px solid #252530", background: "transparent",
+      color: "#EDEAE4", fontSize: 13, fontWeight: 500,
+      fontFamily: "'Syne', sans-serif", cursor: "pointer",
+      width: "100%", marginBottom: 8, transition: "all 0.15s",
+    },
+    emptyBox: { textAlign: "center", padding: "20px 0", borderBottom: "none" },
+    fabBar: {
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: "14px 0 18px",
+      background: "#131316", borderTop: "1px solid #252530",
+      position: "sticky", bottom: 0, zIndex: 50,
+    },
+    fabInner: {
+      display: "flex", alignItems: "center", gap: 6,
+      background: "#1A1A1F", border: "1px solid #252530",
+      borderRadius: 999, padding: "6px 8px",
+    },
+    fabItem: {
+      display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+      padding: "8px 22px", borderRadius: 999, cursor: "pointer", transition: "all 0.15s",
+      background: "transparent", border: "none", fontFamily: "'Syne', sans-serif",
+    },
+    fabSep: { width: 1, height: 32, background: "#252530" },
+    fabAdd: {
+      width: 46, height: 46, background: "#D4A853", borderRadius: "50%",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      cursor: "pointer", border: "none", flexShrink: 0, transition: "background 0.15s",
+    },
+    fabLbl: {
+      fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase",
+      fontFamily: "'JetBrains Mono', monospace",
+    },
+  };
+
+  // Add media query hook for better responsiveness similar to original grid layout
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  if (isMobile) {
+    s.hero.gridTemplateColumns = "1fr";
+    s.hero.borderBottom = "none";
+    s.heroMain.borderRight = "none";
+    s.heroMain.borderBottom = "1px solid #252530";
+    s.statCard.borderRight = "none";
+    s.statCard.borderBottom = "1px solid #252530";
+    s.body.gridTemplateColumns = "1fr";
+    s.left.borderRight = "none";
+    s.twoCol.gridTemplateColumns = "1fr";
+    s.halfSec.borderRight = "none";
+    s.halfSec.borderBottom = "1px solid #252530";
+  }
+
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #131316; }
+        ::-webkit-scrollbar-thumb { background: #252530; border-radius: 2px; }
+      `}</style>
+
+      <div style={s.root}>
+        {/* ── TOP BAR ── */}
+        <header style={s.topbar}>
+          <div style={s.logoWrap}>
+            <div style={s.logoMark}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A0800" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" />
+              </svg>
+            </div>
+            <span style={s.logoName}>Balancio</span>
+          </div>
+          <div style={s.topRight}>
+            <span style={s.timeText}>{time}</span>
+            <div style={s.avatarCircle} onClick={() => navigate('/profile')}>
+              {user?.name?.[0]?.toUpperCase() || 'M'}
+            </div>
+          </div>
+        </header>
+
+        {/* ── HERO ── */}
+        <section style={s.hero}>
+          <div style={s.heroMain}>
+            <p style={s.heroGreeting}>{getGreeting()}</p>
+            <h1 style={s.heroName}>{user?.name?.split(' ')[0] || "User"}</h1>
+            <div style={s.heroBadgeRow}>
+              <span style={s.heroBal}>Net balance</span>
+              <span style={s.heroBalNum}>{netBalance < 0 ? "−" : ""}₹{Math.abs(netBalance).toFixed(2)}</span>
+              <span style={s.heroBadge}>{netBalance >= 0 ? "You are owed" : "You owe"}</span>
+            </div>
+          </div>
+          <div style={s.statCard}>
+            <div style={{ ...s.statIcon, background: "#1A3025" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#45C285" strokeWidth="2.5" strokeLinecap="round">
+                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                <polyline points="17 6 23 6 23 12" />
+              </svg>
+            </div>
+            <p style={s.statLabel}>You are owed</p>
+            <p style={{ ...s.statVal, color: "#45C285" }}>₹{totals.owed.toFixed(2)}</p>
+          </div>
+          <div style={{ ...s.statCard, borderRight: "none" }}>
+            <div style={{ ...s.statIcon, background: "#2A1515" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D95555" strokeWidth="2.5" strokeLinecap="round">
+                <polyline points="23 18 13.5 8.5 8.5 13.5 1 6" />
+                <polyline points="17 18 23 18 23 12" />
+              </svg>
+            </div>
+            <p style={s.statLabel}>You owe</p>
+            <p style={{ ...s.statVal, color: "#D95555" }}>₹{totals.owes.toFixed(2)}</p>
+          </div>
+        </section>
+
+        {/* ── BODY ── */}
+        <div style={s.body}>
+          <div style={s.left}>
+            {/* Spending trend */}
+            <div style={s.section}>
+              <div style={s.secHeader}>
+                <span style={s.secTitle}>Spending trend</span>
+                <div style={{ display: "flex", gap: 4 }}>
+                  {["This year", "6 mo", "3 mo"].map(f => (
+                    <button key={f} onClick={() => setActiveFilter(f)} style={{
+                      fontSize: 11, padding: "4px 12px", borderRadius: 999,
+                      border: "1px solid #252530", fontFamily: "'Syne', sans-serif",
+                      background: activeFilter === f ? "#222228" : "transparent",
+                      color: activeFilter === f ? "#EDEAE4" : "#4A4845",
+                      cursor: "pointer", transition: "all 0.15s",
+                    }}>
+                      {f}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <BarChart data={spendData} labels={months} highlightIndex={4} />
+            </div>
+
+            {/* Groups + Friends */}
+            <div style={{ ...s.twoCol, borderTop: "1px solid #252530" }}>
+              <div style={{ ...s.halfSec, borderRight: !isMobile ? "1px solid #252530" : "none" }}>
+                <div style={s.secHeader}>
+                  <span style={s.secTitle}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8A8680" strokeWidth="2" strokeLinecap="round">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                    Groups
+                  </span>
+                  <span style={s.viewAll} onClick={() => navigate('/groups')}>View all</span>
+                </div>
+                {mappedGroups.length === 0 ? (
+                  <div style={s.emptyBox}>
+                     <p style={{ fontSize: 12, color: "#4A4845", marginBottom: 12 }}>No groups yet</p>
+                  </div>
+                ) : (
+                  mappedGroups.map((g, i) => (
+                    <div key={i} onClick={() => navigate(`/groups/${g._id}`)} style={{ ...s.listRow, borderBottom: i < mappedGroups.length - 1 ? "1px solid #252530" : "none" }}>
+                      <div style={s.lav}>{g.name[0].toUpperCase()}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{g.name}</div>
+                        <div style={{ fontSize: 11, color: "#4A4845" }}>{g.members} member{g.members !== 1 ? "s" : ""}</div>
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: g.amount < 0 ? "#D95555" : "#45C285" }}>
+                        {g.amount < 0 ? "−" : "+"}₹{Math.abs(g.amount).toFixed(2)}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div style={s.halfSec}>
+                <div style={s.secHeader}>
+                  <span style={s.secTitle}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8A8680" strokeWidth="2" strokeLinecap="round">
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                    </svg>
+                    Friends
+                  </span>
+                  <span style={s.viewAll} onClick={() => navigate('/friends')}>View all</span>
+                </div>
+                {mappedFriends.length === 0 ? (
+                  <div style={s.emptyBox}>
+                    <div style={{
+                      width: 40, height: 40, borderRadius: "50%", background: "#1A1A1F",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      margin: "0 auto 10px",
+                    }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4A4845" strokeWidth="2" strokeLinecap="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                        <line x1="19" y1="8" x2="19" y2="14" />
+                        <line x1="16" y1="11" x2="22" y2="11" />
+                      </svg>
+                    </div>
+                    <p style={{ fontSize: 12, color: "#4A4845", marginBottom: 12 }}>No friends yet</p>
+                    <button onClick={() => navigate('/friends')} style={{
+                      background: "#D4A853", color: "#1A0800", border: "none",
+                      borderRadius: 8, padding: "9px 18px", fontSize: 12,
+                      fontWeight: 700, fontFamily: "'Syne', sans-serif", cursor: "pointer",
+                    }}>
+                      Add Friend
+                    </button>
+                  </div>
+                ) : (
+                  mappedFriends.map((f, i) => (
+                    <div key={i} onClick={() => navigate('/friends')} style={{ ...s.listRow, borderBottom: i < mappedFriends.length - 1 ? "1px solid #252530" : "none" }}>
+                      <div style={s.lav}>{f.name[0].toUpperCase()}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.name}</div>
+                        <div style={{ fontSize: 11, color: "#4A4845" }}>{f.amount !== 0 ? "Settlement pending" : "Settled"}</div>
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: f.amount < 0 ? "#D95555" : (f.amount > 0 ? "#45C285" : "#8A8680") }}>
+                        {f.amount < 0 ? "−" : (f.amount > 0 ? "+" : "")}₹{Math.abs(f.amount).toFixed(2)}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div style={s.right}>
+            {/* Categories */}
+            <div style={s.catBody}>
+              <div style={{ ...s.secHeader, marginBottom: 16 }}>
+                <span style={s.secTitle}>Categories</span>
+              </div>
+              {categories.length > 0 ? (
+                <>
+                  <div style={s.donutWrap}>
+                    <DonutChart segments={categories} />
+                    <div style={s.donutCenter}>
+                      <span style={{ fontSize: 22, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", display: "block", lineHeight: 1.1 }}>
+                        {analytics?.categories?.length || 0}
+                      </span>
+                      <span style={{ fontSize: 10, color: "#4A4845" }}>categories</span>
+                    </div>
+                  </div>
+                  <div>
+                    {categories.map((c, i) => (
+                      <div key={i} style={s.catRow}>
+                        <div style={{ ...s.catDot, background: c.color }} />
+                        <span style={{ flex: 1, fontSize: 13, color: "#8A8680" }}>{c.name}</span>
+                        <div style={s.catBarBg}>
+                          <div style={{ height: 4, borderRadius: 2, background: c.color, width: `${c.pct}%` }} />
+                        </div>
+                        <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", minWidth: 28, textAlign: "right" }}>
+                          {c.pct}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div style={s.emptyBox}>
+                   <p style={{ fontSize: 12, color: "#4A4845" }}>No spending data</p>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Actions */}
+            <div style={s.qaSec}>
+              <div style={{ ...s.secHeader, marginBottom: 12 }}>
+                <span style={s.secTitle}>Quick actions</span>
+              </div>
+              <button onClick={() => navigate('/groups/new')} style={{ ...s.qaBtn, background: "#D4A853", borderColor: "#D4A853", color: "#1A0800", fontWeight: 700 }}
+                onMouseEnter={e => e.currentTarget.style.background = "#F0C878"}
+                onMouseLeave={e => e.currentTarget.style.background = "#D4A853"}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                New Group
+              </button>
+              <button onClick={() => navigate('/friends')} style={s.qaBtn}
+                onMouseEnter={e => { e.currentTarget.style.background = "#1A1A1F"; e.currentTarget.style.borderColor = "#2A2A32"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "#252530"; }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <line x1="19" y1="8" x2="19" y2="14" />
+                  <line x1="16" y1="11" x2="22" y2="11" />
+                </svg>
+                Add Friend
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ── BOTTOM DOCK ── */}
+        <footer style={s.fabBar}>
+          <div style={s.fabInner}>
+            {dockItems.slice(0, 2).map(item => {
+              const isOn = activeDock === item.label;
+              return (
+                <a key={item.label}
+                  href={item.href}
+                  onClick={e => { e.preventDefault(); setActiveDock(item.label); navigate(item.href); }}
+                  style={{
+                    ...s.fabItem,
+                    textDecoration: "none",
+                    background: isOn ? "#2A2A32" : "transparent",
+                    color: isOn ? "#D4A853" : "#4A4845",
+                  }}>
+                  <span style={{ display: "flex", color: "inherit" }}>{item.icon}</span>
+                  <span style={{ ...s.fabLbl, color: "inherit" }}>{item.label}</span>
+                </a>
+              );
+            })}
+
+            <div style={s.fabSep} />
+
+            <button onClick={() => navigate('/groups/new')} style={s.fabAdd}
+              onMouseEnter={e => e.currentTarget.style.background = "#F0C878"}
+              onMouseLeave={e => e.currentTarget.style.background = "#D4A853"}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A0800" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </button>
+
+            <div style={s.fabSep} />
+
+            {dockItems.slice(2).map(item => {
+              const isOn = activeDock === item.label;
+              return (
+                <a key={item.label}
+                  href={item.href}
+                  onClick={e => { e.preventDefault(); setActiveDock(item.label); navigate(item.href); }}
+                  style={{
+                    ...s.fabItem,
+                    textDecoration: "none",
+                    background: isOn ? "#2A2A32" : "transparent",
+                    color: isOn ? "#D4A853" : "#4A4845",
+                  }}>
+                  <span style={{ display: "flex", color: "inherit" }}>{item.icon}</span>
+                  <span style={{ ...s.fabLbl, color: "inherit" }}>{item.label}</span>
+                </a>
+              );
+            })}
+          </div>
+        </footer>
+      </div>
+    </>
+  );
+}
