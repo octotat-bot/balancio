@@ -11,6 +11,7 @@ import userRoutes from './routes/userRoutes.js';
 import settlementRoutes from './routes/settlementRoutes.js';
 import friendRoutes from './routes/friendRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 import { initializeSocket } from './socket/index.js';
 
 dotenv.config();
@@ -122,6 +123,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/settlements', settlementRoutes);
 app.use('/api/friends', friendRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.get('/api/health', (req, res) => {
     const dbState = ['disconnected', 'connected', 'connecting', 'disconnecting'];

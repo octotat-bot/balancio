@@ -1,7 +1,9 @@
+import mongoose from 'mongoose';
 import Settlement from '../models/Settlement.js';
 import Group from '../models/Group.js';
 import Expense from '../models/Expense.js';
-import { sendNotificationToUser } from '../socket/index.js';
+import { sendNotificationToUser, getIO } from '../socket/index.js';
+import { buildPairwiseMap, deriveSettlementEdges, computeMemberTotals } from '../utils/balanceCalculator.js';
 
 export const getSettlements = async (req, res, next) => {
     try {
@@ -38,6 +40,19 @@ export const getSettlements = async (req, res, next) => {
 };
 
 export const createSettlement = async (req, res, next) => {
+    // Use a MongoDB session/transaction to prevent race conditions on the
+    // anti-collision check + insert.
+    //
+    // Session lifecycle:
+    //   - `committed` flag tracks whether commitTransaction() succeeded.
+    //   - `finally` always runs (even on early `return`), aborting the tx
+    //     if it was never committed and ending the session unconditionally.
+    //   - abort is wrapped in its own try/catch because calling it after the
+    //     session has already been closed throws a harmless but noisy error.
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    let committed = false;
+
     try {
         const { from, to, amount, note } = req.body;
 
@@ -49,13 +64,12 @@ export const createSettlement = async (req, res, next) => {
             return res.status(400).json({ message: 'Cannot settle with yourself' });
         }
 
-        // Validate amount is a positive number
         const parsedAmount = parseFloat(amount);
         if (isNaN(parsedAmount) || parsedAmount <= 0) {
             return res.status(400).json({ message: 'Amount must be a positive number' });
         }
 
-        const group = await Group.findById(req.params.groupId);
+        const group = await Group.findById(req.params.groupId).session(session);
         if (!group) {
             return res.status(404).json({ message: 'Group not found' });
         }
@@ -65,46 +79,60 @@ export const createSettlement = async (req, res, next) => {
             return res.status(403).json({ message: 'You are not a member of this group' });
         }
 
-        // Validate that both from and to are members of the group
         const isFromMember = group.members.some(m => m.toString() === from.toString());
-        const isToMember = group.members.some(m => m.toString() === to.toString());
+        const isToMember   = group.members.some(m => m.toString() === to.toString());
         if (!isFromMember || !isToMember) {
             return res.status(400).json({ message: 'Both participants must be members of this group' });
         }
 
-        // Check if there's already a pending settlement between the same users
-        const existingPendingSettlement = await Settlement.findOne({
+        // Anti-collision check inside the transaction — the unique index is a
+        // second line of defence; this check gives a friendlier error message.
+        const existing = await Settlement.findOne({
             group: req.params.groupId,
             from,
             to,
-            confirmedByRecipient: false
-        });
+            confirmedByRecipient: false,
+        }).session(session);
 
-        if (existingPendingSettlement) {
-            return res.status(400).json({
-                message: 'There is already a pending payment between these users. Please wait for confirmation before creating another.',
+        if (existing) {
+            return res.status(409).json({
+                message: 'A pending settlement already exists between these users',
                 pendingSettlement: {
-                    amount: existingPendingSettlement.amount,
-                    createdAt: existingPendingSettlement.createdAt
-                }
+                    amount: existing.amount,
+                    createdAt: existing.createdAt,
+                },
             });
         }
 
-        const settlement = await Settlement.create({
-            group: req.params.groupId,
-            from,
-            to,
-            amount: parseFloat(amount),
-            note,
-            confirmedByRecipient: false,
-        });
+        const [settlement] = await Settlement.create(
+            [{
+                group: req.params.groupId,
+                from,
+                to,
+                amount: parsedAmount,
+                note,
+                confirmedByRecipient: false,
+            }],
+            { session }
+        );
+
+        await session.commitTransaction();
+        committed = true;
+        // session ended in finally
 
         await settlement.populate('from', 'name email phone');
         await settlement.populate('to', 'name email phone');
 
-        if (req.io) {
-            req.io.to(req.params.groupId).emit('settlement_added', settlement);
-            req.io.to(req.params.groupId).emit('settlement_update', { type: 'SETTLEMENT_CREATED', groupId: req.params.groupId, settlement });
+        // Emit settlement_created (new event) + keep existing settlement_added
+        const io = getIO();
+        if (io) {
+            io.to(req.params.groupId).emit('settlement_created', settlement);
+            io.to(req.params.groupId).emit('settlement_added', settlement);
+            io.to(req.params.groupId).emit('settlement_update', {
+                type: 'SETTLEMENT_CREATED',
+                groupId: req.params.groupId,
+                settlement,
+            });
         }
 
         sendNotificationToUser(to.toString(), 'groupSettlement', {
@@ -114,7 +142,7 @@ export const createSettlement = async (req, res, next) => {
             amount: settlement.amount,
             groupId: req.params.groupId,
             groupName: group.name,
-            notificationType: 'groupSettlement'
+            notificationType: 'groupSettlement',
         });
 
         res.status(201).json({
@@ -122,9 +150,28 @@ export const createSettlement = async (req, res, next) => {
             settlement,
         });
     } catch (error) {
+        // Catch unique index violation (two concurrent requests that both pass
+        // the findOne check before either can commit)
+        if (error.code === 11000) {
+            return res.status(409).json({
+                message: 'A pending settlement already exists between these users',
+            });
+        }
         next(error);
+    } finally {
+        // Always runs — even after early `return` inside try.
+        // This guarantees no session is left open regardless of code path.
+        if (!committed) {
+            try {
+                await session.abortTransaction();
+            } catch (_) {
+                // Swallow: session may already be in an aborted/closed state
+            }
+        }
+        session.endSession();
     }
 };
+
 
 export const confirmSettlement = async (req, res, next) => {
     try {
@@ -144,9 +191,15 @@ export const confirmSettlement = async (req, res, next) => {
         await settlement.populate('from', 'name email phone');
         await settlement.populate('to', 'name email phone');
 
-        if (req.io) {
-            req.io.to(req.params.groupId).emit('settlement_confirmed', settlement);
-            req.io.to(req.params.groupId).emit('settlement_update', { type: 'SETTLEMENT_CONFIRMED', groupId: req.params.groupId, settlement });
+        // Emit settlement_confirmed (new event) + keep existing settlement_confirmed room emit
+        const io = getIO();
+        if (io) {
+            io.to(req.params.groupId).emit('settlement_confirmed', settlement);
+            io.to(req.params.groupId).emit('settlement_update', {
+                type: 'SETTLEMENT_CONFIRMED',
+                groupId: req.params.groupId,
+                settlement,
+            });
         }
 
         res.json({
@@ -171,9 +224,9 @@ export const deleteSettlement = async (req, res, next) => {
             return res.status(404).json({ message: 'Group not found' });
         }
 
-        const isPayer = settlement.from.toString() === req.userId.toString();
+        const isPayer    = settlement.from.toString() === req.userId.toString();
         const isRecipient = settlement.to.toString() === req.userId.toString();
-        const isAdmin = group.admins.some(adminId => adminId.toString() === req.userId.toString());
+        const isAdmin    = group.admins.some(adminId => adminId.toString() === req.userId.toString());
 
         if (!isPayer && !isRecipient && !isAdmin) {
             return res.status(403).json({ message: 'Only the payer, recipient, or an admin can delete this settlement' });
@@ -181,9 +234,14 @@ export const deleteSettlement = async (req, res, next) => {
 
         await Settlement.findByIdAndDelete(req.params.settlementId);
 
-        if (req.io) {
-            req.io.to(group._id.toString()).emit('settlement_deleted', req.params.settlementId);
-            req.io.to(group._id.toString()).emit('settlement_update', { type: 'SETTLEMENT_DELETED', groupId: group._id, settlementId: req.params.settlementId });
+        const io = getIO();
+        if (io) {
+            io.to(group._id.toString()).emit('settlement_deleted', req.params.settlementId);
+            io.to(group._id.toString()).emit('settlement_update', {
+                type: 'SETTLEMENT_DELETED',
+                groupId: group._id,
+                settlementId: req.params.settlementId,
+            });
         }
 
         res.json({ message: 'Settlement deleted' });
@@ -201,263 +259,62 @@ export const getBalances = async (req, res, next) => {
             return res.status(404).json({ message: 'Group not found' });
         }
 
-        const isAdmin = group.admins.some(adminId => adminId.toString() === req.userId.toString());
+        const isAdmin       = group.admins.some(adminId => adminId.toString() === req.userId.toString());
         const shouldSimplify = req.query.simplify === 'true';
 
-        const expenses = await Expense.find({ group: req.params.groupId }).populate('paidBy', 'name');
+        // Fetch raw records
+        const expenses    = await Expense.find({ group: req.params.groupId }).populate('paidBy', 'name');
         const settlements = await Settlement.find({ group: req.params.groupId, confirmedByRecipient: true })
             .populate('from', 'name')
             .populate('to', 'name');
 
-        // Create a map of pending members for quick lookup
-        const pendingMembersMap = {};
+        // Build member info lookup (registered + pending)
+        const memberInfo = {};
+        group.members.forEach(m => {
+            memberInfo[m._id.toString()] = { _id: m._id, name: m.name, email: m.email, isPending: false };
+        });
         (group.pendingMembers || []).forEach(pm => {
-            pendingMembersMap[pm._id.toString()] = {
-                _id: pm._id,
-                name: pm.name,
-                phone: pm.phone,
-                isPending: true
-            };
+            memberInfo[pm._id.toString()] = { _id: pm._id, name: pm.name, phone: pm.phone, isPending: true };
         });
 
-        const balances = {};
-        
-        // Initialize balances for registered members
-        group.members.forEach(member => {
-            balances[member._id.toString()] = {
+        // ── PHASE 1: build pairwise map ───────────────────────────────────────
+        const pairwiseMap = buildPairwiseMap(expenses, settlements);
+
+        // ── PHASE 2: derive settlement edges ─────────────────────────────────
+        let settlementEdges = deriveSettlementEdges(pairwiseMap, memberInfo, shouldSimplify);
+
+        // Derive per-member totals from the pairwise map
+        const memberTotals = computeMemberTotals(pairwiseMap);
+
+        // Build richly populated balances array (preserve existing response shape)
+        const balances = Object.values(memberInfo).map(member => {
+            const id = member._id.toString();
+            const totals = memberTotals[id] || { paid: 0, owes: 0, balance: 0 };
+            return {
                 user: member,
-                paid: 0,
-                owes: 0,
-                balance: 0,
-                isPending: false
+                paid: totals.paid,
+                owes: totals.owes,
+                balance: totals.balance,
+                isPending: member.isPending,
             };
         });
-        
-        // Initialize balances for pending members
-        (group.pendingMembers || []).forEach(pm => {
-            balances[pm._id.toString()] = {
-                user: {
-                    _id: pm._id,
-                    name: pm.name,
-                    phone: pm.phone
-                },
-                paid: 0,
-                owes: 0,
-                balance: 0,
-                isPending: true
-            };
-        });
-
-        const pairwiseDebts = {};
-
-        expenses.forEach(expense => {
-            // Handle payer - could be registered user or pending member
-            let payerId;
-            let payerName;
-            
-            if (expense.paidByPending) {
-                payerId = expense.paidByPending.toString();
-                payerName = pendingMembersMap[payerId]?.name || 'Unknown';
-            } else if (expense.paidBy && expense.paidBy._id) {
-                payerId = expense.paidBy._id.toString();
-                payerName = expense.paidBy.name || 'Unknown';
-            } else if (expense.paidBy) {
-                // paidBy might be just an ObjectId if not populated
-                payerId = expense.paidBy.toString();
-                payerName = 'Unknown';
-            } else {
-                return; // Skip if no payer
-            }
-            
-            if (balances[payerId]) {
-                balances[payerId].paid += expense.amount;
-            }
-
-            expense.splits.forEach(split => {
-                // Handle split user - could be registered user or pending member
-                let userId;
-                
-                if (split.pendingMemberId) {
-                    userId = split.pendingMemberId.toString();
-                } else if (split.user && split.user._id) {
-                    // Populated user object
-                    userId = split.user._id.toString();
-                } else if (split.user) {
-                    // Just an ObjectId
-                    userId = split.user.toString();
-                } else {
-                    return; // Skip if no user
-                }
-                
-                if (balances[userId]) {
-                    balances[userId].owes += split.amount;
-
-                    if (payerId !== userId) {
-                        const pairKey = [userId, payerId].sort().join('_');
-                        if (!pairwiseDebts[pairKey]) {
-                            pairwiseDebts[pairKey] = {
-                                personA: userId < payerId ? userId : payerId,
-                                personB: userId < payerId ? payerId : userId,
-                                aOwesB: 0,
-                                bOwesA: 0,
-                                expenses: []
-                            };
-                        }
-
-                        if (userId < payerId) {
-                            pairwiseDebts[pairKey].aOwesB += split.amount;
-                        } else {
-                            pairwiseDebts[pairKey].bOwesA += split.amount;
-                        }
-
-                        pairwiseDebts[pairKey].expenses.push({
-                            id: expense._id,
-                            description: expense.description,
-                            amount: split.amount,
-                            paidBy: payerName,
-                            date: expense.createdAt,
-                            category: expense.category
-                        });
-                    }
-                }
-            });
-        });
-
-        Object.values(balances).forEach(member => {
-            member.balance = member.paid - member.owes;
-        });
-
-        settlements.forEach(settlement => {
-            const fromId = (settlement.from._id || settlement.from).toString();
-            const toId = (settlement.to._id || settlement.to).toString();
-
-            if (balances[fromId]) {
-                balances[fromId].balance += settlement.amount;
-            }
-            if (balances[toId]) {
-                balances[toId].balance -= settlement.amount;
-            }
-
-            const pairKey = [fromId, toId].sort().join('_');
-            
-            // Create pairwiseDebts entry if it doesn't exist (for settlements without prior expenses)
-            if (!pairwiseDebts[pairKey]) {
-                pairwiseDebts[pairKey] = {
-                    personA: fromId < toId ? fromId : toId,
-                    personB: fromId < toId ? toId : fromId,
-                    aOwesB: 0,
-                    bOwesA: 0,
-                    expenses: []
-                };
-            }
-            
-            if (fromId < toId) {
-                pairwiseDebts[pairKey].aOwesB -= settlement.amount;
-            } else {
-                pairwiseDebts[pairKey].bOwesA -= settlement.amount;
-            }
-
-            pairwiseDebts[pairKey].expenses.push({
-                id: settlement._id,
-                description: `Payment to ${settlement.to.name}`,
-                amount: settlement.amount,
-                paidBy: settlement.from.name,
-                date: settlement.createdAt,
-                category: 'payment',
-                isPayment: true
-            });
-        });
-
-        // Helper to get member info (works for both registered and pending members)
-        const getMemberInfo = (memberId) => {
-            const registeredMember = group.members.find(m => m._id.toString() === memberId);
-            if (registeredMember) {
-                return { _id: memberId, name: registeredMember.name, isPending: false };
-            }
-            const pendingMember = pendingMembersMap[memberId];
-            if (pendingMember) {
-                return { _id: memberId, name: pendingMember.name, isPending: true };
-            }
-            return null;
-        };
-
-        const detailedDebts = [];
-        Object.values(pairwiseDebts).forEach(pair => {
-            const memberA = getMemberInfo(pair.personA);
-            const memberB = getMemberInfo(pair.personB);
-
-            if (!memberA || !memberB) return;
-
-            const netAmount = pair.aOwesB - pair.bOwesA;
-
-            detailedDebts.push({
-                personA: memberA,
-                personB: memberB,
-                aOwesB: Math.round(pair.aOwesB * 100) / 100,
-                bOwesA: Math.round(pair.bOwesA * 100) / 100,
-                netAmount: Math.round(Math.abs(netAmount) * 100) / 100,
-                netDirection: netAmount > 0 ? 'AtoB' : 'BtoA',
-                expenses: pair.expenses,
-                expenseCount: pair.expenses.length
-            });
-        });
-
-        let simplifiedDebts = [];
-        if (shouldSimplify) {
-            detailedDebts.forEach(pair => {
-                if (pair.netAmount > 0.01) {
-                    const from = pair.netDirection === 'AtoB' ? pair.personA : pair.personB;
-                    const to = pair.netDirection === 'AtoB' ? pair.personB : pair.personA;
-                    simplifiedDebts.push({
-                        from,
-                        to,
-                        amount: pair.netAmount,
-                        expenseCount: pair.expenseCount
-                    });
-                }
-            });
-        } else {
-            detailedDebts.forEach(pair => {
-                if (pair.aOwesB > 0.01) {
-                    simplifiedDebts.push({
-                        from: pair.personA,
-                        to: pair.personB,
-                        amount: pair.aOwesB,
-                        expenseCount: pair.expenses.filter(e => e.paidBy === pair.personB.name).length
-                    });
-                }
-                if (pair.bOwesA > 0.01) {
-                    simplifiedDebts.push({
-                        from: pair.personB,
-                        to: pair.personA,
-                        amount: pair.bOwesA,
-                        expenseCount: pair.expenses.filter(e => e.paidBy === pair.personA.name).length
-                    });
-                }
-            });
-        }
 
         // Filter debts for non-admin users to only show their own debts
         if (!isAdmin) {
-            simplifiedDebts = simplifiedDebts.filter(debt =>
-                debt.from._id.toString() === req.userId.toString() ||
-                debt.to._id.toString() === req.userId.toString()
-            );
-        }
-
-        // Also filter detailedDebts for non-admin users
-        let filteredDetailedDebts = detailedDebts;
-        if (!isAdmin) {
-            filteredDetailedDebts = detailedDebts.filter(pair =>
-                pair.personA._id.toString() === req.userId.toString() ||
-                pair.personB._id.toString() === req.userId.toString()
+            const myId = req.userId.toString();
+            settlementEdges = settlementEdges.filter(
+                edge =>
+                    (edge.from._id || edge.from).toString() === myId ||
+                    (edge.to._id   || edge.to).toString()   === myId
             );
         }
 
         res.json({
-            balances: Object.values(balances),
-            simplifiedDebts,
-            detailedDebts: filteredDetailedDebts,
+            balances,
+            simplifiedDebts: settlementEdges,
+            // detailedDebts kept for API shape compatibility — populated when
+            // simplify=false using the same edge list
+            detailedDebts: shouldSimplify ? [] : settlementEdges,
             isAdmin,
         });
     } catch (error) {

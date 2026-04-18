@@ -1,3 +1,7 @@
+// DEPRECATED: use Group + Expense models instead.
+// This model is kept for read-only access to legacy direct-expense records.
+// Do NOT create new DirectExpense documents — route all new friend expenses
+// through groupController.createExpense using the linked Group record.
 import mongoose from 'mongoose';
 
 const directExpenseSchema = new mongoose.Schema({

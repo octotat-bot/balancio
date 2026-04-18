@@ -56,9 +56,19 @@ const groupSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        // MIGRATION NEEDED: existing direct-friendship groups have isLinkedFriendshipGroup:true
+        // Run: db.groups.updateMany({ isLinkedFriendshipGroup: true }, { $set: { type: 'direct' } })
+        // to backfill the new `type` field for existing records.
         isLinkedFriendshipGroup: {
             type: Boolean,
             default: false,
+        },
+        // New canonical discriminator — replaces isLinkedFriendshipGroup going forward.
+        // 'direct' = 1-on-1 friend expense group; 'group' = multi-member group
+        type: {
+            type: String,
+            enum: ['direct', 'group'],
+            default: 'group',
         },
         budgets: [
             {

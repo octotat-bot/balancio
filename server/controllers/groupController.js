@@ -3,6 +3,8 @@ import Group from '../models/Group.js';
 import Expense from '../models/Expense.js';
 import User from '../models/User.js';
 import Settlement from '../models/Settlement.js';
+import Notification from '../models/Notification.js';
+import { getIO } from '../socket/index.js';
 
 export const createGroup = async (req, res, next) => {
     try {
@@ -570,71 +572,109 @@ export const createExpense = async (req, res, next) => {
         }
 
         const isAdmin = group.admins.some(adminId => adminId.toString() === req.userId.toString());
-        
-        // Handle paidBy - can be a registered user or pending member
-        let expenseData = {
+
+        // ── Change #6: paidBy must be a registered user ───────────────────────
+        // Pending members may appear in splits but CANNOT be the payer.
+        if (paidByPending) {
+            return res.status(400).json({ message: 'Expense payer must be a registered user' });
+        }
+
+        const finalPaidBy = isAdmin && paidBy ? paidBy : req.userId.toString();
+
+        // Verify the resolved payer exists in the User collection
+        const payerUser = await User.findById(finalPaidBy).lean();
+        if (!payerUser) {
+            return res.status(400).json({ message: 'Expense payer must be a registered user' });
+        }
+
+        // ── Change #2: Server-side split recomputation & validation ──────────
+        const totalAmount = parseFloat(amount);
+        if (isNaN(totalAmount) || totalAmount <= 0) {
+            return res.status(400).json({ message: 'Amount must be a positive number' });
+        }
+
+        // Collect all participant ids (registered + pending) in the splits payload
+        const splitParticipants = (splits && splits.length > 0) ? splits : [];
+
+        let processedSplits = [];
+
+        if (splitType === 'equal') {
+            // Recompute equal splits ignoring client-supplied amounts
+            if (splitParticipants.length === 0) {
+                return res.status(400).json({ message: 'Splits must contain at least one participant' });
+            }
+            const n = splitParticipants.length;
+            const base = Math.floor((totalAmount / n) * 100) / 100; // floor to 2dp
+            const remainder = Math.round((totalAmount - base * n) * 100) / 100;
+
+            processedSplits = splitParticipants.map((split, idx) => {
+                const splitAmount = idx === 0 ? Math.round((base + remainder) * 100) / 100 : base;
+                if (split.pendingMemberId) {
+                    return { pendingMemberId: split.pendingMemberId, amount: splitAmount };
+                }
+                return { user: split.user, amount: splitAmount };
+            });
+
+        } else if (splitType === 'percentage') {
+            // Client sends amounts as percentages; convert to actual amounts
+            const totalPct = splitParticipants.reduce((s, sp) => s + Number(sp.amount || 0), 0);
+            if (Math.abs(totalPct - 100) > 0.01) {
+                return res.status(400).json({ message: 'Splits do not sum to expense total' });
+            }
+            processedSplits = splitParticipants.map(split => {
+                const splitAmount = Math.round((split.amount / 100) * totalAmount * 100) / 100;
+                if (split.pendingMemberId) {
+                    return { pendingMemberId: split.pendingMemberId, amount: splitAmount };
+                }
+                return { user: split.user, amount: splitAmount };
+            });
+            // Correct rounding drift on first element
+            const computed = processedSplits.reduce((s, sp) => s + sp.amount, 0);
+            const drift = Math.round((totalAmount - computed) * 100) / 100;
+            if (processedSplits.length > 0) processedSplits[0].amount = Math.round((processedSplits[0].amount + drift) * 100) / 100;
+
+        } else {
+            // 'unequal', 'shares', 'itemized' — client supplies exact amounts; validate sum
+            processedSplits = splitParticipants.map(split => {
+                const splitAmount = Math.round(Number(split.amount) * 100) / 100;
+                if (split.pendingMemberId) {
+                    return { pendingMemberId: split.pendingMemberId, amount: splitAmount };
+                }
+                return { user: split.user, amount: splitAmount };
+            });
+
+            const splitSum = Math.round(processedSplits.reduce((s, sp) => s + sp.amount, 0) * 100) / 100;
+            if (Math.abs(splitSum - totalAmount) > 0.01) {
+                return res.status(400).json({ message: 'Splits do not sum to expense total' });
+            }
+        }
+
+        // Process itemized items (no recomputation needed — they describe line items)
+        const processedItems = [];
+        if (items && items.length > 0) {
+            for (const item of items) {
+                processedItems.push({
+                    name: item.name,
+                    amount: Math.round(Number(item.amount) * 100) / 100,
+                    involved: item.involved || [],
+                    involvedPending: item.involvedPending || []
+                });
+            }
+        }
+
+        const expenseData = {
             group: groupId,
             description,
-            amount,
+            amount: totalAmount,
+            paidBy: finalPaidBy,
             category,
             date: date || new Date(),
             splitType,
             notes,
             createdBy: req.userId,
+            splits: processedSplits,
+            items: processedItems,
         };
-
-        // If paidByPending is provided (pending member paid), use it
-        if (paidByPending) {
-            // Verify the pending member exists in this group
-            const pendingMemberExists = group.pendingMembers.some(
-                pm => pm._id.toString() === paidByPending
-            );
-            if (!pendingMemberExists) {
-                return res.status(400).json({ message: 'Pending member not found in this group' });
-            }
-            expenseData.paidByPending = paidByPending;
-        } else {
-            // Regular user paid
-            const finalPaidBy = isAdmin && paidBy ? paidBy : req.userId;
-            expenseData.paidBy = finalPaidBy;
-        }
-
-        // Process splits - separate registered users from pending members
-        const processedSplits = [];
-        const processedItems = [];
-
-        if (splits && splits.length > 0) {
-            for (const split of splits) {
-                if (split.pendingMemberId) {
-                    // This is a pending member split
-                    processedSplits.push({
-                        pendingMemberId: split.pendingMemberId,
-                        amount: split.amount
-                    });
-                } else if (split.user) {
-                    // This is a registered user split
-                    processedSplits.push({
-                        user: split.user,
-                        amount: split.amount
-                    });
-                }
-            }
-        }
-
-        if (items && items.length > 0) {
-            for (const item of items) {
-                const processedItem = {
-                    name: item.name,
-                    amount: item.amount,
-                    involved: item.involved || [],
-                    involvedPending: item.involvedPending || []
-                };
-                processedItems.push(processedItem);
-            }
-        }
-
-        expenseData.splits = processedSplits;
-        expenseData.items = processedItems;
 
         const expense = await Expense.create(expenseData);
 
@@ -644,7 +684,7 @@ export const createExpense = async (req, res, next) => {
         group.updatedAt = new Date();
         await group.save();
 
-        let warning = null;
+        // ── Change #5: Budget alerts via Notification model + socket ─────────
         if (group.budgets && group.budgets.length > 0) {
             const budget = group.budgets.find(b => b.category === category);
             if (budget) {
@@ -661,21 +701,41 @@ export const createExpense = async (req, res, next) => {
                         }
                     },
                     {
-                        $group: {
-                            _id: null,
-                            total: { $sum: "$amount" }
-                        }
+                        $group: { _id: null, total: { $sum: '$amount' } }
                     }
                 ]);
 
-                const totalSpent = (stats[0]?.total || 0);
+                const totalSpent = stats[0]?.total || 0;
 
                 if (totalSpent > budget.limit) {
-                    warning = `Budget Alert: You've spent ${totalSpent} on ${category} this month (Limit: ${budget.limit})`;
+                    const alertPayload = {
+                        category,
+                        totalSpent,
+                        limit: budget.limit,
+                        groupId,
+                        groupName: group.name,
+                    };
+
+                    // Create a Notification record for every group member
+                    const notifDocs = group.members.map(memberId => ({
+                        userId: memberId,
+                        groupId,
+                        type: 'budget_alert',
+                        payload: alertPayload,
+                        read: false,
+                    }));
+                    await Notification.insertMany(notifDocs);
+
+                    // Emit to the group's socket room
+                    const io = getIO();
+                    if (io) {
+                        io.to(groupId).emit('budget_alert', alertPayload);
+                    }
                 }
             }
         }
 
+        // Emit expense_added (existing event — preserved)
         if (req.io) {
             const populatedExpenseForSocket = await Expense.findById(expense._id)
                 .populate('paidBy', 'name email')
@@ -685,10 +745,11 @@ export const createExpense = async (req, res, next) => {
             req.io.to(groupId).emit('group_update', { type: 'EXPENSE_ADDED', groupId, expense: populatedExpenseForSocket });
         }
 
+        // NOTE: `warning` field removed from response — budget alerts are now
+        // pushed via socket and stored as Notification records.
         res.status(201).json({
             message: 'Expense added successfully',
             expense,
-            warning
         });
     } catch (error) {
         next(error);
@@ -718,18 +779,70 @@ export const updateExpense = async (req, res, next) => {
         const { description, amount, paidBy, category, date, splitType, splits, notes, items } = req.body;
 
         expense.description = description || expense.description;
-        expense.amount = amount || expense.amount;
+        expense.category    = category    || expense.category;
+        expense.date        = date        || expense.date;
+        expense.notes       = notes !== undefined ? notes : expense.notes;
 
+        // ── paidBy update: only admins, only registered users ────────────────
         if (isAdmin && paidBy) {
-            expense.paidBy = paidBy;
+            const payerUser = await User.findById(paidBy).lean();
+            if (!payerUser) {
+                return res.status(400).json({ message: 'Expense payer must be a registered user' });
+            }
+            expense.paidBy        = paidBy;
+            expense.paidByPending = undefined; // clear legacy field if present
         }
 
-        expense.category = category || expense.category;
-        expense.date = date || expense.date;
-        expense.splitType = splitType || expense.splitType;
-        expense.splits = splits || expense.splits;
-        expense.items = items || expense.items;
-        expense.notes = notes !== undefined ? notes : expense.notes;
+        // ── amount + splits recomputation & validation ────────────────────────
+        const totalAmount = amount !== undefined ? parseFloat(amount) : expense.amount;
+        if (amount !== undefined) {
+            if (isNaN(totalAmount) || totalAmount <= 0) {
+                return res.status(400).json({ message: 'Amount must be a positive number' });
+            }
+            expense.amount = totalAmount;
+        }
+
+        if (splits && splits.length > 0) {
+            const resolvedSplitType = splitType || expense.splitType;
+
+            let processedSplits;
+            if (resolvedSplitType === 'equal') {
+                const n    = splits.length;
+                const base = Math.floor((totalAmount / n) * 100) / 100;
+                const rem  = Math.round((totalAmount - base * n) * 100) / 100;
+                processedSplits = splits.map((s, idx) => {
+                    const amt = idx === 0 ? Math.round((base + rem) * 100) / 100 : base;
+                    return s.pendingMemberId ? { pendingMemberId: s.pendingMemberId, amount: amt } : { user: s.user, amount: amt };
+                });
+            } else if (resolvedSplitType === 'percentage') {
+                const totalPct = splits.reduce((acc, s) => acc + Number(s.amount || 0), 0);
+                if (Math.abs(totalPct - 100) > 0.01) {
+                    return res.status(400).json({ message: 'Splits do not sum to expense total' });
+                }
+                processedSplits = splits.map(s => {
+                    const amt = Math.round((s.amount / 100) * totalAmount * 100) / 100;
+                    return s.pendingMemberId ? { pendingMemberId: s.pendingMemberId, amount: amt } : { user: s.user, amount: amt };
+                });
+                const computed = processedSplits.reduce((acc, s) => acc + s.amount, 0);
+                const drift    = Math.round((totalAmount - computed) * 100) / 100;
+                if (processedSplits.length > 0) processedSplits[0].amount = Math.round((processedSplits[0].amount + drift) * 100) / 100;
+            } else {
+                // unequal / shares / itemized — validate sum
+                processedSplits = splits.map(s => {
+                    const amt = Math.round(Number(s.amount) * 100) / 100;
+                    return s.pendingMemberId ? { pendingMemberId: s.pendingMemberId, amount: amt } : { user: s.user, amount: amt };
+                });
+                const splitSum = Math.round(processedSplits.reduce((acc, s) => acc + s.amount, 0) * 100) / 100;
+                if (Math.abs(splitSum - totalAmount) > 0.01) {
+                    return res.status(400).json({ message: 'Splits do not sum to expense total' });
+                }
+            }
+
+            expense.splits = processedSplits;
+        }
+
+        if (splitType) expense.splitType = splitType;
+        if (items !== undefined) expense.items = items;
 
         await expense.save();
         await expense.populate('paidBy', 'name email');

@@ -4,7 +4,7 @@ import User from '../models/User.js';
 
 let ioInstance = null;
 
-export const getIO = () => ioInstance;
+export const getIO = () => ioInstance; // available to controllers that don't have req.io
 
 export const initializeSocket = (io) => {
     ioInstance = io;

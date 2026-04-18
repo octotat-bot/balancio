@@ -1,3 +1,7 @@
+// DEPRECATED: use Group + Settlement models instead.
+// This model is kept for read-only access to legacy direct-settlement records.
+// Do NOT create new DirectSettlement documents — route all new friend settlements
+// through settlementController using the linked Group record.
 import mongoose from 'mongoose';
 
 const directSettlementSchema = new mongoose.Schema(
