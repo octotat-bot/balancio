@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { CheckCircle, XCircle, AlertCircle, Info, X, Sparkles } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, Info, X } from 'lucide-react';
 
 const ToastContext = createContext(null);
 
@@ -66,7 +66,27 @@ export function ToastProvider({ children }) {
 
 function ToastContainer({ toasts, onClose }) {
     return (
-        <div className="fixed top-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none">
+        <div style={{
+            position: 'fixed',
+            bottom: '30px', /* Bottom center display for premium feel */
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 9999,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            pointerEvents: 'none',
+        }}>
+            <style>{`
+                @keyframes toastSlideUp {
+                    0% { opacity: 0; transform: translateY(20px) scale(0.95); }
+                    100% { opacity: 1; transform: translateY(0) scale(1); }
+                }
+                @keyframes toastFadeOut {
+                    0% { opacity: 1; transform: translateY(0) scale(1); }
+                    100% { opacity: 0; transform: translateY(10px) scale(0.95); }
+                }
+            `}</style>
             {toasts.map((toast) => (
                 <Toast key={toast.id} {...toast} onClose={() => onClose(toast.id)} />
             ))}
@@ -91,125 +111,107 @@ function Toast({ title, message, type, duration, isExiting, onClose }) {
 
     const configs = {
         success: {
-            icon: <CheckCircle className="h-5 w-5" />,
-            gradient: 'from-emerald-500 to-teal-500',
-            bgGlow: 'bg-emerald-500/10',
-            iconBg: 'bg-gradient-to-br from-emerald-500 to-teal-600',
-            textColor: 'text-emerald-600',
-            progressGradient: 'from-emerald-400 via-teal-500 to-emerald-600',
+            icon: <CheckCircle size={18} color="#fff" />,
+            iconBg: '#45C285', // Jade green
+            shadow: 'rgba(69, 194, 133, 0.2)'
         },
         error: {
-            icon: <XCircle className="h-5 w-5" />,
-            gradient: 'from-rose-500 to-red-500',
-            bgGlow: 'bg-rose-500/10',
-            iconBg: 'bg-gradient-to-br from-rose-500 to-red-600',
-            textColor: 'text-rose-600',
-            progressGradient: 'from-rose-400 via-red-500 to-rose-600',
+            icon: <XCircle size={18} color="#fff" />,
+            iconBg: '#D95555', // Crimson
+            shadow: 'rgba(217, 85, 85, 0.2)'
         },
         warning: {
-            icon: <AlertCircle className="h-5 w-5" />,
-            gradient: 'from-amber-500 to-orange-500',
-            bgGlow: 'bg-amber-500/10',
-            iconBg: 'bg-gradient-to-br from-amber-500 to-orange-600',
-            textColor: 'text-amber-600',
-            progressGradient: 'from-amber-400 via-orange-500 to-amber-600',
+            icon: <AlertCircle size={18} color="#fff" />,
+            iconBg: '#D4A853', // Gold
+            shadow: 'rgba(212, 168, 83, 0.2)'
         },
         info: {
-            icon: <Info className="h-5 w-5" />,
-            gradient: 'from-blue-500 to-indigo-500',
-            bgGlow: 'bg-blue-500/10',
-            iconBg: 'bg-gradient-to-br from-blue-500 to-indigo-600',
-            textColor: 'text-blue-600',
-            progressGradient: 'from-blue-400 via-indigo-500 to-blue-600',
+            icon: <Info size={18} color="#fff" />,
+            iconBg: '#3b82f6', // Blue
+            shadow: 'rgba(59, 130, 246, 0.2)'
         },
     };
 
     const config = configs[type];
 
     return (
-        <div
-            className={`
-                pointer-events-auto
-                relative overflow-hidden
-                bg-white/95 backdrop-blur-xl
-                rounded-2xl
-                shadow-[0_8px_32px_rgba(0,0,0,0.12),0_4px_8px_rgba(0,0,0,0.08)]
-                border border-white/60
-                min-w-[340px] max-w-[420px]
-                transform transition-all duration-300 ease-out
-                ${isExiting
-                    ? 'animate-toast-exit opacity-0 translate-x-full'
-                    : 'animate-toast-enter'
-                }
-            `}
-            style={{
-                boxShadow: `0 8px 32px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.8)`,
-            }}
-        >
-            {/* Subtle glow effect */}
-            <div className={`absolute inset-0 ${config.bgGlow} opacity-50 blur-xl`} />
-
-            {/* Content */}
-            <div className="relative p-4">
-                <div className="flex items-start gap-3.5">
-                    {/* Animated Icon Container */}
-                    <div className={`
-                        relative flex-shrink-0 w-10 h-10 rounded-xl ${config.iconBg}
-                        flex items-center justify-center
-                        shadow-lg
-                        animate-icon-pop
-                    `}>
-                        <div className="text-white">
-                            {config.icon}
-                        </div>
-                        {/* Icon glow */}
-                        <div className={`absolute inset-0 rounded-xl ${config.iconBg} blur-md opacity-40`} />
-                    </div>
-
-                    {/* Text Content */}
-                    <div className="flex-1 min-w-0 pt-0.5">
-                        {title && (
-                            <p className="font-semibold text-[15px] text-gray-900 leading-tight">
-                                {title}
-                            </p>
-                        )}
-                        {message && (
-                            <p className="text-[13px] text-gray-500 mt-1 leading-relaxed">
-                                {message}
-                            </p>
-                        )}
-                    </div>
-
-                    {/* Close Button */}
-                    <button
-                        onClick={onClose}
-                        className="
-                            flex-shrink-0 w-7 h-7 rounded-lg
-                            flex items-center justify-center
-                            text-gray-400 hover:text-gray-600
-                            hover:bg-gray-100/80
-                            transition-all duration-200
-                            focus:outline-none focus:ring-2 focus:ring-gray-200
-                        "
-                    >
-                        <X className="h-4 w-4" />
-                    </button>
+        <div style={{
+            pointerEvents: 'auto',
+            position: 'relative',
+            overflow: 'hidden',
+            background: 'rgba(19, 19, 22, 0.85)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            borderRadius: '16px',
+            border: '1px solid #252530',
+            boxShadow: \`0 16px 40px rgba(0,0,0,0.5), 0 0 20px \${config.shadow}\`,
+            minWidth: '320px',
+            maxWidth: '420px',
+            fontFamily: "'Syne', sans-serif",
+            animation: isExiting ? 'toastFadeOut 0.3s forwards ease-in' : 'toastSlideUp 0.4s forwards cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+        }}>
+            {/* Content Wrap */}
+            <div style={{ padding: '16px', display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+                {/* Icon Container */}
+                <div style={{
+                    flexShrink: 0,
+                    width: '36px', height: '36px',
+                    borderRadius: '12px',
+                    background: config.iconBg,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: \`0 4px 12px \${config.shadow}\`
+                }}>
+                    {config.icon}
                 </div>
+
+                {/* Text Context */}
+                <div style={{ flex: 1, minWidth: 0, paddingTop: '2px' }}>
+                    {title && (
+                        <p style={{
+                            margin: 0, fontSize: '14px', fontWeight: 700,
+                            color: '#EDEAE4', lineHeight: '1.2'
+                        }}>
+                            {title}
+                        </p>
+                    )}
+                    {message && (
+                        <p style={{
+                            margin: '4px 0 0 0', fontSize: '13px',
+                            color: '#8A8680', lineHeight: '1.4'
+                        }}>
+                            {message}
+                        </p>
+                    )}
+                </div>
+
+                {/* Close Toggle */}
+                <button
+                    onClick={onClose}
+                    style={{
+                        background: 'transparent', border: 'none',
+                        width: '24px', height: '24px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#4A4845', cursor: 'pointer',
+                        padding: 0, marginTop: '2px', borderRadius: '50%',
+                        transition: 'color 0.2s'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.color = '#EDEAE4'}
+                    onMouseLeave={e => e.currentTarget.style.color = '#4A4845'}
+                >
+                    <X size={16} />
+                </button>
             </div>
 
-            {/* Animated Progress Bar */}
-            <div className="h-1 bg-gray-100/80 overflow-hidden">
-                <div
-                    className={`
-                        h-full bg-gradient-to-r ${config.progressGradient}
-                        transition-all duration-75 ease-linear
-                        relative
-                    `}
-                    style={{ width: `${progress}%` }}
-                >
-                    {/* Shimmer effect on progress bar */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
-                </div>
+            {/* Progress Bar Indicator */}
+            <div style={{ height: '3px', background: '#252530', width: '100%', overflow: 'hidden' }}>
+                <div style={{
+                    height: '100%',
+                    width: \`\${progress}%\`,
+                    background: config.iconBg,
+                    transition: 'width 75ms linear',
+                    borderTopRightRadius: '3px',
+                    borderBottomRightRadius: '3px'
+                }} />
             </div>
         </div>
     );
