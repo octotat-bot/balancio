@@ -132,7 +132,7 @@ function Toast({ title, message, type, duration, isExiting, onClose }) {
         },
     };
 
-    const config = configs[type];
+    const config = configs[type] || configs['info'];
 
     return (
         <div style={{
