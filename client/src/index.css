@@ -931,3 +931,17 @@ body {
         grid-column: span 1 !important;
     }
 }
+
+/* ============================================
+   PLACEHOLDER STYLING (DARK THEME)
+   ============================================ */
+
+::placeholder {
+    color: #6A6763 !important;
+    opacity: 1 !important;
+}
+
+textarea::placeholder, input::placeholder {
+    color: #6A6763 !important;
+    opacity: 1 !important;
+}

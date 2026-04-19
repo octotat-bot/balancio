@@ -211,14 +211,16 @@ export function CreateGroup() {
                                         width: '100%',
                                         padding: '12px 16px',
                                         borderRadius: '12px',
-                                        border: '2px solid #e5e5e5',
+                                        backgroundColor: '#1A1A1F',
+                                        color: '#EDEAE4',
+                                        border: '2px solid #252530',
                                         fontSize: '15px',
                                         outline: 'none',
                                         resize: 'none',
                                         fontFamily: 'inherit',
                                     }}
-                                    onFocus={(e) => e.target.style.borderColor = '#000'}
-                                    onBlur={(e) => e.target.style.borderColor = '#e5e5e5'}
+                                    onFocus={(e) => e.target.style.borderColor = '#D4A853'}
+                                    onBlur={(e) => e.target.style.borderColor = '#252530'}
                                 />
                                 {errors.description && (
                                     <p style={{ marginTop: '6px', fontSize: '13px', color: '#dc2626' }}>{errors.description.message}</p>
@@ -240,8 +242,12 @@ export function CreateGroup() {
                         <CardContent style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             {/* Current User */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', backgroundColor: '#1A1A1F', borderRadius: '12px' }}>
-                                <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#D4A853', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600' }}>
-                                    {user?.name?.charAt(0).toUpperCase()}
+                                <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#D4A853', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600', overflow: 'hidden' }}>
+                                    {user?.avatar ? (
+                                        <img src={user.avatar} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    ) : (
+                                        user?.name?.charAt(0).toUpperCase()
+                                    )}
                                 </div>
                                 <div style={{ flex: 1 }}>
                                     <p style={{ fontWeight: '500', margin: 0 }}>{user?.name}</p>

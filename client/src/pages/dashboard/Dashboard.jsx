@@ -421,7 +421,11 @@ export default function Dashboard() {
           <div style={s.topRight}>
             <span style={s.timeText}>{time}</span>
             <div style={s.avatarCircle} onClick={() => navigate('/profile')}>
-              {user?.name?.[0]?.toUpperCase() || 'M'}
+              {user?.avatar ? (
+                <img src={user.avatar} alt="Profile" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+              ) : (
+                user?.name?.[0]?.toUpperCase() || 'M'
+              )}
             </div>
           </div>
         </header>

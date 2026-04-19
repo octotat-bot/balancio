@@ -27,20 +27,20 @@ export const Input = forwardRef(({
                         padding: Icon ? '0 40px 0 40px' : '0 12px',
                         borderRadius: '12px',
                         border: '2px solid',
-                        borderColor: error ? '#dc2626' : '#e5e5e5',
+                        borderColor: error ? '#D95555' : '#252530',
                         fontSize: '15px',
                         color: '#EDEAE4',
                         outline: 'none',
                         transition: 'border-color 0.2s',
-                        backgroundColor: error ? '#fef2f2' : '#fff',
+                        backgroundColor: error ? '#2A1515' : '#1A1A1F',
                         ...style,
                     }}
                     onFocus={(e) => {
-                        e.target.style.borderColor = error ? '#dc2626' : '#000000';
+                        e.target.style.borderColor = error ? '#D95555' : '#D4A853';
                         if (props.onFocus) props.onFocus(e);
                     }}
                     onBlur={(e) => {
-                        e.target.style.borderColor = error ? '#dc2626' : '#e5e5e5';
+                        e.target.style.borderColor = error ? '#D95555' : '#252530';
                         if (props.onBlur) props.onBlur(e);
                     }}
                     {...props}
