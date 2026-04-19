@@ -467,6 +467,7 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
                                 min="0" placeholder="0.00"
                                 {...register('amount')}
                                 style={{
+                                    width: '100%', boxSizing: 'border-box',
                                     padding: '24px 24px 24px 60px', fontSize: '48px', fontWeight: '800',
                                     border: '2px solid #252530', borderRadius: '24px', outline: 'none', transition: 'all 0.2s',
                                     backgroundColor: '#131316', color: '#EDEAE4'
@@ -575,7 +576,7 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
                     <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                             <span style={{ fontSize: '13px', color: '#8A8680', fontWeight: '500' }}>{selectedMembers.length} selected</span>
-                            <button type="button" onClick={() => setSelectedMembers(selectedMembers.length === memberList.length ? [] : memberList.map(m => m._id))} style={{ background: 'none', border: 'none', fontSize: '13px', color: '#3b82f6', fontWeight: '600', cursor: 'pointer' }}>
+                            <button type="button" onClick={() => setSelectedMembers(selectedMembers.length === memberList.length ? [] : memberList.map(m => m._id))} style={{ background: 'none', border: 'none', fontSize: '13px', color: '#D4A853', fontWeight: '600', cursor: 'pointer' }}>
                                 {selectedMembers.length === memberList.length ? 'Select None' : 'Select All'}
                             </button>
                         </div>

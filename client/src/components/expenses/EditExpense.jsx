@@ -178,6 +178,7 @@ export function EditExpense({ groupId, expense, members, onSuccess, onCancel, is
                         {...register('amount')}
                         style={{
                             width: '100%',
+                            boxSizing: 'border-box',
                             padding: '20px 20px 20px 50px',
                             fontSize: '32px',
                             fontWeight: '700',
