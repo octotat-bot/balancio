@@ -86,14 +86,17 @@ export function Layout() {
         topbar: {
             display: "flex", alignItems: "center", justifyContent: "space-between",
             padding: "14px 28px",
-            background: "#131316",
-            borderBottom: "1px solid #252530",
+            background: "rgba(19, 19, 22, 0.75)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            borderBottom: "1px solid rgba(37, 37, 48, 0.5)",
             position: "sticky", top: 0, zIndex: 50,
         },
         logoWrap: { display: "flex", alignItems: "center", gap: 10 },
         logoMark: {
             width: 32, height: 32, borderRadius: 8, background: "#D4A853",
             display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 4px 14px rgba(212, 168, 83, 0.2)",
         },
         logoName: { fontSize: 16, fontWeight: 800, letterSpacing: "0.02em" },
         topRight: { display: "flex", alignItems: "center", gap: 10 },
@@ -103,6 +106,7 @@ export function Layout() {
             background: "#5C3A10", border: "1.5px solid #8A6520",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 12, fontWeight: 700, color: "#F0C878", cursor: "pointer",
+            overflow: "hidden"
         },
         main: {
             flex: 1,
@@ -115,13 +119,17 @@ export function Layout() {
         fabBar: {
             display: "flex", alignItems: "center", justifyContent: "center",
             padding: "14px 0 18px",
-            background: "#131316", borderTop: "1px solid #252530",
+            background: "rgba(19, 19, 22, 0.8)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            borderTop: "1px solid rgba(37, 37, 48, 0.5)",
             position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50,
         },
         fabInner: {
             display: "flex", alignItems: "center", gap: 6,
             background: "#1A1A1F", border: "1px solid #252530",
             borderRadius: 999, padding: "6px 8px",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
         },
         fabItem: {
             display: "flex", flexDirection: "column", alignItems: "center", gap: 3,

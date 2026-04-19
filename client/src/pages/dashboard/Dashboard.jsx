@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "../../stores/authStore";
 import { useGroupStore } from "../../stores/groupStore";
 import { useFriendStore } from "../../stores/friendStore";
@@ -37,7 +38,23 @@ const GridIcon = ({ size = 16, color = "currentColor" }) => (
   </svg>
 );
 
-// ─── Donut chart ─────────────────────────────────────────────────────────────
+// ─── Skeletons ───────────────────────────────────────────────────────────────
+const Skeleton = ({ width, height, borderRadius = 8, style = {} }) => (
+  <motion.div
+    initial={{ opacity: 0.5 }}
+    animate={{ opacity: 1 }}
+    transition={{ repeat: Infinity, duration: 1, repeatType: "mirror" }}
+    style={{
+      width, height, borderRadius,
+      background: "linear-gradient(90deg, #1A1A1F 0%, #252530 50%, #1A1A1F 100%)",
+      backgroundSize: "200% 100%",
+      animation: "shimmer 2s infinite linear",
+      ...style
+    }}
+  />
+);
+
+// ─── Donut chart (Animated) ──────────────────────────────────────────────────
 function DonutChart({ segments }) {
   const r = 46;
   const circ = 2 * Math.PI * r;
@@ -48,15 +65,19 @@ function DonutChart({ segments }) {
       {segments.map((seg, i) => {
         const dash = (Math.max(seg.pct, 0.1) / 100) * circ;
         const gap  = circ - dash;
+        const finalOffset = -offset;
+        
         const el = (
-          <circle
+          <motion.circle
             key={i}
             cx="60" cy="60" r={r}
             fill="none"
             stroke={seg.color}
             strokeWidth={18}
             strokeDasharray={`${dash.toFixed(1)} ${gap.toFixed(1)}`}
-            strokeDashoffset={-offset}
+            initial={{ strokeDashoffset: circ }}
+            animate={{ strokeDashoffset: finalOffset }}
+            transition={{ duration: 1 + i * 0.2, ease: "easeOut" }}
           />
         );
         offset += dash;
@@ -66,27 +87,29 @@ function DonutChart({ segments }) {
   );
 }
 
-// ─── Bar chart ───────────────────────────────────────────────────────────────
+// ─── Bar chart (Animated) ────────────────────────────────────────────────────
 function BarChart({ data, labels, highlightIndex }) {
   const max = Math.max(...data, 80);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       <div style={{ display: "flex", alignItems: "flex-end", gap: 5, height: 120 }}>
         {data.map((v, i) => {
-          const h = Math.max(3, Math.round((v / max) * 110));
+          const targetH = Math.max(3, Math.round((v / max) * 110));
           const isHi = i === highlightIndex;
           return (
-            <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <div style={{
-                width: "100%", height: h,
-                borderRadius: "3px 3px 0 0",
-                background: isHi ? "#D4A853" : "#222228",
-                cursor: "pointer",
-                transition: "background 0.15s",
-              }}
+            <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end" }}>
+              <motion.div
+                initial={{ height: 3 }}
+                animate={{ height: targetH }}
+                transition={{ duration: 0.8, delay: i * 0.05, ease: "easeOut" }}
+                style={{
+                  width: "100%",
+                  borderRadius: "3px 3px 0 0",
+                  background: isHi ? "#D4A853" : "#222228",
+                  cursor: "pointer",
+                }}
                 title={`₹${v}`}
-                onMouseEnter={e => { if (!isHi) e.currentTarget.style.background = "#8A6520"; }}
-                onMouseLeave={e => { if (!isHi) e.currentTarget.style.background = "#222228"; }}
+                whileHover={{ scaleY: 1.05, background: isHi ? "#F0C878" : "#8A6520", originY: 1 }}
               />
             </div>
           );
@@ -106,11 +129,24 @@ function BarChart({ data, labels, highlightIndex }) {
   );
 }
 
+// ─── Animation Variants ──────────────────────────────────────────────────────
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08 }
+  }
+};
+const itemVariants = {
+  hidden: { opacity: 0, y: 15 },
+  visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 20 } }
+};
+
 // ─── Main Dashboard ──────────────────────────────────────────────────────────
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { groups = [], fetchGroups } = useGroupStore();
+  const { groups, fetchGroups } = useGroupStore();
   const { friends, fetchFriends } = useFriendStore();
   
   const [activeDock, setActiveDock] = useState("Home");
@@ -118,12 +154,15 @@ export default function Dashboard() {
   const [time, setTime] = useState("");
   const [friendBalances, setFriendBalances] = useState({});
   const [analytics, setAnalytics] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const acceptedFriends = friends?.accepted || [];
 
   useEffect(() => {
-    fetchGroups();
-    fetchFriends();
+    Promise.all([fetchGroups(), fetchFriends()]).then(() => {
+      // Small delay for skeleton showcase
+      setTimeout(() => setIsLoading(false), 500); 
+    });
   }, [fetchGroups, fetchFriends]);
 
   useEffect(() => {
@@ -200,7 +239,7 @@ export default function Dashboard() {
     color: categoryColors[i % categoryColors.length]
   }));
 
-  const mappedGroups = groups.slice(0, 4).map(g => ({
+  const mappedGroups = (groups || []).slice(0, 4).map(g => ({
     _id: g._id,
     name: g.name || "Group",
     members: g.members?.length || 1,
@@ -250,14 +289,17 @@ export default function Dashboard() {
     topbar: {
       display: "flex", alignItems: "center", justifyContent: "space-between",
       padding: "14px 28px",
-      background: "#131316",
-      borderBottom: "1px solid #252530",
+      background: "rgba(19, 19, 22, 0.75)",
+      backdropFilter: "blur(16px)",
+      WebkitBackdropFilter: "blur(16px)",
+      borderBottom: "1px solid rgba(37, 37, 48, 0.5)",
       position: "sticky", top: 0, zIndex: 50,
     },
     logoWrap: { display: "flex", alignItems: "center", gap: 10 },
     logoMark: {
       width: 32, height: 32, borderRadius: 8, background: "#D4A853",
       display: "flex", alignItems: "center", justifyContent: "center",
+      boxShadow: "0 4px 14px rgba(212, 168, 83, 0.2)",
     },
     logoName: { fontSize: 16, fontWeight: 800, letterSpacing: "0.02em" },
     topRight: { display: "flex", alignItems: "center", gap: 10 },
@@ -267,6 +309,7 @@ export default function Dashboard() {
       background: "#5C3A10", border: "1.5px solid #8A6520",
       display: "flex", alignItems: "center", justifyContent: "center",
       fontSize: 12, fontWeight: 700, color: "#F0C878", cursor: "pointer",
+      overflow: "hidden"
     },
     hero: {
       display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
@@ -285,10 +328,12 @@ export default function Dashboard() {
     heroBadge: {
       fontSize: 10, fontWeight: 700, background: netBalance >= 0 ? "#45C285" : "#D95555", color: "#fff",
       padding: "3px 10px", borderRadius: 999, letterSpacing: "0.06em", textTransform: "uppercase",
+      boxShadow: netBalance >= 0 ? "0 4px 12px rgba(69, 194, 133, 0.3)" : "0 4px 12px rgba(217, 85, 85, 0.3)"
     },
     statCard: {
       padding: "24px 28px", display: "flex", flexDirection: "column",
       justifyContent: "center", borderRight: "1px solid #252530",
+      position: "relative",
     },
     statIcon: {
       width: 28, height: 28, borderRadius: 8,
@@ -298,7 +343,7 @@ export default function Dashboard() {
       fontSize: 10, color: "#4A4845", textTransform: "uppercase",
       letterSpacing: "0.1em", fontFamily: "'JetBrains Mono', monospace", marginBottom: 8,
     },
-    statVal: { fontSize: 36, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" },
+    statVal: { fontSize: 36, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", position: "relative", zIndex: 2 },
     body: {
       display: "grid", gridTemplateColumns: "1fr 300px",
       flex: 1,
@@ -319,8 +364,11 @@ export default function Dashboard() {
     halfSec: { padding: "20px 22px" },
     listRow: {
       display: "flex", alignItems: "center", gap: 10,
-      padding: "9px 0", borderBottom: "1px solid #252530",
-      cursor: "pointer"
+      padding: "12px 14px", borderBottom: "1px solid rgba(37,37,48,0.4)",
+      cursor: "pointer",
+      borderRadius: "12px",
+      margin: "0 -14px 4px",
+      transition: "background 0.2s"
     },
     lav: {
       width: 34, height: 34, borderRadius: 10, background: "#222228",
@@ -350,13 +398,17 @@ export default function Dashboard() {
     fabBar: {
       display: "flex", alignItems: "center", justifyContent: "center",
       padding: "14px 0 18px",
-      background: "#131316", borderTop: "1px solid #252530",
+      background: "rgba(19, 19, 22, 0.8)",
+      backdropFilter: "blur(16px)",
+      WebkitBackdropFilter: "blur(16px)",
+      borderTop: "1px solid rgba(37, 37, 48, 0.5)",
       position: "sticky", bottom: 0, zIndex: 50,
     },
     fabInner: {
       display: "flex", alignItems: "center", gap: 6,
       background: "#1A1A1F", border: "1px solid #252530",
       borderRadius: 999, padding: "6px 8px",
+      boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
     },
     fabItem: {
       display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
@@ -367,7 +419,8 @@ export default function Dashboard() {
     fabAdd: {
       width: 46, height: 46, background: "#D4A853", borderRadius: "50%",
       display: "flex", alignItems: "center", justifyContent: "center",
-      cursor: "pointer", border: "none", flexShrink: 0, transition: "background 0.15s",
+      cursor: "pointer", border: "none", flexShrink: 0, transition: "transform 0.15s, box-shadow 0.15s",
+      boxShadow: "0 4px 14px rgba(212, 168, 83, 0.3)",
     },
     fabLbl: {
       fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase",
@@ -375,7 +428,6 @@ export default function Dashboard() {
     },
   };
 
-  // Add media query hook for better responsiveness similar to original grid layout
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
@@ -405,43 +457,49 @@ export default function Dashboard() {
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: #131316; }
         ::-webkit-scrollbar-thumb { background: #252530; border-radius: 2px; }
+        /* Add glow to stat values */
+        .glow-owed { text-shadow: 0 0 20px rgba(69, 194, 133, 0.3); }
+        .glow-owes { text-shadow: 0 0 20px rgba(217, 85, 85, 0.3); }
       `}</style>
 
       <div style={s.root}>
-        {/* ── TOP BAR ── */}
         <header style={s.topbar}>
           <div style={s.logoWrap}>
-            <div style={s.logoMark}>
+            <motion.div style={s.logoMark} whileHover={{ rotate: 10, scale: 1.05 }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A0800" strokeWidth="2.5" strokeLinecap="round">
                 <path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" />
               </svg>
-            </div>
+            </motion.div>
             <span style={s.logoName}>Balancio</span>
           </div>
           <div style={s.topRight}>
             <span style={s.timeText}>{time}</span>
-            <div style={s.avatarCircle} onClick={() => navigate('/profile')}>
+            <motion.div style={s.avatarCircle} onClick={() => navigate('/profile')} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.9 }}>
               {user?.avatar ? (
                 <img src={user.avatar} alt="Profile" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
               ) : (
                 user?.name?.[0]?.toUpperCase() || 'M'
               )}
-            </div>
+            </motion.div>
           </div>
         </header>
 
-        {/* ── HERO ── */}
-        <section style={s.hero}>
-          <div style={s.heroMain}>
+        <motion.section style={s.hero} variants={containerVariants} initial="hidden" animate="visible">
+          <motion.div style={s.heroMain} variants={itemVariants}>
             <p style={s.heroGreeting}>{getGreeting()}</p>
             <h1 style={s.heroName}>{user?.name?.split(' ')[0] || "User"}</h1>
             <div style={s.heroBadgeRow}>
               <span style={s.heroBal}>Net balance</span>
-              <span style={s.heroBalNum}>{netBalance < 0 ? "−" : ""}₹{Math.abs(netBalance).toFixed(2)}</span>
-              <span style={s.heroBadge}>{netBalance >= 0 ? "You are owed" : "You owe"}</span>
+              {isLoading ? <Skeleton width={60} height={20} /> : (
+                <>
+                  <span style={s.heroBalNum}>{netBalance < 0 ? "−" : ""}₹{Math.abs(netBalance).toFixed(2)}</span>
+                  <span style={s.heroBadge}>{netBalance >= 0 ? "You are owed" : "You owe"}</span>
+                </>
+              )}
             </div>
-          </div>
-          <div style={s.statCard}>
+          </motion.div>
+
+          <motion.div style={s.statCard} variants={itemVariants}>
             <div style={{ ...s.statIcon, background: "#1A3025" }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#45C285" strokeWidth="2.5" strokeLinecap="round">
                 <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
@@ -449,9 +507,13 @@ export default function Dashboard() {
               </svg>
             </div>
             <p style={s.statLabel}>You are owed</p>
-            <p style={{ ...s.statVal, color: "#45C285" }}>₹{totals.owed.toFixed(2)}</p>
-          </div>
-          <div style={{ ...s.statCard, borderRight: "none" }}>
+            {isLoading ? <Skeleton width={120} height={40} /> : (
+              <p className="glow-owed" style={{ ...s.statVal, color: "#45C285" }}>₹{totals.owed.toFixed(2)}</p>
+            )}
+            <div style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: '50px', background: 'radial-gradient(ellipse at bottom, rgba(69,194,133,0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
+          </motion.div>
+
+          <motion.div style={{ ...s.statCard, borderRight: "none" }} variants={itemVariants}>
             <div style={{ ...s.statIcon, background: "#2A1515" }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D95555" strokeWidth="2.5" strokeLinecap="round">
                 <polyline points="23 18 13.5 8.5 8.5 13.5 1 6" />
@@ -459,20 +521,21 @@ export default function Dashboard() {
               </svg>
             </div>
             <p style={s.statLabel}>You owe</p>
-            <p style={{ ...s.statVal, color: "#D95555" }}>₹{totals.owes.toFixed(2)}</p>
-          </div>
-        </section>
+            {isLoading ? <Skeleton width={120} height={40} /> : (
+              <p className="glow-owes" style={{ ...s.statVal, color: "#D95555" }}>₹{totals.owes.toFixed(2)}</p>
+            )}
+            <div style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: '50px', background: 'radial-gradient(ellipse at bottom, rgba(217,85,85,0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
+          </motion.div>
+        </motion.section>
 
-        {/* ── BODY ── */}
-        <div style={s.body}>
-          <div style={s.left}>
-            {/* Spending trend */}
+        <motion.div style={s.body} variants={containerVariants} initial="hidden" animate="visible">
+          <motion.div style={s.left} variants={itemVariants}>
             <div style={s.section}>
               <div style={s.secHeader}>
                 <span style={s.secTitle}>Spending trend</span>
                 <div style={{ display: "flex", gap: 4 }}>
                   {["This year", "6 mo", "3 mo"].map(f => (
-                    <button key={f} onClick={() => setActiveFilter(f)} style={{
+                    <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} key={f} onClick={() => setActiveFilter(f)} style={{
                       fontSize: 11, padding: "4px 12px", borderRadius: 999,
                       border: "1px solid #252530", fontFamily: "'Syne', sans-serif",
                       background: activeFilter === f ? "#222228" : "transparent",
@@ -480,14 +543,19 @@ export default function Dashboard() {
                       cursor: "pointer", transition: "all 0.15s",
                     }}>
                       {f}
-                    </button>
+                    </motion.button>
                   ))}
                 </div>
               </div>
-              <BarChart data={spendData} labels={months} highlightIndex={4} />
+              {isLoading ? (
+                <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 120 }}>
+                  {[...Array(12)].map((_, i) => <Skeleton key={i} width="100%" height={Math.random() * 80 + 20} style={{ flex: 1, borderRadius: '3px 3px 0 0' }} />)}
+                </div>
+              ) : (
+                <BarChart data={spendData} labels={months} highlightIndex={4} />
+              )}
             </div>
 
-            {/* Groups + Friends */}
             <div style={{ ...s.twoCol, borderTop: "1px solid #252530" }}>
               <div style={{ ...s.halfSec, borderRight: !isMobile ? "1px solid #252530" : "none" }}>
                 <div style={s.secHeader}>
@@ -501,13 +569,17 @@ export default function Dashboard() {
                   </span>
                   <span style={s.viewAll} onClick={() => navigate('/groups')}>View all</span>
                 </div>
-                {mappedGroups.length === 0 ? (
+                {isLoading ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {[...Array(3)].map((_, i) => <Skeleton key={i} width="100%" height={50} />)}
+                  </div>
+                ) : mappedGroups.length === 0 ? (
                   <div style={s.emptyBox}>
                      <p style={{ fontSize: 12, color: "#4A4845", marginBottom: 12 }}>No groups yet</p>
                   </div>
                 ) : (
                   mappedGroups.map((g, i) => (
-                    <div key={i} onClick={() => navigate(`/groups/${g._id}`)} style={{ ...s.listRow, borderBottom: i < mappedGroups.length - 1 ? "1px solid #252530" : "none" }}>
+                    <motion.div key={i} whileHover={{ backgroundColor: '#1A1A1F', x: 4 }} drag="x" dragConstraints={{ left: 0, right: 0 }} onClick={() => navigate(`/groups/${g._id}`)} style={{ ...s.listRow, borderBottom: i < mappedGroups.length - 1 ? "1px solid rgba(37,37,48,0.4)" : "none" }}>
                       <div style={s.lav}>{g.name[0].toUpperCase()}</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{g.name}</div>
@@ -516,7 +588,7 @@ export default function Dashboard() {
                       <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: g.amount < 0 ? "#D95555" : "#45C285" }}>
                         {g.amount < 0 ? "−" : "+"}₹{Math.abs(g.amount).toFixed(2)}
                       </span>
-                    </div>
+                    </motion.div>
                   ))
                 )}
               </div>
@@ -531,7 +603,11 @@ export default function Dashboard() {
                   </span>
                   <span style={s.viewAll} onClick={() => navigate('/friends')}>View all</span>
                 </div>
-                {mappedFriends.length === 0 ? (
+                {isLoading ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {[...Array(3)].map((_, i) => <Skeleton key={i} width="100%" height={50} />)}
+                  </div>
+                ) : mappedFriends.length === 0 ? (
                   <div style={s.emptyBox}>
                     <div style={{
                       width: 40, height: 40, borderRadius: "50%", background: "#1A1A1F",
@@ -546,17 +622,18 @@ export default function Dashboard() {
                       </svg>
                     </div>
                     <p style={{ fontSize: 12, color: "#4A4845", marginBottom: 12 }}>No friends yet</p>
-                    <button onClick={() => navigate('/friends')} style={{
+                    <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => navigate('/friends')} style={{
                       background: "#D4A853", color: "#1A0800", border: "none",
                       borderRadius: 8, padding: "9px 18px", fontSize: 12,
                       fontWeight: 700, fontFamily: "'Syne', sans-serif", cursor: "pointer",
+                      boxShadow: "0 4px 14px rgba(212, 168, 83, 0.3)",
                     }}>
                       Add Friend
-                    </button>
+                    </motion.button>
                   </div>
                 ) : (
                   mappedFriends.map((f, i) => (
-                    <div key={i} onClick={() => navigate('/friends')} style={{ ...s.listRow, borderBottom: i < mappedFriends.length - 1 ? "1px solid #252530" : "none" }}>
+                    <motion.div key={i} whileHover={{ backgroundColor: '#1A1A1F', x: 4 }} drag="x" dragConstraints={{ left: -60, right: 0 }} onClick={() => navigate('/friends')} style={{ ...s.listRow, position: 'relative', overflow: 'hidden', borderBottom: i < mappedFriends.length - 1 ? "1px solid rgba(37,37,48,0.4)" : "none" }}>
                       <div style={s.lav}>{f.name[0].toUpperCase()}</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.name}</div>
@@ -565,20 +642,26 @@ export default function Dashboard() {
                       <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: f.amount < 0 ? "#D95555" : (f.amount > 0 ? "#45C285" : "#8A8680") }}>
                         {f.amount < 0 ? "−" : (f.amount > 0 ? "+" : "")}₹{Math.abs(f.amount).toFixed(2)}
                       </span>
-                    </div>
+                    </motion.div>
                   ))
                 )}
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div style={s.right}>
-            {/* Categories */}
+          <motion.div style={s.right} variants={itemVariants}>
             <div style={s.catBody}>
               <div style={{ ...s.secHeader, marginBottom: 16 }}>
                 <span style={s.secTitle}>Categories</span>
               </div>
-              {categories.length > 0 ? (
+              {isLoading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
+                  <Skeleton width={120} height={120} borderRadius="50%" />
+                  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {[...Array(3)].map((_, i) => <Skeleton key={i} width="100%" height={20} />)}
+                  </div>
+                </div>
+              ) : categories.length > 0 ? (
                 <>
                   <div style={s.donutWrap}>
                     <DonutChart segments={categories} />
@@ -595,7 +678,7 @@ export default function Dashboard() {
                         <div style={{ ...s.catDot, background: c.color }} />
                         <span style={{ flex: 1, fontSize: 13, color: "#8A8680" }}>{c.name}</span>
                         <div style={s.catBarBg}>
-                          <div style={{ height: 4, borderRadius: 2, background: c.color, width: `${c.pct}%` }} />
+                          <motion.div initial={{ width: 0 }} animate={{ width: `${c.pct}%` }} transition={{ duration: 1, delay: i * 0.1, ease: "easeOut" }} style={{ height: 4, borderRadius: 2, background: c.color }} />
                         </div>
                         <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", minWidth: 28, textAlign: "right" }}>
                           {c.pct}%
@@ -611,20 +694,19 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* Quick Actions */}
             <div style={s.qaSec}>
               <div style={{ ...s.secHeader, marginBottom: 12 }}>
                 <span style={s.secTitle}>Quick actions</span>
               </div>
-              <button onClick={() => navigate('/groups/new')} style={{ ...s.qaBtn, background: "#D4A853", borderColor: "#D4A853", color: "#1A0800", fontWeight: 700 }}
+              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => navigate('/groups/new')} style={{ ...s.qaBtn, background: "#D4A853", borderColor: "#D4A853", color: "#1A0800", fontWeight: 700, boxShadow: "0 4px 14px rgba(212, 168, 83, 0.2)" }}
                 onMouseEnter={e => e.currentTarget.style.background = "#F0C878"}
                 onMouseLeave={e => e.currentTarget.style.background = "#D4A853"}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                   <path d="M12 5v14M5 12h14" />
                 </svg>
                 New Group
-              </button>
-              <button onClick={() => navigate('/friends')} style={s.qaBtn}
+              </motion.button>
+              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => navigate('/friends')} style={s.qaBtn}
                 onMouseEnter={e => { e.currentTarget.style.background = "#1A1A1F"; e.currentTarget.style.borderColor = "#2A2A32"; }}
                 onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "#252530"; }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -634,18 +716,18 @@ export default function Dashboard() {
                   <line x1="16" y1="11" x2="22" y2="11" />
                 </svg>
                 Add Friend
-              </button>
+              </motion.button>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
-        {/* ── BOTTOM DOCK ── */}
         <footer style={s.fabBar}>
           <div style={s.fabInner}>
             {dockItems.slice(0, 2).map(item => {
               const isOn = activeDock === item.label;
               return (
-                <a key={item.label}
+                <motion.a key={item.label}
+                  whileTap={{ scale: 0.9 }}
                   href={item.href}
                   onClick={e => { e.preventDefault(); setActiveDock(item.label); navigate(item.href); }}
                   style={{
@@ -656,26 +738,30 @@ export default function Dashboard() {
                   }}>
                   <span style={{ display: "flex", color: "inherit" }}>{item.icon}</span>
                   <span style={{ ...s.fabLbl, color: "inherit" }}>{item.label}</span>
-                </a>
+                </motion.a>
               );
             })}
 
             <div style={s.fabSep} />
 
-            <button onClick={() => navigate('/groups/new')} style={s.fabAdd}
+            <motion.button 
+              whileHover={{ scale: 1.1, rotate: 90 }} 
+              whileTap={{ scale: 0.9 }}
+              onClick={() => navigate('/groups/new')} style={s.fabAdd}
               onMouseEnter={e => e.currentTarget.style.background = "#F0C878"}
               onMouseLeave={e => e.currentTarget.style.background = "#D4A853"}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A0800" strokeWidth="2.5" strokeLinecap="round">
                 <path d="M12 5v14M5 12h14" />
               </svg>
-            </button>
+            </motion.button>
 
             <div style={s.fabSep} />
 
             {dockItems.slice(2).map(item => {
               const isOn = activeDock === item.label;
               return (
-                <a key={item.label}
+                <motion.a key={item.label}
+                  whileTap={{ scale: 0.9 }}
                   href={item.href}
                   onClick={e => { e.preventDefault(); setActiveDock(item.label); navigate(item.href); }}
                   style={{
@@ -686,7 +772,7 @@ export default function Dashboard() {
                   }}>
                   <span style={{ display: "flex", color: "inherit" }}>{item.icon}</span>
                   <span style={{ ...s.fabLbl, color: "inherit" }}>{item.label}</span>
-                </a>
+                </motion.a>
               );
             })}
           </div>
