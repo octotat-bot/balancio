@@ -129,6 +129,105 @@ function BarChart({ data, labels, highlightIndex }) {
   );
 }
 
+// ─── Universe Mode (Physics Simulation) ────────────────────────────────────────
+function BalanceUniverse({ friends, user }) {
+  const r = 160; 
+
+  return (
+    <motion.div 
+       initial={{ opacity: 0, scale: 0.95 }} 
+       animate={{ opacity: 1, scale: 1 }} 
+       exit={{ opacity: 0 }} 
+       style={{ position: 'relative', width: '100%', height: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', gridColumn: '1 / -1' }}
+    >
+      <motion.div animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 6, repeat: Infinity }} style={{ position: 'absolute', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(212,168,83,0.15) 0%, transparent 70%)', filter: 'blur(40px)', zIndex: 1 }} />
+
+      <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 2, pointerEvents: 'none' }}>
+        {friends.filter(f => f.amount !== 0).map((f, i, arr) => {
+          const angle = (i / arr.length) * Math.PI * 2;
+          const x2 = `calc(50% + ${Math.cos(angle) * r}px)`;
+          const y2 = `calc(50% + ${Math.sin(angle) * r}px)`;
+          const color = f.amount > 0 ? "#45C285" : "#D95555";
+          
+          return (
+            <motion.line 
+              key={f._id}
+              x1="50%" y1="50%" 
+              x2={x2} y2={y2} 
+              stroke={color} 
+              strokeWidth={Math.max(2, Math.min(Math.abs(f.amount) / 100, 8))}
+              opacity="0.4"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 1.5, ease: "easeOut", delay: i * 0.1 }}
+            />
+          );
+        })}
+      </svg>
+
+      <div style={{ position: 'relative', zIndex: 3, width: '100%', height: '100%' }}>
+        {/* User Node */}
+        <motion.div 
+          style={{ position: 'absolute', top: '50%', left: '50%', x: '-50%', y: '-50%', width: 80, height: 80, borderRadius: '50%', background: '#D4A853', boxShadow: '0 0 40px rgba(212,168,83,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #F0C878', cursor: 'grab' }}
+          drag 
+          dragConstraints={{ top: -50, left: -50, right: 50, bottom: 50 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+           {user?.avatar ? <img src={user.avatar} style={{ width:'100%', height:'100%', borderRadius:'50%', objectFit:'cover' }} draggable="false" alt="avatar" /> : <span style={{ color: '#1A0800', fontWeight: 800, fontSize: 24, userSelect:'none' }}>{user?.name?.[0]?.toUpperCase()}</span>}
+        </motion.div>
+        
+        {/* Friend Nodes */}
+        {friends.filter(f => f.amount !== 0).map((f, i, arr) => {
+          const angle = (i / arr.length) * Math.PI * 2;
+          const color = f.amount > 0 ? "#45C285" : "#D95555";
+          const nodeRadius = Math.max(60, Math.min(60 + Math.abs(f.amount)/100, 110));
+          
+          const targetX = `calc(50% + ${Math.cos(angle) * r}px)`;
+          const targetY = `calc(50% + ${Math.sin(angle) * r}px)`;
+
+          return (
+            <motion.div
+               key={f._id}
+               drag
+               dragConstraints={{ top: -40, left: -40, right: 40, bottom: 40 }}
+               dragElastic={0.2}
+               whileHover={{ scale: 1.1, zIndex: 10 }}
+               whileTap={{ scale: 0.9 }}
+               initial={{ top: '50%', left: '50%', x: '-50%', opacity: 0, y: '-50%' }}
+               animate={{ 
+                 top: targetY, 
+                 left: targetX,
+                 opacity: 1,
+                 y: ['-50%', `calc(-50% - ${Math.random() * 10}px)`, '-50%'],
+               }}
+               transition={{ 
+                 top: { type: 'spring', stiffness: 50, damping: 10, delay: i * 0.1 },
+                 left: { type: 'spring', stiffness: 50, damping: 10, delay: i * 0.1 },
+                 opacity: { duration: 0.5, delay: i * 0.1 },
+                 y: { duration: 3 + Math.random() * 2, repeat: Infinity, ease: 'easeInOut', delay: 1 }
+               }}
+               style={{ 
+                 position: 'absolute', 
+                 width: nodeRadius, height: nodeRadius, borderRadius: '50%', 
+                 background: '#1A1A1F', border: `3px solid ${color}`,
+                 boxShadow: `0 0 20px ${color}40`,
+                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'grab',
+                 userSelect: 'none'
+               }}
+            >
+              <div style={{ width: nodeRadius*0.8, textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <span style={{ color: '#EDEAE4', fontWeight: 700, fontSize: nodeRadius/4.5 }}>{f.name.split(' ')[0]}</span>
+              </div>
+              <span style={{ color: color, fontWeight: 800, fontSize: nodeRadius/5.5, fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>{f.amount > 0 ? '+' : '−'}₹{Math.abs(f.amount)}</span>
+            </motion.div>
+          )
+        })}
+      </div>
+    </motion.div>
+  )
+}
+
 // ─── Animation Variants ──────────────────────────────────────────────────────
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -151,6 +250,7 @@ export default function Dashboard() {
   
   const [activeDock, setActiveDock] = useState("Home");
   const [activeFilter, setActiveFilter] = useState("This year");
+  const [viewMode, setViewMode] = useState("classic");
   const [time, setTime] = useState("");
   const [friendBalances, setFriendBalances] = useState({});
   const [analytics, setAnalytics] = useState(null);
@@ -463,6 +563,17 @@ export default function Dashboard() {
       `}</style>
 
       <div style={s.root}>
+        {/* ── Dynamic Aura Background ── */}
+        <motion.div
+           animate={{ opacity: [0.15, 0.25, 0.15], scale: [1, 1.05, 1] }}
+           transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+           style={{
+             position: 'fixed', inset: '-20%',
+             background: `radial-gradient(circle at 50% 50%, ${netBalance >= 0 ? 'rgba(69, 194, 133, 0.15)' : 'rgba(217, 85, 85, 0.15)'} 0%, transparent 60%)`,
+             zIndex: 0, pointerEvents: 'none', filter: 'blur(60px)'
+           }}
+        />
+
         <header style={s.topbar}>
           <div style={s.logoWrap}>
             <motion.div style={s.logoMark} whileHover={{ rotate: 10, scale: 1.05 }}>
@@ -487,7 +598,13 @@ export default function Dashboard() {
         <motion.section style={s.hero} variants={containerVariants} initial="hidden" animate="visible">
           <motion.div style={s.heroMain} variants={itemVariants}>
             <p style={s.heroGreeting}>{getGreeting()}</p>
-            <h1 style={s.heroName}>{user?.name?.split(' ')[0] || "User"}</h1>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <h1 style={{ ...s.heroName, margin: 0 }}>{user?.name?.split(' ')[0] || "User"}</h1>
+                <div style={{ display: 'flex', background: '#1A1A1F', border: '1px solid #252530', borderRadius: 999, padding: 4, zIndex: 10 }}>
+                   <button onClick={() => setViewMode('classic')} style={{ padding: '6px 12px', borderRadius: 999, background: viewMode === 'classic' ? '#3B3B46' : 'transparent', color: viewMode === 'classic' ? '#EDEAE4' : '#8A8680', border: 'none', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: "'Syne', sans-serif", transition: 'all 0.2s' }}>Classic</button>
+                   <button onClick={() => setViewMode('universe')} style={{ padding: '6px 12px', borderRadius: 999, background: viewMode === 'universe' ? '#3B3B46' : 'transparent', color: viewMode === 'universe' ? '#EDEAE4' : '#8A8680', border: 'none', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: "'Syne', sans-serif", transition: 'all 0.2s' }}>Universe</button>
+                </div>
+            </div>
             <div style={s.heroBadgeRow}>
               <span style={s.heroBal}>Net balance</span>
               {isLoading ? <Skeleton width={60} height={20} /> : (
@@ -528,7 +645,13 @@ export default function Dashboard() {
           </motion.div>
         </motion.section>
 
-        <motion.div style={s.body} variants={containerVariants} initial="hidden" animate="visible">
+        <AnimatePresence mode="wait">
+        {viewMode === 'universe' ? (
+           <motion.div key="universe" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}>
+             <BalanceUniverse friends={mappedFriends} user={user} />
+           </motion.div>
+        ) : (
+        <motion.div key="classic" style={s.body} variants={containerVariants} initial="hidden" animate="visible" exit="hidden">
           <motion.div style={s.left} variants={itemVariants}>
             <div style={s.section}>
               <div style={s.secHeader}>
@@ -717,9 +840,10 @@ export default function Dashboard() {
                 </svg>
                 Add Friend
               </motion.button>
-            </div>
           </motion.div>
         </motion.div>
+        )}
+        </AnimatePresence>
 
         <footer style={s.fabBar}>
           <div style={s.fabInner}>
