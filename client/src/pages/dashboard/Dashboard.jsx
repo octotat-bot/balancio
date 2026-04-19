@@ -840,6 +840,7 @@ export default function Dashboard() {
                 </svg>
                 Add Friend
               </motion.button>
+            </div>
           </motion.div>
         </motion.div>
         )}
