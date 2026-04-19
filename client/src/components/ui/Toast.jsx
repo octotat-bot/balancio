@@ -144,7 +144,7 @@ function Toast({ title, message, type, duration, isExiting, onClose }) {
             WebkitBackdropFilter: 'blur(16px)',
             borderRadius: '16px',
             border: '1px solid #252530',
-            boxShadow: \`0 16px 40px rgba(0,0,0,0.5), 0 0 20px \${config.shadow}\`,
+            boxShadow: `0 16px 40px rgba(0,0,0,0.5), 0 0 20px ${config.shadow}`,
             minWidth: '320px',
             maxWidth: '420px',
             fontFamily: "'Syne', sans-serif",
@@ -159,7 +159,7 @@ function Toast({ title, message, type, duration, isExiting, onClose }) {
                     borderRadius: '12px',
                     background: config.iconBg,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: \`0 4px 12px \${config.shadow}\`
+                    boxShadow: `0 4px 12px ${config.shadow}`
                 }}>
                     {config.icon}
                 </div>
@@ -206,7 +206,7 @@ function Toast({ title, message, type, duration, isExiting, onClose }) {
             <div style={{ height: '3px', background: '#252530', width: '100%', overflow: 'hidden' }}>
                 <div style={{
                     height: '100%',
-                    width: \`\${progress}%\`,
+                    width: `${progress}%`,
                     background: config.iconBg,
                     transition: 'width 75ms linear',
                     borderTopRightRadius: '3px',
