@@ -182,14 +182,15 @@ export function EditExpense({ groupId, expense, members, onSuccess, onCancel, is
                             fontSize: '32px',
                             fontWeight: '700',
                             border: '2px solid',
-                            borderColor: errors.amount ? '#ef4444' : '#e5e5e5',
+                            borderColor: errors.amount ? '#ef4444' : '#252530',
                             borderRadius: '16px',
                             outline: 'none',
                             transition: 'all 0.2s',
-                            backgroundColor: '#16161B'
+                            backgroundColor: '#131316',
+                            color: '#EDEAE4'
                         }}
-                        onFocus={(e) => e.target.style.borderColor = '#000'}
-                        onBlur={(e) => e.target.style.borderColor = errors.amount ? '#ef4444' : '#e5e5e5'}
+                        onFocus={(e) => { e.target.style.borderColor = '#D4A853'; e.target.style.backgroundColor = '#1A1A1F'; }}
+                        onBlur={(e) => { e.target.style.borderColor = errors.amount ? '#ef4444' : '#252530'; e.target.style.backgroundColor = '#131316'; }}
                     />
                 </div>
                 {errors.amount && (
@@ -225,8 +226,8 @@ export function EditExpense({ groupId, expense, members, onSuccess, onCancel, is
                                 padding: '16px 8px',
                                 borderRadius: '12px',
                                 border: '2px solid',
-                                borderColor: watchCategory === cat.value ? '#000' : '#e5e5e5',
-                                backgroundColor: watchCategory === cat.value ? '#fafafa' : '#fff',
+                                borderColor: watchCategory === cat.value ? '#D4A853' : '#252530',
+                                backgroundColor: watchCategory === cat.value ? '#2A2518' : '#1A1A1F',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 flexDirection: 'column',
@@ -239,7 +240,7 @@ export function EditExpense({ groupId, expense, members, onSuccess, onCancel, is
                             <span style={{
                                 fontSize: '11px',
                                 fontWeight: watchCategory === cat.value ? '600' : '500',
-                                color: watchCategory === cat.value ? '#000' : '#737373',
+                                color: watchCategory === cat.value ? '#EDEAE4' : '#737373',
                                 textAlign: 'center'
                             }}>
                                 {cat.label}
@@ -261,13 +262,14 @@ export function EditExpense({ groupId, expense, members, onSuccess, onCancel, is
                         style={{
                             width: '100%',
                             padding: '12px 16px',
-                            border: '2px solid #e5e5e5',
+                            border: '1px solid #252530',
                             borderRadius: '12px',
                             fontSize: '15px',
                             fontWeight: '500',
                             outline: 'none',
                             cursor: !isAdmin ? 'not-allowed' : 'pointer',
-                            backgroundColor: !isAdmin ? '#f5f5f5' : '#fff',
+                            backgroundColor: !isAdmin ? '#131316' : '#1A1A1F',
+                            color: '#EDEAE4',
                             opacity: !isAdmin ? 0.7 : 1
                         }}
                     >
@@ -304,8 +306,8 @@ export function EditExpense({ groupId, expense, members, onSuccess, onCancel, is
                                     padding: '12px',
                                     borderRadius: '12px',
                                     border: '2px solid',
-                                    borderColor: isSelected ? '#000' : '#e5e5e5',
-                                    backgroundColor: isSelected ? '#fafafa' : '#fff',
+                                    borderColor: isSelected ? '#D4A853' : '#252530',
+                                    backgroundColor: isSelected ? '#1A1A1F' : '#131316',
                                     cursor: 'pointer',
                                     transition: 'all 0.2s'
                                 }}
@@ -349,8 +351,10 @@ export function EditExpense({ groupId, expense, members, onSuccess, onCancel, is
                     style={{
                         width: '100%',
                         padding: '12px 16px',
-                        border: '2px solid #e5e5e5',
+                        border: '1px solid #252530',
                         borderRadius: '12px',
+                        backgroundColor: '#131316',
+                        color: '#EDEAE4',
                         fontSize: '14px',
                         outline: 'none',
                         resize: 'none',

@@ -468,11 +468,11 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
                                 {...register('amount')}
                                 style={{
                                     padding: '24px 24px 24px 60px', fontSize: '48px', fontWeight: '800',
-                                    border: 'none', borderRadius: '24px', outline: 'none', transition: 'all 0.2s',
-                                    backgroundColor: '#1A1A1F', color: '#EDEAE4'
+                                    border: '2px solid #252530', borderRadius: '24px', outline: 'none', transition: 'all 0.2s',
+                                    backgroundColor: '#131316', color: '#EDEAE4'
                                 }}
-                                onFocus={(e) => e.target.style.backgroundColor = '#fff'}
-                                onBlur={(e) => e.target.style.backgroundColor = '#f5f5f5'}
+                                onFocus={(e) => { e.target.style.backgroundColor = '#1A1A1F'; e.target.style.borderColor = '#D4A853'; }}
+                                onBlur={(e) => { e.target.style.backgroundColor = '#131316'; e.target.style.borderColor = '#252530'; }}
                             />
                         </div>
                         {errors.amount && <p style={{ marginTop: '8px', fontSize: '13px', color: '#ef4444' }}>{errors.amount.message}</p>}
@@ -489,8 +489,8 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
                                     onClick={() => setValue('category', cat.value, { shouldValidate: true })}
                                     style={{
                                         padding: '12px 4px', borderRadius: '12px', border: '2px solid',
-                                        borderColor: watchCategory === cat.value ? '#000' : '#e5e5e5',
-                                        backgroundColor: watchCategory === cat.value ? '#fafafa' : '#fff',
+                                        borderColor: watchCategory === cat.value ? '#D4A853' : '#252530',
+                                        backgroundColor: watchCategory === cat.value ? '#2A2518' : '#1A1A1F',
                                         cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', transition: 'all 0.2s'
                                     }}
                                 >
@@ -519,7 +519,8 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
                                             fontWeight: '500',
                                             outline: 'none',
                                             cursor: !isAdmin ? 'not-allowed' : 'pointer',
-                                            backgroundColor: !isAdmin ? '#f5f5f5' : '#fff',
+                                            backgroundColor: !isAdmin ? '#131316' : '#1A1A1F',
+                                            color: '#EDEAE4',
                                             appearance: 'none',
                                             opacity: !isAdmin ? 0.7 : 1
                                         }}
@@ -541,16 +542,16 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
                 <div style={{ width: '450px', borderLeft: '1px solid #f0f0f0', paddingLeft: '40px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
                     <div>
                         <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#B0ADA8' }}>Split Method</label>
-                        <div style={{ display: 'flex', padding: '4px', backgroundColor: '#f1f1f1', borderRadius: '14px' }}>
+                        <div style={{ display: 'flex', padding: '4px', backgroundColor: '#1A1A1F', borderRadius: '14px', border: '1px solid #252530' }}>
                             {splitTypes.map((type) => (
                                 <button
                                     key={type.id} type="button" onClick={() => setSplitType(type.id)}
                                     style={{
                                         flex: 1, padding: '8px 4px', borderRadius: '10px', border: 'none',
-                                        backgroundColor: splitType === type.id ? '#fff' : 'transparent',
-                                        boxShadow: splitType === type.id ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                                        backgroundColor: splitType === type.id ? '#D4A853' : 'transparent',
+                                        boxShadow: splitType === type.id ? '0 2px 8px rgba(212, 168, 83, 0.2)' : 'none',
                                         fontSize: '13px', fontWeight: splitType === type.id ? '700' : '500',
-                                        color: splitType === type.id ? '#0a0a0a' : '#737373', cursor: 'pointer', transition: 'all 0.2s',
+                                        color: splitType === type.id ? '#1A0800' : '#8A8680', cursor: 'pointer', transition: 'all 0.2s',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
                                     }}
                                 >
@@ -587,12 +588,12 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
                                     key={member._id} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} onClick={() => toggleMember(member._id)}
                                     style={{
                                         display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', borderRadius: '12px',
-                                        backgroundColor: isSelected ? '#fff' : '#fafafa', border: '2px solid',
-                                        borderColor: isSelected ? '#0a0a0a' : 'transparent', boxShadow: isSelected ? '0 4px 12px rgba(0,0,0,0.05)' : 'none',
-                                        opacity: isSelected ? 1 : 0.7, cursor: 'pointer', transition: 'border-color 0.2s, background-color 0.2s'
+                                        backgroundColor: isSelected ? '#1A1A1F' : '#131316', border: '2px solid',
+                                        borderColor: isSelected ? '#D4A853' : '#252530', boxShadow: isSelected ? '0 4px 12px rgba(0,0,0,0.2)' : 'none',
+                                        opacity: isSelected ? 1 : 0.5, cursor: 'pointer', transition: 'border-color 0.2s, background-color 0.2s'
                                     }}
                                 >
-                                    <div style={{ width: '20px', height: '20px', borderRadius: '6px', border: isSelected ? 'none' : '2px solid #d4d4d4', backgroundColor: isSelected ? '#0a0a0a' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                                    <div style={{ width: '20px', height: '20px', borderRadius: '6px', border: isSelected ? 'none' : '2px solid #252530', backgroundColor: isSelected ? '#D4A853' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1A0800' }}>
                                         {isSelected && <Check size={12} strokeWidth={4} />}
                                     </div>
                                     <Avatar name={member.name} size="sm" />
@@ -611,7 +612,7 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
                                                 value={customSplits[member._id] ?? (splitType === 'shares' ? 1 : '')}
                                                 onChange={(e) => setCustomSplits({ ...customSplits, [member._id]: parseFloat(e.target.value) || 0 })}
                                                 placeholder={splitType === 'unequal' ? '0.00' : '1'}
-                                                style={{ width: '70px', padding: '8px', borderRadius: '8px', border: '1px solid #353540', fontSize: '14px', fontWeight: '600', textAlign: 'right', outline: 'none' }}
+                                                style={{ width: '70px', padding: '8px', borderRadius: '8px', border: '1px solid #252530', backgroundColor: '#131316', color: '#EDEAE4', fontSize: '14px', fontWeight: '600', textAlign: 'right', outline: 'none' }}
                                             />
                                             {splitType === 'percentage' && <span style={{ fontSize: '12px', color: '#8A8680' }}>%</span>}
                                             {splitType === 'shares' && <span style={{ fontSize: '12px', color: '#8A8680' }}>sh</span>}
