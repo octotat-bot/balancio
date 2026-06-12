@@ -175,6 +175,7 @@ export function Layout() {
                         type="button"
                         onClick={() => navigate('/notifications')}
                         aria-label="Notifications"
+                        data-tour="notifications"
                         style={{
                             position: 'relative', background: 'none', border: 'none',
                             cursor: 'pointer', color: '#B0ADA8', padding: 6, display: 'flex',
@@ -207,13 +208,15 @@ export function Layout() {
                 <Outlet />
             </main>
 
-            <footer style={s.fabBar}>
+            <footer style={s.fabBar} data-tour="navigation">
                 <div style={s.fabInner}>
                     {dockItems.slice(0, 2).map((item) => {
                         const isOn = activeDock === item.label;
                         return (
                             <a key={item.label}
                                 href={item.href}
+                                aria-label={item.label}
+                                aria-current={isOn ? 'page' : undefined}
                                 onClick={(e) => { e.preventDefault(); navigate(item.href); }}
                                 style={{
                                     ...s.fabItem,
@@ -230,6 +233,7 @@ export function Layout() {
                     <div style={s.fabSep} />
 
                     <button onClick={() => navigate('/groups/new')} style={s.fabAdd}
+                        aria-label="Create new group"
                         onMouseEnter={(e) => e.currentTarget.style.background = "#F0C878"}
                         onMouseLeave={(e) => e.currentTarget.style.background = "#D4A853"}>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A0800" strokeWidth="2.5" strokeLinecap="round">
@@ -244,6 +248,8 @@ export function Layout() {
                         return (
                             <a key={item.label}
                                 href={item.href}
+                                aria-label={item.label}
+                                aria-current={isOn ? 'page' : undefined}
                                 onClick={(e) => { e.preventDefault(); navigate(item.href); }}
                                 style={{
                                     ...s.fabItem,

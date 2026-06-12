@@ -15,6 +15,16 @@ import Notifications from './pages/notifications/Notifications';
 import Profile from './pages/profile/Profile';
 import Layout from './components/Layout';
 import SettlementNotifications from './components/notifications/SettlementNotifications';
+import FirstTimeExperience from './components/first-time/FirstTimeExperience';
+
+function DashboardWithTour() {
+  return (
+    <>
+      <Dashboard />
+      <FirstTimeExperience />
+    </>
+  );
+}
 
 // Protected Route wrapper
 function ProtectedRoute({ children }) {
@@ -58,22 +68,8 @@ function App() {
   // Wait for Zustand to hydrate from localStorage before rendering routes
   if (!_hasHydrated) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#fff'
-      }}>
-        <div style={{
-          width: '40px',
-          height: '40px',
-          border: '3px solid #e5e5e5',
-          borderTopColor: '#000',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite'
-        }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <div className="app-splash">
+        <div className="app-splash-spinner" />
       </div>
     );
   }
@@ -102,7 +98,7 @@ function App() {
             }
           >
             <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="dashboard" element={<DashboardWithTour />} />
             <Route path="groups" element={<GroupList />} />
             <Route path="groups/new" element={<CreateGroup />} />
             <Route path="groups/:groupId" element={<GroupDetail />} />

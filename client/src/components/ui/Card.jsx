@@ -61,7 +61,7 @@ export function CardContent({ children, className = '', style = {} }) {
 
 export function CardFooter({ children, className = '', style = {} }) {
     return (
-        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f5f5f5', ...style }} className={className}>
+        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-subtle)', ...style }} className={className}>
             {children}
         </div>
     );

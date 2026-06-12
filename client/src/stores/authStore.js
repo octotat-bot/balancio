@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import api from '../services/api';
+import { FIRST_VISIT_KEY } from '../hooks/useFirstVisit';
 
 export const useAuthStore = create(
     persist(
@@ -53,6 +54,8 @@ export const useAuthStore = create(
                     });
 
                     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+                    localStorage.setItem(FIRST_VISIT_KEY, '1');
 
                     return {
                         success: true,

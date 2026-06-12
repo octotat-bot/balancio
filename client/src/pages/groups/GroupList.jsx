@@ -5,6 +5,7 @@ import { Plus, Search, Users, Filter, ArrowUpDown } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Avatar } from '../../components/ui/Avatar';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { SkeletonList } from '../../components/ui/Skeleton';
 import { useGroupStore } from '../../stores/groupStore';
 import { useFriendStore } from '../../stores/friendStore';
 import { useAuthStore } from '../../stores/authStore';
@@ -83,7 +84,6 @@ export function GroupList() {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            style={{ paddingBottom: '100px' }}
         >
             {/* Header */}
             <motion.div
@@ -161,20 +161,9 @@ export function GroupList() {
                         placeholder="Search groups..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        style={{
-                            width: '100%',
-                            height: '48px',
-                            paddingLeft: '48px',
-                            paddingRight: '16px',
-                            backgroundColor: '#131316',
-                            border: '2px solid #e5e5e5',
-                            borderRadius: '12px',
-                            fontSize: '15px',
-                            outline: 'none',
-                            transition: 'border-color 0.2s ease',
-                        }}
-                        onFocus={(e) => e.target.style.borderColor = '#000'}
-                        onBlur={(e) => e.target.style.borderColor = '#e5e5e5'}
+                        className="input-field"
+                        style={{ paddingLeft: '48px' }}
+                        aria-label="Search groups"
                     />
                 </motion.div>
 
@@ -182,20 +171,17 @@ export function GroupList() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setShowFilters(!showFilters)}
+                    className={showFilters ? 'chip chip-active' : 'chip'}
                     style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
                         padding: '0 20px',
                         height: '48px',
-                        backgroundColor: showFilters ? '#000' : '#fff',
-                        color: showFilters ? '#fff' : '#525252',
-                        border: '2px solid #e5e5e5',
-                        borderRadius: '12px',
                         fontSize: '14px',
-                        fontWeight: '500',
-                        cursor: 'pointer',
                     }}
+                    aria-expanded={showFilters}
+                    aria-label="Toggle sort filters"
                 >
                     <Filter style={{ width: '18px', height: '18px' }} />
                     Filters
@@ -223,16 +209,7 @@ export function GroupList() {
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
                                     onClick={() => setSortBy(option.value)}
-                                    style={{
-                                        padding: '10px 16px',
-                                        backgroundColor: sortBy === option.value ? '#000' : '#f5f5f5',
-                                        color: sortBy === option.value ? '#fff' : '#525252',
-                                        border: 'none',
-                                        borderRadius: '100px',
-                                        fontSize: '13px',
-                                        fontWeight: '500',
-                                        cursor: 'pointer',
-                                    }}
+                                    className={sortBy === option.value ? 'chip chip-active' : 'chip'}
                                 >
                                     {option.label}
                                 </motion.button>
@@ -297,7 +274,9 @@ export function GroupList() {
             </p>
 
             {/* Groups List */}
-            {filteredGroups.length === 0 ? (
+            {isLoading ? (
+                <SkeletonList count={4} />
+            ) : filteredGroups.length === 0 ? (
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -373,7 +352,7 @@ export function GroupList() {
                                     style={{
                                         fontWeight: '600',
                                         fontSize: '18px',
-                                        color: (group.userBalance || 0) >= 0 ? '#16a34a' : '#dc2626',
+                                        color: (group.userBalance || 0) >= 0 ? '#45C285' : '#D95555',
                                         margin: 0,
                                     }}
                                 >

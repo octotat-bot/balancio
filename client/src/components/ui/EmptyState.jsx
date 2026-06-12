@@ -17,9 +17,9 @@ export function EmptyState({
             style={{
                 textAlign: 'center',
                 padding: '60px 20px',
-                backgroundColor: '#16161B',
-                borderRadius: '20px',
-                border: '2px dashed #e5e5e5',
+                backgroundColor: 'var(--bg-elevated)',
+                borderRadius: 'var(--radius-xl)',
+                border: '2px dashed var(--border-default)',
             }}
         >
             {Icon && (
@@ -30,15 +30,15 @@ export function EmptyState({
                     style={{
                         width: '72px',
                         height: '72px',
-                        backgroundColor: '#f0f0f0',
-                        borderRadius: '20px',
+                        backgroundColor: 'var(--bg-surface)',
+                        borderRadius: 'var(--radius-xl)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         margin: '0 auto 20px',
                     }}
                 >
-                    <Icon style={{ width: '32px', height: '32px', color: '#6A6763' }} />
+                    <Icon style={{ width: '32px', height: '32px', color: 'var(--text-faint)' }} />
                 </motion.div>
             )}
             <motion.h3

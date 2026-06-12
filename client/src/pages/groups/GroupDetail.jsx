@@ -37,7 +37,7 @@ import { Avatar } from '../../components/ui/Avatar';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { SkeletonCard } from '../../components/ui/Skeleton';
+import { SkeletonCard, SkeletonList } from '../../components/ui/Skeleton';
 import { useGroupStore } from '../../stores/groupStore';
 import { useExpenseStore } from '../../stores/expenseStore';
 import { useAuthStore } from '../../stores/authStore';
@@ -261,8 +261,8 @@ export function GroupDetail() {
 
     if (groupLoading) {
         return (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
-                <p>Loading group...</p>
+            <div style={{ maxWidth: 800, margin: '0 auto' }}>
+                <SkeletonList count={3} />
             </div>
         );
     }
@@ -291,7 +291,6 @@ export function GroupDetail() {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            style={{ paddingBottom: '100px' }}
         >
             {/* Header */}
             <motion.div variants={itemVariants} className="friend-header mobile-flex-col" style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '24px' }}>
@@ -299,6 +298,7 @@ export function GroupDetail() {
                     whileHover={{ scale: 1.1, backgroundColor: '#1A1A1F' }}
                     whileTap={{ scale: 0.9 }}
                     onClick={() => navigate('/groups')}
+                    aria-label="Back to groups"
                     style={{
                         padding: '10px',
                         borderRadius: '50%',
@@ -343,26 +343,12 @@ export function GroupDetail() {
             </motion.div>
 
             {/* Tabs */}
-            <motion.div variants={itemVariants} className="scroll-hidden" style={{ display: 'flex', gap: '4px', borderBottom: '1px solid #252530', overflowX: 'auto', marginBottom: '24px', paddingBottom: '1px', WebkitOverflowScrolling: 'touch' }}>
+            <motion.div variants={itemVariants} className="scroll-hidden tab-bar" style={{ marginBottom: '24px' }}>
                 {tabs.map((tab) => (
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '12px 16px',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            border: 'none',
-                            borderBottom: activeTab === tab.id ? '2px solid #000' : '2px solid transparent',
-                            backgroundColor: 'transparent',
-                            color: activeTab === tab.id ? '#000' : '#737373',
-                            cursor: 'pointer',
-                            whiteSpace: 'nowrap',
-                            transition: 'color 0.2s',
-                        }}
+                        className={activeTab === tab.id ? 'tab-item tab-item-active' : 'tab-item'}
                     >
                         <tab.icon style={{ width: '16px', height: '16px' }} />
                         {tab.label}
@@ -497,7 +483,7 @@ export function GroupDetail() {
                                                                 backgroundColor: '#131316',
                                                                 borderRadius: '20px',
                                                                 padding: '16px 20px',
-                                                                border: '1px solid #f5f5f5',
+                                                                border: '1px solid var(--border-subtle)',
                                                                 display: 'flex',
                                                                 alignItems: 'center',
                                                                 gap: '16px',
@@ -522,10 +508,10 @@ export function GroupDetail() {
 
                                                             <div style={{ flex: 1, minWidth: 0 }}>
                                                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                                                                    <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#171717' }}>
+                                                                    <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)' }}>
                                                                         {expense.description}
                                                                     </p>
-                                                                    <p style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#171717' }}>
+                                                                    <p style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)' }}>
                                                                         {formatCurrency(expense.amount)}
                                                                     </p>
                                                                 </div>
@@ -639,10 +625,10 @@ export function GroupDetail() {
                         const getActivityIcon = (type) => {
                             switch (type) {
                                 case 'group_created': return { icon: '🎉', color: '#6366f1', bg: '#eef2ff' };
-                                case 'expense_added': return { icon: '💰', color: '#EDEAE4', bg: '#f5f5f5' };
+                                case 'expense_added': return { icon: '💰', color: '#EDEAE4', bg: 'var(--bg-surface)' };
                                 case 'settlement_confirmed': return { icon: '✅', color: '#16a34a', bg: '#f0fdf4' };
                                 case 'settlement_pending': return { icon: '⏳', color: '#ca8a04', bg: '#fefce8' };
-                                default: return { icon: '📋', color: '#8A8680', bg: '#f5f5f5' };
+                                default: return { icon: '📋', color: '#8A8680', bg: 'var(--bg-surface)' };
                             }
                         };
 

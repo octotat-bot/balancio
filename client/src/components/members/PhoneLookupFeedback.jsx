@@ -88,7 +88,7 @@ export function PhoneLookupFeedback({ phone, onResolved, excludeUserId }) {
     return (
         <div style={{
             marginTop: 8, padding: '10px 12px', borderRadius: 10,
-            background: '#fffbeb', border: '1px solid #fde68a',
+            background: 'var(--warning-muted)', border: '1px solid rgba(212, 168, 83, 0.3)',
             display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: '#92400e',
         }}>
             <Clock size={16} style={{ marginTop: 1, flexShrink: 0 }} />

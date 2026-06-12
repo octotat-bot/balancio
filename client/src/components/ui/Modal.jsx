@@ -79,7 +79,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }) {
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
                                 padding: '20px 24px',
-                                borderBottom: '1px solid #f5f5f5',
+                                borderBottom: '1px solid var(--border-subtle)',
                             }}
                         >
                             <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#EDEAE4', margin: 0 }}>
@@ -89,6 +89,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }) {
                                 whileHover={{ scale: 1.1, rotate: 90 }}
                                 whileTap={{ scale: 0.9 }}
                                 onClick={onClose}
+                                aria-label="Close dialog"
                                 style={{
                                     width: '32px',
                                     height: '32px',

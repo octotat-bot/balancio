@@ -68,7 +68,7 @@ function ToastContainer({ toasts, onClose }) {
     return (
         <div style={{
             position: 'fixed',
-            bottom: '30px', /* Bottom center display for premium feel */
+            bottom: 'var(--toast-offset, 104px)',
             left: '50%',
             transform: 'translateX(-50%)',
             zIndex: 9999,
@@ -187,6 +187,7 @@ function Toast({ title, message, type, duration, isExiting, onClose }) {
                 {/* Close Toggle */}
                 <button
                     onClick={onClose}
+                    aria-label="Dismiss notification"
                     style={{
                         background: 'transparent', border: 'none',
                         width: '24px', height: '24px',

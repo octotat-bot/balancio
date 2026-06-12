@@ -448,7 +448,7 @@ export function Friends() {
         const recentExpenses = (directExpenses || []).slice(0, 5);
 
         return (
-            <div style={{ paddingBottom: '100px' }}>
+            <div>
                 {/* Header */}
                 <motion.div variants={itemVariants} className="friend-header mobile-flex-col" style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '32px' }}>
                     <motion.button
@@ -1130,7 +1130,7 @@ export function Friends() {
     // FRIENDS LIST VIEW
     // =============================================
     return (
-        <div style={{ paddingBottom: '100px' }}>
+        <div>
             {/* Header */}
             <motion.div variants={itemVariants} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
                 <div>

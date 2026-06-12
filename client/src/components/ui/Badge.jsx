@@ -2,11 +2,11 @@ import React from 'react';
 
 export function Badge({ children, variant = 'default', size = 'md', style = {} }) {
     const variants = {
-        default: { bg: '#f4f4f5', color: '#3f3f46', border: '#e4e4e7' },
-        success: { bg: '#ecfdf5', color: '#059669', border: '#a7f3d0' },
-        warning: { bg: '#fffbeb', color: '#d97706', border: '#fde68a' },
-        danger: { bg: '#fef2f2', color: '#e11d48', border: '#fecdd3' },
-        primary: { bg: '#eef2ff', color: '#4f46e5', border: '#c7d2fe' },
+        default: { bg: 'var(--bg-surface)', color: 'var(--text-secondary)', border: 'var(--border-subtle)' },
+        success: { bg: 'var(--success-muted)', color: 'var(--success)', border: 'rgba(69, 194, 133, 0.3)' },
+        warning: { bg: 'var(--warning-muted)', color: 'var(--warning)', border: 'rgba(212, 168, 83, 0.3)' },
+        danger: { bg: 'var(--danger-muted)', color: 'var(--danger)', border: 'rgba(217, 85, 85, 0.3)' },
+        primary: { bg: 'rgba(212, 168, 83, 0.12)', color: 'var(--accent)', border: 'rgba(212, 168, 83, 0.3)' },
     };
 
     const v = variants[variant] || variants.default;

@@ -492,7 +492,7 @@ export default function Dashboard() {
         />
 
         <motion.section style={s.hero} variants={containerVariants} initial="hidden" animate="visible">
-          <motion.div style={s.heroMain} variants={itemVariants}>
+          <motion.div style={s.heroMain} variants={itemVariants} data-tour="balance-summary">
             <p style={s.heroGreeting}>{getGreeting()}</p>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <h1 style={{ ...s.heroName, margin: 0 }}>{user?.name?.split(' ')[0] || "User"}</h1>
@@ -576,7 +576,7 @@ export default function Dashboard() {
             </div>
 
             <div style={{ ...s.twoCol, borderTop: "1px solid #252530" }}>
-              <div style={{ ...s.halfSec, borderRight: !isMobile ? "1px solid #252530" : "none" }}>
+              <div style={{ ...s.halfSec, borderRight: !isMobile ? "1px solid #252530" : "none" }} data-tour="groups">
                 <div style={s.secHeader}>
                   <span style={s.secTitle}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8A8680" strokeWidth="2" strokeLinecap="round">
@@ -713,7 +713,7 @@ export default function Dashboard() {
               )}
             </div>
 
-            <div style={s.qaSec}>
+            <div style={s.qaSec} data-tour="quick-actions">
               <div style={{ ...s.secHeader, marginBottom: 12 }}>
                 <span style={s.secTitle}>Quick actions</span>
               </div>

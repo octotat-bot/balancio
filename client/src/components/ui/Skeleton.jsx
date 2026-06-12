@@ -10,9 +10,9 @@ export function Skeleton({ className = '', variant = 'text', style = {}, width, 
     };
 
     const baseStyle = {
-        backgroundColor: '#f0f0f0',
+        backgroundColor: 'var(--bg-surface)',
         animation: 'shimmer 1.5s infinite linear',
-        background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+        background: 'linear-gradient(90deg, var(--bg-surface) 25%, var(--bg-hover) 50%, var(--bg-surface) 75%)',
         backgroundSize: '200% 100%',
         ...variants[variant],
         ...(width ? { width } : {}),

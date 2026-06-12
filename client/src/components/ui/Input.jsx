@@ -13,9 +13,9 @@ export const Input = forwardRef(({
     return (
         <div className={className} style={{ display: 'flex', flexDirection: 'column', gap: '6px', ...containerStyle }}>
             {label && (
-                <label style={{ fontSize: '14px', fontWeight: '500', color: '#EDEAE4' }}>
+                <label style={{ fontSize: '14px', fontWeight: '500', color: 'var(--text-primary)' }}>
                     {label}
-                    {required && <span style={{ color: '#dc2626', marginLeft: '4px' }}>*</span>}
+                    {required && <span style={{ color: 'var(--danger)', marginLeft: '4px' }}>*</span>}
                 </label>
             )}
             <div style={{ position: 'relative' }}>
@@ -27,20 +27,20 @@ export const Input = forwardRef(({
                         padding: Icon ? '0 40px 0 40px' : '0 12px',
                         borderRadius: '12px',
                         border: '2px solid',
-                        borderColor: error ? '#D95555' : '#252530',
+                        borderColor: error ? 'var(--danger)' : 'var(--border-subtle)',
                         fontSize: '15px',
-                        color: '#EDEAE4',
+                        color: 'var(--text-primary)',
                         outline: 'none',
                         transition: 'border-color 0.2s',
-                        backgroundColor: error ? '#2A1515' : '#1A1A1F',
+                        backgroundColor: error ? 'var(--danger-muted)' : 'var(--bg-surface)',
                         ...style,
                     }}
                     onFocus={(e) => {
-                        e.target.style.borderColor = error ? '#D95555' : '#D4A853';
+                        e.target.style.borderColor = error ? 'var(--danger)' : 'var(--accent)';
                         if (props.onFocus) props.onFocus(e);
                     }}
                     onBlur={(e) => {
-                        e.target.style.borderColor = error ? '#D95555' : '#252530';
+                        e.target.style.borderColor = error ? 'var(--danger)' : 'var(--border-subtle)';
                         if (props.onBlur) props.onBlur(e);
                     }}
                     {...props}

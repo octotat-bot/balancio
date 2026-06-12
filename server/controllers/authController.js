@@ -126,6 +126,7 @@ export const signup = async (req, res, next) => {
             message: 'Account created successfully',
             user: user.toJSON(),
             token,
+            isNewUser: true,
             onboarding: {
                 wasPendingMember: joinedGroups.length > 0,
                 joinedGroups,
@@ -164,6 +165,7 @@ export const login = async (req, res, next) => {
             message: 'Login successful',
             user: user.toJSON(),
             token,
+            isNewUser: false,
         });
     } catch (error) {
         next(error);

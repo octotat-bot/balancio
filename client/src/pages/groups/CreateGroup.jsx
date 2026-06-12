@@ -112,7 +112,7 @@ export function CreateGroup() {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            style={{ maxWidth: '680px', margin: '0 auto', paddingBottom: '100px' }}
+            style={{ maxWidth: '680px', margin: '0 auto' }}
         >
             {/* Header */}
             <motion.div
@@ -178,8 +178,8 @@ export function CreateGroup() {
                                                 fontSize: '24px',
                                                 border: 'none',
                                                 cursor: 'pointer',
-                                                backgroundColor: selectedIcon === index ? '#000' : '#f5f5f5',
-                                                color: selectedIcon === index ? '#fff' : '#000',
+                                                backgroundColor: selectedIcon === index ? 'var(--accent)' : 'var(--bg-surface)',
+                                                color: selectedIcon === index ? 'var(--accent-ink)' : 'var(--text-primary)',
                                                 transition: 'background-color 0.2s',
                                             }}
                                         >
@@ -328,7 +328,7 @@ export function CreateGroup() {
                             <Button
                                 type="button"
                                 variant="ghost"
-                                style={{ width: '100%', border: '2px dashed #e5e5e5', backgroundColor: '#16161B' }}
+                                style={{ width: '100%', border: '2px dashed var(--border-default)', backgroundColor: 'var(--bg-elevated)' }}
                                 icon={Plus}
                                 onClick={() => append({ name: '', phone: '' })}
                             >

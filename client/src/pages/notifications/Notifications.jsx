@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Bell, Wallet, AlertCircle, UserPlus, Check } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
+import { SkeletonList } from '../../components/ui/Skeleton';
 import api from '../../services/api';
 import { formatCurrency, formatDate } from '../../utils/helpers';
 import { useRefreshPolling } from '../../hooks/useRefreshPolling';
@@ -57,10 +58,11 @@ export function Notifications() {
     };
 
     return (
-        <div style={{ paddingBottom: 100, maxWidth: 680, margin: '0 auto' }}>
+        <div style={{ maxWidth: 680, margin: '0 auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
                 <button
                     onClick={() => navigate(-1)}
+                    aria-label="Go back"
                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#B0ADA8', padding: 8 }}
                 >
                     <ArrowLeft size={20} />
@@ -77,7 +79,7 @@ export function Notifications() {
             </div>
 
             {loading ? (
-                <p style={{ color: '#8A8680' }}>Loading…</p>
+                <SkeletonList count={3} />
             ) : notifications.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: 48, color: '#8A8680' }}>
                     <Bell size={40} style={{ marginBottom: 12, opacity: 0.4 }} />

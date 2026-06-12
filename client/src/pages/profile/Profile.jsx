@@ -169,7 +169,7 @@ export function Profile() {
 
     const SettingRow = ({ icon: Icon, label, value, onClick, danger }) => (
         <motion.button
-            whileHover={{ x: 4, backgroundColor: danger ? '#fef2f2' : '#fafafa' }}
+            whileHover={{ x: 4, backgroundColor: danger ? 'var(--danger-muted)' : 'var(--bg-surface)' }}
             whileTap={{ scale: 0.99 }}
             onClick={onClick}
             style={{
@@ -178,9 +178,9 @@ export function Profile() {
                 alignItems: 'center',
                 gap: '16px',
                 padding: '16px 20px',
-                backgroundColor: '#131316',
+                backgroundColor: 'var(--bg-elevated)',
                 border: 'none',
-                borderBottom: '1px solid #f5f5f5',
+                borderBottom: '1px solid var(--border-subtle)',
                 cursor: 'pointer',
                 textAlign: 'left',
             }}
@@ -190,21 +190,21 @@ export function Profile() {
                     width: '40px',
                     height: '40px',
                     borderRadius: '12px',
-                    backgroundColor: danger ? '#fef2f2' : '#f5f5f5',
+                    backgroundColor: danger ? 'var(--danger-muted)' : 'var(--bg-surface)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                 }}
             >
-                <Icon style={{ width: '20px', height: '20px', color: danger ? '#dc2626' : '#525252' }} />
+                <Icon style={{ width: '20px', height: '20px', color: danger ? 'var(--danger)' : 'var(--text-secondary)' }} />
             </div>
             <div style={{ flex: 1 }}>
-                <p style={{ margin: 0, fontWeight: '500', fontSize: '15px', color: danger ? '#dc2626' : '#0a0a0a' }}>
+                <p style={{ margin: 0, fontWeight: '500', fontSize: '15px', color: danger ? 'var(--danger)' : 'var(--text-primary)' }}>
                     {label}
                 </p>
-                {value && <p style={{ margin: 0, fontSize: '13px', color: '#6A6763' }}>{value}</p>}
+                {value && <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)' }}>{value}</p>}
             </div>
-            <ChevronRight style={{ width: '20px', height: '20px', color: '#d4d4d4' }} />
+            <ChevronRight style={{ width: '20px', height: '20px', color: 'var(--text-faint)' }} />
         </motion.button>
     );
 
@@ -213,7 +213,7 @@ export function Profile() {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            style={{ maxWidth: '600px', margin: '0 auto', paddingBottom: '100px' }}
+            style={{ maxWidth: '600px', margin: '0 auto' }}
         >
             {/* Header */}
             <motion.div variants={itemVariants} style={{ marginBottom: '32px' }}>
@@ -302,7 +302,7 @@ export function Profile() {
                         gap: '32px',
                         marginTop: '24px',
                         paddingTop: '24px',
-                        borderTop: '1px solid #f5f5f5',
+                        borderTop: '1px solid var(--border-subtle)',
                     }}
                 >
                     <div>
@@ -334,7 +334,7 @@ export function Profile() {
                             overflow: 'hidden',
                         }}
                     >
-                        <div style={{ padding: '20px', borderBottom: '1px solid #f5f5f5' }}>
+                        <div style={{ padding: '20px', borderBottom: '1px solid var(--border-subtle)' }}>
                             <Input
                                 label="Display Name"
                                 icon={User}
@@ -342,7 +342,7 @@ export function Profile() {
                                 {...profileForm.register('name')}
                             />
                         </div>
-                        <div style={{ padding: '20px', borderBottom: '1px solid #f5f5f5' }}>
+                        <div style={{ padding: '20px', borderBottom: '1px solid var(--border-subtle)' }}>
                             <Input
                                 label="Email"
                                 icon={Mail}

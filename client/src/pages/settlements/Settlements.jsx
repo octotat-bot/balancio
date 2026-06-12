@@ -142,7 +142,6 @@ export function Settlements() {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            style={{ paddingBottom: '100px' }}
         >
             {/* Header */}
             <motion.div variants={itemVariants} style={{ marginBottom: '32px' }}>
@@ -182,18 +181,16 @@ export function Settlements() {
                 {/* Net Balance */}
                 <Card hover={false} style={{
                     padding: '24px',
-                    background: netBalance >= 0
-                        ? 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)'
-                        : 'linear-gradient(135deg, #fef2f2 0%, #fecaca 100%)',
-                    border: 'none'
+                    background: netBalance >= 0 ? 'var(--success-muted)' : 'var(--danger-muted)',
+                    border: `1px solid ${netBalance >= 0 ? 'rgba(69, 194, 133, 0.25)' : 'rgba(217, 85, 85, 0.25)'}`,
                 }}>
-                    <p style={{ fontSize: '13px', fontWeight: '600', color: '#8A8680', margin: '0 0 8px 0', textTransform: 'uppercase' }}>
+                    <p style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-muted)', margin: '0 0 8px 0', textTransform: 'uppercase' }}>
                         Net Balance
                     </p>
                     <p style={{
                         fontSize: '32px',
                         fontWeight: '800',
-                        color: netBalance >= 0 ? '#16a34a' : '#dc2626',
+                        color: netBalance >= 0 ? 'var(--success)' : 'var(--danger)',
                         margin: 0
                     }}>
                         {netBalance >= 0 ? '+' : ''}{formatCurrency(netBalance)}
@@ -204,33 +201,33 @@ export function Settlements() {
                 </Card>
 
                 {/* Total I Owe */}
-                <Card hover={false} style={{ padding: '24px', backgroundColor: '#fef2f2', border: '2px solid #fecaca' }}>
+                <Card hover={false} style={{ padding: '24px', backgroundColor: 'var(--danger-muted)', border: '1px solid rgba(217, 85, 85, 0.25)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                        <TrendingDown size={18} style={{ color: '#dc2626' }} />
-                        <p style={{ fontSize: '13px', fontWeight: '600', color: '#dc2626', margin: 0, textTransform: 'uppercase' }}>
+                        <TrendingDown size={18} style={{ color: 'var(--danger)' }} />
+                        <p style={{ fontSize: '13px', fontWeight: '600', color: 'var(--danger)', margin: 0, textTransform: 'uppercase' }}>
                             I Owe
                         </p>
                     </div>
-                    <p style={{ fontSize: '28px', fontWeight: '800', color: '#dc2626', margin: 0 }}>
+                    <p style={{ fontSize: '28px', fontWeight: '800', color: 'var(--danger)', margin: 0 }}>
                         {formatCurrency(totalIOwe)}
                     </p>
-                    <p style={{ fontSize: '13px', color: '#b91c1c', margin: '8px 0 0 0' }}>
+                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '8px 0 0 0' }}>
                         To {myDebts.length} {myDebts.length === 1 ? 'person' : 'people'}
                     </p>
                 </Card>
 
                 {/* Total Owed to Me */}
-                <Card hover={false} style={{ padding: '24px', backgroundColor: '#f0fdf4', border: '2px solid #bbf7d0' }}>
+                <Card hover={false} style={{ padding: '24px', backgroundColor: 'var(--success-muted)', border: '1px solid rgba(69, 194, 133, 0.25)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                        <TrendingUp size={18} style={{ color: '#16a34a' }} />
-                        <p style={{ fontSize: '13px', fontWeight: '600', color: '#16a34a', margin: 0, textTransform: 'uppercase' }}>
+                        <TrendingUp size={18} style={{ color: 'var(--success)' }} />
+                        <p style={{ fontSize: '13px', fontWeight: '600', color: 'var(--success)', margin: 0, textTransform: 'uppercase' }}>
                             Owed to Me
                         </p>
                     </div>
-                    <p style={{ fontSize: '28px', fontWeight: '800', color: '#16a34a', margin: 0 }}>
+                    <p style={{ fontSize: '28px', fontWeight: '800', color: 'var(--success)', margin: 0 }}>
                         {formatCurrency(totalOwedToMe)}
                     </p>
-                    <p style={{ fontSize: '13px', color: '#15803d', margin: '8px 0 0 0' }}>
+                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '8px 0 0 0' }}>
                         From {owedToMe.length} {owedToMe.length === 1 ? 'person' : 'people'}
                     </p>
                 </Card>
@@ -251,28 +248,22 @@ export function Settlements() {
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
+                        className={activeTab === tab.id ? 'chip chip-active' : 'chip'}
                         style={{
-                            padding: '10px 20px',
-                            borderRadius: '10px',
-                            border: '2px solid',
-                            borderColor: activeTab === tab.id ? '#000' : '#e5e5e5',
-                            backgroundColor: activeTab === tab.id ? '#000' : '#fff',
-                            color: activeTab === tab.id ? '#fff' : '#525252',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
-                            whiteSpace: 'nowrap'
+                            whiteSpace: 'nowrap',
+                            fontSize: '14px',
+                            fontWeight: 600,
                         }}
                     >
                         {tab.label}
                         <span style={{
                             padding: '2px 8px',
                             borderRadius: '20px',
-                            backgroundColor: activeTab === tab.id ? '#fff' : (tab.color || '#f5f5f5'),
-                            color: activeTab === tab.id ? '#000' : (tab.color ? '#fff' : '#525252'),
+                            backgroundColor: activeTab === tab.id ? 'rgba(26, 8, 0, 0.15)' : 'var(--bg-hover)',
+                            color: activeTab === tab.id ? 'var(--accent-ink)' : 'var(--text-secondary)',
                             fontSize: '12px',
                             fontWeight: '700'
                         }}>
@@ -286,10 +277,10 @@ export function Settlements() {
             <motion.div variants={itemVariants}>
                 {activeTab === 'people' ? (
                     byPerson.length === 0 ? (
-                        <Card hover={false} style={{ padding: 48, textAlign: 'center', backgroundColor: '#f0fdf4', border: '2px solid #bbf7d0' }}>
+                        <Card hover={false} style={{ padding: 48, textAlign: 'center', backgroundColor: 'var(--success-muted)', border: '1px solid rgba(69, 194, 133, 0.25)' }}>
                             <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
-                            <h3 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 700, color: '#16a34a' }}>All settled up!</h3>
-                            <p style={{ margin: 0, color: '#15803d' }}>You don&apos;t owe anyone and no one owes you.</p>
+                            <h3 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 700, color: 'var(--success)' }}>All settled up!</h3>
+                            <p style={{ margin: 0, color: 'var(--text-muted)' }}>You don&apos;t owe anyone and no one owes you.</p>
                         </Card>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

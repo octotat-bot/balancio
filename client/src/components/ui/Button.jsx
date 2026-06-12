@@ -3,22 +3,22 @@ import { motion } from 'framer-motion';
 
 const variants = {
     primary: {
-        backgroundColor: '#D4A853',
-        color: '#ffffff',
+        backgroundColor: 'var(--accent)',
+        color: 'var(--accent-ink)',
         border: 'none',
     },
     secondary: {
-        backgroundColor: '#131316',
-        color: '#EDEAE4',
-        border: '2px solid #e5e5e5',
+        backgroundColor: 'var(--bg-surface)',
+        color: 'var(--text-primary)',
+        border: '2px solid var(--border-subtle)',
     },
     ghost: {
         backgroundColor: 'transparent',
-        color: '#B0ADA8',
+        color: 'var(--text-secondary)',
         border: 'none',
     },
     danger: {
-        backgroundColor: '#dc2626',
+        backgroundColor: 'var(--danger)',
         color: '#ffffff',
         border: 'none',
     },
