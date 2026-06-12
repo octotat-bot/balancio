@@ -54,7 +54,11 @@ export const useAuthStore = create(
 
                     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-                    return { success: true };
+                    return {
+                        success: true,
+                        onboarding: response.data.onboarding,
+                        userName: userData.name,
+                    };
                 } catch (error) {
                     console.error('Auth Store Signup Error:', error);
                     const message = error.response?.data?.message || 'Signup failed';

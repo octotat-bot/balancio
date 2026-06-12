@@ -2,8 +2,10 @@ import mongoose from 'mongoose';
 import Settlement from '../models/Settlement.js';
 import Group from '../models/Group.js';
 import Expense from '../models/Expense.js';
+import Friend from '../models/Friend.js';
 import { sendNotificationToUser, getIO } from '../socket/index.js';
 import { buildPairwiseMap, deriveSettlementEdges, computeMemberTotals } from '../utils/balanceCalculator.js';
+import { computeDirectBalance } from './friendController.js';
 
 export const getSettlements = async (req, res, next) => {
     try {
@@ -338,10 +340,141 @@ export const getBalances = async (req, res, next) => {
     }
 };
 
+export const getGlobalSummary = async (req, res, next) => {
+    try {
+        const userId = req.userId.toString();
+        const groups = await Group.find({
+            members: req.userId,
+            isLinkedFriendshipGroup: { $ne: true },
+        }).sort({ updatedAt: -1 });
+
+        let totalIOwe = 0;
+        let totalOwedToMe = 0;
+        const byPersonMap = {};
+        const groupDebts = [];
+
+        for (const group of groups) {
+            const populated = await Group.findById(group._id).populate('members', 'name email phone');
+            const expenses = await Expense.find({ group: group._id }).populate('paidBy', 'name');
+            const settlements = await Settlement.find({ group: group._id, confirmedByRecipient: true });
+
+            const memberInfo = {};
+            populated.members.forEach(m => {
+                memberInfo[m._id.toString()] = { _id: m._id, name: m.name, email: m.email, phone: m.phone, isPending: false };
+            });
+            (populated.pendingMembers || []).forEach(pm => {
+                memberInfo[pm._id.toString()] = { _id: pm._id, name: pm.name, phone: pm.phone, isPending: true };
+            });
+
+            const pairwiseMap = buildPairwiseMap(expenses, settlements);
+            const edges = deriveSettlementEdges(pairwiseMap, memberInfo, true).filter(edge => {
+                const fromId = (edge.from._id || edge.from).toString();
+                const toId = (edge.to._id || edge.to).toString();
+                return fromId === userId || toId === userId;
+            });
+
+            for (const edge of edges) {
+                const fromId = (edge.from._id || edge.from).toString();
+                const toId = (edge.to._id || edge.to).toString();
+                const iOwe = fromId === userId;
+                const other = iOwe ? edge.to : edge.from;
+                const personId = (other._id || other).toString();
+
+                if (!byPersonMap[personId]) {
+                    byPersonMap[personId] = {
+                        personId,
+                        name: other.name,
+                        phone: other.phone,
+                        isPending: Boolean(other.isPending),
+                        youOwe: 0,
+                        theyOwe: 0,
+                        items: [],
+                    };
+                }
+
+                if (iOwe) {
+                    byPersonMap[personId].youOwe += edge.amount;
+                    totalIOwe += edge.amount;
+                } else {
+                    byPersonMap[personId].theyOwe += edge.amount;
+                    totalOwedToMe += edge.amount;
+                }
+
+                byPersonMap[personId].items.push({
+                    type: 'group',
+                    groupId: group._id,
+                    groupName: group.name,
+                    groupIcon: group.icon || '👥',
+                    amount: edge.amount,
+                    direction: iOwe ? 'owe' : 'owed',
+                });
+
+                groupDebts.push({
+                    ...edge,
+                    groupId: group._id,
+                    groupName: group.name,
+                    groupIcon: group.icon || '👥',
+                });
+            }
+        }
+
+        const friendships = await Friend.find({
+            $or: [{ requester: req.userId }, { recipient: req.userId }],
+            status: 'accepted',
+        })
+            .populate('requester', 'name phone')
+            .populate('recipient', 'name phone');
+
+        for (const friendship of friendships) {
+            const balance = await computeDirectBalance(friendship, req.userId);
+            if (Math.abs(balance) < 0.01) continue;
+
+            const friend = friendship.requester._id.toString() === userId
+                ? friendship.recipient
+                : friendship.requester;
+            const personId = `friend-${friendship._id}`;
+
+            byPersonMap[personId] = {
+                personId,
+                friendshipId: friendship._id,
+                name: friend?.name || 'Friend',
+                phone: friend?.phone,
+                isPending: !friend,
+                youOwe: balance < 0 ? Math.abs(balance) : 0,
+                theyOwe: balance > 0 ? balance : 0,
+                items: [{
+                    type: 'friend',
+                    friendshipId: friendship._id,
+                    amount: Math.abs(balance),
+                    direction: balance < 0 ? 'owe' : 'owed',
+                }],
+            };
+
+            if (balance < 0) totalIOwe += Math.abs(balance);
+            else totalOwedToMe += balance;
+        }
+
+        const round = (n) => Math.round(n * 100) / 100;
+
+        res.json({
+            totalIOwe: round(totalIOwe),
+            totalOwedToMe: round(totalOwedToMe),
+            netBalance: round(totalOwedToMe - totalIOwe),
+            byPerson: Object.values(byPersonMap).sort((a, b) =>
+                (b.youOwe + b.theyOwe) - (a.youOwe + a.theyOwe)
+            ),
+            groupDebts,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 export default {
     getSettlements,
     createSettlement,
     confirmSettlement,
     deleteSettlement,
     getBalances,
+    getGlobalSummary,
 };

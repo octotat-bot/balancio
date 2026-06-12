@@ -32,6 +32,8 @@ export const signup = async (req, res, next) => {
             ]
         });
 
+        const joinedGroups = [];
+
         if (groupsWithPendingMember.length > 0) {
             for (const group of groupsWithPendingMember) {
                 // Find the pending member entry to get its _id
@@ -109,6 +111,12 @@ export const signup = async (req, res, next) => {
                     pm => normalizePhone(pm.phone) !== normalizedPhone
                 );
                 await group.save();
+
+                joinedGroups.push({
+                    _id: group._id,
+                    name: group.name,
+                    icon: group.icon || '👥',
+                });
             }
         }
 
@@ -118,6 +126,10 @@ export const signup = async (req, res, next) => {
             message: 'Account created successfully',
             user: user.toJSON(),
             token,
+            onboarding: {
+                wasPendingMember: joinedGroups.length > 0,
+                joinedGroups,
+            },
         });
     } catch (error) {
         next(error);

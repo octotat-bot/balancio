@@ -1,7 +1,9 @@
 import Expense from '../models/Expense.js';
 import DirectExpense from '../models/DirectExpense.js';
 import Friend from '../models/Friend.js';
+import User from '../models/User.js';
 import mongoose from 'mongoose';
+import { normalizePhone, phoneLookupVariants } from '../utils/phone.js';
 
 const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -118,6 +120,32 @@ export const getAnalytics = async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ message: 'Failed to fetch analytics' });
+    }
+};
+
+export const lookupPhone = async (req, res) => {
+    try {
+        const { phone } = req.query;
+        const normalized = normalizePhone(phone);
+
+        if (!normalized || normalized.length < 10) {
+            return res.json({ found: false, normalizedPhone: normalized || '' });
+        }
+
+        const user = await User.findOne({ phone: { $in: phoneLookupVariants(phone) } })
+            .select('name phone avatar');
+
+        if (user) {
+            return res.json({
+                found: true,
+                user: { _id: user._id, name: user.name, phone: user.phone, avatar: user.avatar },
+                normalizedPhone: normalized,
+            });
+        }
+
+        res.json({ found: false, normalizedPhone: normalized });
+    } catch (error) {
+        res.status(500).json({ message: 'Lookup failed' });
     }
 };
 

@@ -10,6 +10,8 @@ import CreateGroup from './pages/groups/CreateGroup';
 import Settlements from './pages/settlements/Settlements';
 import Friends from './pages/friends/Friends';
 import FriendDetail from './pages/friends/FriendDetail';
+import Onboarding from './pages/onboarding/Onboarding';
+import Notifications from './pages/notifications/Notifications';
 import Profile from './pages/profile/Profile';
 import Layout from './components/Layout';
 import SettlementNotifications from './components/notifications/SettlementNotifications';
@@ -107,8 +109,18 @@ function App() {
             <Route path="friends" element={<Friends />} />
             <Route path="friends/:friendshipId" element={<FriendDetail />} />
             <Route path="settlements" element={<Settlements />} />
+            <Route path="notifications" element={<Notifications />} />
             <Route path="profile" element={<Profile />} />
           </Route>
+
+          <Route
+            path="/onboarding"
+            element={
+              <ProtectedRoute>
+                <Onboarding />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

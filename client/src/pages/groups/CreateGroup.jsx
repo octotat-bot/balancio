@@ -19,6 +19,7 @@ import { useGroupStore } from '../../stores/groupStore';
 import { useToast } from '../../components/ui/Toast';
 import { useAuthStore } from '../../stores/authStore';
 import { phonesMatch } from '../../utils/phone';
+import { PhoneLookupFeedback } from '../../components/members/PhoneLookupFeedback';
 
 const createGroupSchema = z.object({
     name: z.string().min(1, 'Group name is required').max(50, 'Group name must be 50 characters or less'),
@@ -67,6 +68,7 @@ export function CreateGroup() {
         handleSubmit,
         formState: { errors },
         watch,
+        setValue,
     } = useForm({
         resolver: zodResolver(createGroupSchema),
         defaultValues: {
@@ -82,6 +84,7 @@ export function CreateGroup() {
     });
 
     const nameValue = watch('name');
+    const watchedMembers = watch('members');
 
     const onSubmit = async (data) => {
         // Filter out empty members
@@ -267,21 +270,30 @@ export function CreateGroup() {
                                         exit={{ opacity: 0, height: 0 }}
                                         style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
                                     >
-                                        <div style={{ display: 'flex', gap: '8px' }}>
-                                            <div style={{ flex: 1 }}>
-                                                <Input
-                                                    placeholder="Member name"
-                                                    icon={User}
-                                                    error={errors.members?.[index]?.name?.message}
-                                                    {...register(`members.${index}.name`)}
-                                                />
-                                            </div>
+                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                                             <div style={{ flex: 1 }}>
                                                 <Input
                                                     placeholder="Phone number"
                                                     icon={Phone}
                                                     error={errors.members?.[index]?.phone?.message}
                                                     {...register(`members.${index}.phone`)}
+                                                />
+                                                <PhoneLookupFeedback
+                                                    phone={watchedMembers?.[index]?.phone}
+                                                    excludeUserId={user?._id}
+                                                    onResolved={(result) => {
+                                                        if (result.type === 'found' && result.user?.name) {
+                                                            setValue(`members.${index}.name`, result.user.name);
+                                                        }
+                                                    }}
+                                                />
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <Input
+                                                    placeholder="Name (nickname if not on app)"
+                                                    icon={User}
+                                                    error={errors.members?.[index]?.name?.message}
+                                                    {...register(`members.${index}.name`)}
                                                 />
                                             </div>
                                             {fields.length > 1 && (
@@ -324,7 +336,7 @@ export function CreateGroup() {
                             </Button>
 
                             <p style={{ fontSize: '12px', color: '#6A6763', textAlign: 'center', margin: 0 }}>
-                                Add members by name and phone number (registered or not)
+                                Enter phone first — we&apos;ll show if they&apos;re on Balancio or will join later
                             </p>
                         </CardContent>
                     </Card>

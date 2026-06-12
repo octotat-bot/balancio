@@ -82,7 +82,12 @@ export function AuthPage() {
         });
         if (result.success) {
             toast.success('🎊 Welcome aboard!', 'Your account is ready to go');
-            navigate('/dashboard');
+            navigate('/onboarding', {
+                state: {
+                    onboarding: result.onboarding || { joinedGroups: [], wasPendingMember: false },
+                    userName: data.name,
+                },
+            });
         } else {
             console.error('Signup error:', result);
             toast.error('Signup failed', result.message || 'Please try again with different details');

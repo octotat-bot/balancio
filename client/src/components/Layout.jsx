@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Bell } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useChatStore } from '../stores/chatStore';
+import { useNotificationStore } from '../stores/notificationStore';
+import { useRefreshPolling } from '../hooks/useRefreshPolling';
 
 // ─── tiny SVG icon helpers ───────────────────────────────────────────────────
 const Icon = ({ d, size = 16, stroke = "currentColor", strokeWidth = 2, fill = "none", extra = "" }) => (
@@ -34,6 +37,7 @@ const GridIcon = ({ size = 16, color = "currentColor" }) => (
 export function Layout() {
     const { user } = useAuthStore();
     const { connect, joinUserRoom, disconnect } = useChatStore();
+    const { unreadCount, fetchUnreadCount } = useNotificationStore();
     const navigate = useNavigate();
     const location = useLocation();
     
@@ -52,6 +56,12 @@ export function Layout() {
         }
         return () => disconnect();
     }, [user?._id, connect, joinUserRoom, disconnect]);
+
+    useEffect(() => {
+        if (user?._id) fetchUnreadCount();
+    }, [user?._id, fetchUnreadCount, location.pathname]);
+
+    useRefreshPolling(fetchUnreadCount, 30000, Boolean(user?._id));
 
     useEffect(() => {
         const fmt = () => {
@@ -161,6 +171,28 @@ export function Layout() {
                 </div>
                 <div style={s.topRight}>
                     <span style={s.timeText}>{time}</span>
+                    <button
+                        type="button"
+                        onClick={() => navigate('/notifications')}
+                        aria-label="Notifications"
+                        style={{
+                            position: 'relative', background: 'none', border: 'none',
+                            cursor: 'pointer', color: '#B0ADA8', padding: 6, display: 'flex',
+                        }}
+                    >
+                        <Bell size={18} />
+                        {unreadCount > 0 && (
+                            <span style={{
+                                position: 'absolute', top: 0, right: 0,
+                                minWidth: 16, height: 16, borderRadius: 999,
+                                background: '#D95555', color: '#fff', fontSize: 10,
+                                fontWeight: 700, display: 'flex', alignItems: 'center',
+                                justifyContent: 'center', padding: '0 4px',
+                            }}>
+                                {unreadCount > 9 ? '9+' : unreadCount}
+                            </span>
+                        )}
+                    </button>
                     <div style={s.avatarCircle} onClick={() => navigate('/profile')}>
                         {user?.avatar ? (
                             <img src={user.avatar} alt="Profile" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />

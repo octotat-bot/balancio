@@ -6,7 +6,10 @@ import { Button } from '../../components/ui/Button';
 import { Avatar } from '../../components/ui/Avatar';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { useGroupStore } from '../../stores/groupStore';
+import { useFriendStore } from '../../stores/friendStore';
+import { useAuthStore } from '../../stores/authStore';
 import { formatCurrency } from '../../utils/helpers';
+import api from '../../services/api';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -37,15 +40,33 @@ const cardVariants = {
 
 export function GroupList() {
     const navigate = useNavigate();
+    const { user } = useAuthStore();
     const { groups, fetchGroups, isLoading } = useGroupStore();
+    const { friends, fetchFriends } = useFriendStore();
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState('recent');
     const [showFilters, setShowFilters] = useState(false);
+    const [friendBalances, setFriendBalances] = useState({});
 
     useEffect(() => {
         fetchGroups();
+        fetchFriends();
+        api.get('/friends/balances').then(res => {
+            setFriendBalances(res.data.balances || {});
+        }).catch(() => {});
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    const acceptedFriends = friends?.accepted || [];
+    const directEntries = acceptedFriends.map(f => {
+        const isRequester = f.requester?._id === user?._id || f.requester === user?._id;
+        const name = isRequester ? (f.recipient?.name || f.recipientName) : f.requester?.name;
+        return {
+            _id: f._id,
+            name: name || 'Friend',
+            balance: friendBalances[f._id] || 0,
+        };
+    });
 
     const filteredGroups = groups
         .filter((group) =>
@@ -220,6 +241,60 @@ export function GroupList() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {directEntries.length > 0 && (
+                <motion.div variants={itemVariants} style={{ marginBottom: 28 }}>
+                    <p style={{
+                        fontSize: 11, fontWeight: 700, letterSpacing: '0.1em',
+                        textTransform: 'uppercase', color: '#8A8680', marginBottom: 12,
+                    }}>
+                        Direct with friends
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {directEntries.map((entry, index) => (
+                            <motion.div
+                                key={entry._id}
+                                whileHover={{ x: 4, backgroundColor: '#1A1A1F' }}
+                                onClick={() => navigate(`/friends?friend=${entry._id}`)}
+                                style={{
+                                    backgroundColor: '#131316',
+                                    borderRadius: 14,
+                                    padding: '16px 20px',
+                                    border: '1px dashed #3f3f46',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 16,
+                                }}
+                            >
+                                <span style={{ fontSize: 22 }}>💬</span>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <p style={{ margin: 0, fontWeight: 600, color: '#EDEAE4' }}>
+                                        Direct with {entry.name}
+                                    </p>
+                                    <p style={{ margin: '2px 0 0', fontSize: 13, color: '#8A8680' }}>
+                                        1-on-1 expenses
+                                    </p>
+                                </div>
+                                <span style={{
+                                    fontWeight: 700,
+                                    color: entry.balance < 0 ? '#D95555' : entry.balance > 0 ? '#45C285' : '#8A8680',
+                                }}>
+                                    {entry.balance < 0 ? '−' : entry.balance > 0 ? '+' : ''}
+                                    {formatCurrency(Math.abs(entry.balance))}
+                                </span>
+                            </motion.div>
+                        ))}
+                    </div>
+                </motion.div>
+            )}
+
+            <p style={{
+                fontSize: 11, fontWeight: 700, letterSpacing: '0.1em',
+                textTransform: 'uppercase', color: '#8A8680', marginBottom: 12,
+            }}>
+                Groups
+            </p>
 
             {/* Groups List */}
             {filteredGroups.length === 0 ? (

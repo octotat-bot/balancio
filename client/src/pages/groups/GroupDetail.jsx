@@ -53,6 +53,7 @@ import SettleUp from '../../components/settlements/SettleUp';
 import { GroupChat } from '../../components/groups/GroupChat';
 import BudgetManager from '../../components/groups/BudgetManager';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
+import { PhoneLookupFeedback } from '../../components/members/PhoneLookupFeedback';
 
 const tabs = [
     { id: 'expenses', label: 'Expenses', icon: Receipt },
@@ -96,6 +97,8 @@ export function GroupDetail() {
 
     const [activeTab, setActiveTab] = useState('expenses');
     const [showAddExpense, setShowAddExpense] = useState(false);
+    const [showQuickAdd, setShowQuickAdd] = useState(false);
+    const [lastExpense, setLastExpense] = useState(null);
     const [showEditExpense, setShowEditExpense] = useState(false);
     const [showEditGroup, setShowEditGroup] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -135,6 +138,16 @@ export function GroupDetail() {
         return () => clearSettlements();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [groupId]);
+
+    useEffect(() => {
+        if (!groupId) return;
+        try {
+            const raw = localStorage.getItem(`balancio-last-expense-${groupId}`);
+            setLastExpense(raw ? JSON.parse(raw) : null);
+        } catch {
+            setLastExpense(null);
+        }
+    }, [groupId, expenses?.length]);
 
     // Socket Connection & Realtime Updates
     useEffect(() => {
@@ -316,9 +329,17 @@ export function GroupDetail() {
                         <p style={{ fontSize: '15px', color: '#B0ADA8', marginTop: '12px', margin: '12px 0 0' }}>{currentGroup.description}</p>
                     )}
                 </div>
-                <Button className="mobile-w-full" icon={Plus} onClick={() => setShowAddExpense(true)}>
-                    Add Expense
-                </Button>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {lastExpense && (
+                        <Button variant="secondary" onClick={() => setShowQuickAdd(true)}>
+                            Repeat: {lastExpense.description}
+                        </Button>
+                    )}
+                    <Button variant="secondary" onClick={() => setShowQuickAdd(true)}>Quick add</Button>
+                    <Button className="mobile-w-full" icon={Plus} onClick={() => setShowAddExpense(true)}>
+                        Add Expense
+                    </Button>
+                </div>
             </motion.div>
 
             {/* Tabs */}
@@ -1027,7 +1048,7 @@ export function GroupDetail() {
                             {currentGroup.pendingMembers && currentGroup.pendingMembers.length > 0 && (
                                 <div>
                                     <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: '#EDEAE4' }}>
-                                        Pending Members ({currentGroup.pendingMembers.length})
+                                        Waiting to join ({currentGroup.pendingMembers.length})
                                     </h3>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                         {currentGroup.pendingMembers.map((member) => (
@@ -1046,7 +1067,7 @@ export function GroupDetail() {
                                                         </p>
                                                     </div>
                                                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                                        <Badge variant="warning">Pending</Badge>
+                                                        <Badge variant="warning">Waiting to join</Badge>
                                                         {isAdmin && (
                                                             <Button
                                                                 size="sm"
@@ -1180,6 +1201,28 @@ export function GroupDetail() {
                 />
             </Modal>
 
+            <Modal
+                isOpen={showQuickAdd}
+                onClose={() => setShowQuickAdd(false)}
+                title="Quick Add"
+                size="md"
+            >
+                <AddExpense
+                    groupId={groupId}
+                    members={currentGroup.members || []}
+                    allMembers={currentGroup.allMembers || currentGroup.members || []}
+                    isAdmin={isAdmin}
+                    quickMode
+                    repeatFrom={lastExpense}
+                    onSuccess={() => {
+                        setShowQuickAdd(false);
+                        fetchExpenses(groupId);
+                        fetchBalances(groupId);
+                    }}
+                    onCancel={() => setShowQuickAdd(false)}
+                />
+            </Modal>
+
             {/* Add Member Modal */}
             <Modal
                 isOpen={showAddMember}
@@ -1193,23 +1236,32 @@ export function GroupDetail() {
             >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     <p style={{ color: '#B0ADA8', lineHeight: '1.5' }}>
-                        Add a member by their name and phone number. They don't need to be registered yet!
+                        Enter their phone number first. We&apos;ll tell you if they&apos;re already on Balancio.
                     </p>
 
                     <Input
-                        label="Member Name"
-                        placeholder="John Doe"
-                        icon={User}
-                        value={newMemberName}
-                        onChange={(e) => setNewMemberName(e.target.value)}
-                    />
-
-                    <Input
                         label="Phone Number"
-                        placeholder="+1 (555) 000-0000"
+                        placeholder="9876543210 or +91…"
                         icon={Phone}
                         value={newMemberPhone}
                         onChange={(e) => setNewMemberPhone(e.target.value)}
+                    />
+                    <PhoneLookupFeedback
+                        phone={newMemberPhone}
+                        excludeUserId={user?._id}
+                        onResolved={(result) => {
+                            if (result.type === 'found' && result.user?.name) {
+                                setNewMemberName(result.user.name);
+                            }
+                        }}
+                    />
+
+                    <Input
+                        label={newMemberName && newMemberPhone ? 'Display name' : 'Name (for pending members)'}
+                        placeholder="How you'll see them"
+                        icon={User}
+                        value={newMemberName}
+                        onChange={(e) => setNewMemberName(e.target.value)}
                     />
 
                     <div style={{ display: 'flex', gap: '12px' }}>

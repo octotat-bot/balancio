@@ -8,15 +8,22 @@ import Notification from '../models/Notification.js';
  */
 export const getNotifications = async (req, res) => {
     try {
-        const notifications = await Notification.find({
-            userId: req.userId,
-            read: false,
-        })
+        const filter = { userId: req.userId };
+        if (req.query.all !== 'true') {
+            filter.read = false;
+        }
+
+        const notifications = await Notification.find(filter)
             .sort({ createdAt: -1 })
-            .limit(50)          // cap the payload size
+            .limit(req.query.all === 'true' ? 100 : 50)
             .lean();
 
-        res.json({ notifications, count: notifications.length });
+        const unreadCount = await Notification.countDocuments({
+            userId: req.userId,
+            read: false,
+        });
+
+        res.json({ notifications, count: notifications.length, unreadCount });
     } catch (error) {
         console.error('getNotifications error:', error);
         res.status(500).json({ message: 'Failed to fetch notifications' });

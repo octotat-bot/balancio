@@ -5,12 +5,15 @@ import {
     confirmSettlement,
     deleteSettlement,
     getBalances,
+    getGlobalSummary,
 } from '../controllers/settlementController.js';
 import { auth } from '../middleware/auth.js';
 
 const router = express.Router();
 
 router.use(auth);
+
+router.get('/global/summary', getGlobalSummary);
 
 router.get('/:groupId/settlements', getSettlements);
 router.post('/:groupId/settlements', createSettlement);

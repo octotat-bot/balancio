@@ -43,7 +43,7 @@ const splitTypes = [
     { id: 'itemized', label: 'By Item', icon: '🧾' },
 ];
 
-export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, onSubmit, isAdmin = true, hidePaidBy = false }) {
+export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, onSubmit, isAdmin = true, hidePaidBy = false, quickMode = false, repeatFrom = null }) {
     const { createExpense, isLoading } = useExpenseStore();
     const { user } = useAuthStore();
     const toast = useToast();
@@ -56,10 +56,10 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
         || user?._id;
 
     // Mode State: 'simple' | 'receipt'
-    const [mode, setMode] = useState('simple');
+    const [mode, setMode] = useState(quickMode ? 'simple' : 'simple');
 
     // Split State
-    const [splitType, setSplitType] = useState('equal');
+    const [splitType, setSplitType] = useState(repeatFrom?.splitType || 'equal');
     const [selectedMembers, setSelectedMembers] = useState(memberList.map((m) => m._id));
     const [customSplits, setCustomSplits] = useState({});
 
@@ -78,10 +78,10 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
     } = useForm({
         resolver: zodResolver(expenseSchema),
         defaultValues: {
-            description: '',
-            amount: '',
+            description: repeatFrom?.description || '',
+            amount: repeatFrom?.amount ? String(repeatFrom.amount) : '',
             paidBy: defaultPayerId,
-            category: 'other',
+            category: repeatFrom?.category || 'other',
             date: new Date().toISOString().split('T')[0],
             notes: '',
         },
@@ -267,7 +267,17 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
         const result = await createExpense(groupId, expenseData);
 
         if (result.success) {
-            toast.success('💸 Expense added!', 'Recorded successfully');
+            try {
+                localStorage.setItem(`balancio-last-expense-${groupId}`, JSON.stringify({
+                    description: expenseData.description,
+                    amount: expenseData.amount,
+                    category: expenseData.category,
+                    splitType: expenseData.splitType,
+                }));
+            } catch {
+                // ignore
+            }
+            toast.success('💸 Expense added!', quickMode ? 'Quick expense recorded' : 'Recorded successfully');
             if (result.warning) {
                 // Short delay to let the first toast appear, or just stack them
                 setTimeout(() => {
@@ -463,6 +473,28 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
     }
 
     // Default Simple Mode Return
+    if (quickMode) {
+        return (
+            <form onSubmit={handleSubmit(handleFormSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <p style={{ margin: 0, fontSize: 13, color: '#8A8680' }}>
+                    Equal split among all {memberList.length} members — fastest way to log a bill.
+                </p>
+                <Input label="What was it?" placeholder="Dinner, Uber, Groceries…" {...register('description')} error={errors.description?.message} />
+                <Input label="Amount" type="number" placeholder="0" {...register('amount')} error={errors.amount?.message} />
+                <div>
+                    <label style={{ display: 'block', fontSize: 14, fontWeight: 600, marginBottom: 8, color: '#B0ADA8' }}>Category</label>
+                    <select {...register('category')} style={{ width: '100%', padding: 12, borderRadius: 12, border: '1px solid #252530', background: '#131316', color: '#EDEAE4' }}>
+                        {categories.map(c => <option key={c.value} value={c.value}>{c.emoji} {c.label}</option>)}
+                    </select>
+                </div>
+                <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+                    <Button type="button" variant="ghost" onClick={onCancel} style={{ flex: 1 }}>Cancel</Button>
+                    <Button type="submit" loading={isLoading} style={{ flex: 2 }}>Add expense</Button>
+                </div>
+            </form>
+        );
+    }
+
     return (
         <form onSubmit={handleSubmit(handleFormSubmit)} style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
             <div style={{ flex: 1, display: 'flex', gap: '32px', overflow: 'hidden' }}>

@@ -630,7 +630,7 @@ export const deleteDirectExpense = async (req, res) => {
 
 // ─── Direct Balance ────────────────────────────────────────────────────────────
 
-const computeDirectBalance = async (friendship, userId) => {
+export const computeDirectBalance = async (friendship, userId) => {
     const requesterId = friendship.requester._id?.toString() || friendship.requester.toString();
     const recipientId = friendship.recipient?._id?.toString() || friendship.recipient?.toString();
 

@@ -38,8 +38,9 @@ export function Settlements() {
     const toast = useToast();
 
     const [allSettlements, setAllSettlements] = useState([]);
+    const [globalSummary, setGlobalSummary] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('all'); // 'all', 'owe', 'owed'
+    const [activeTab, setActiveTab] = useState('people'); // 'people', 'all', 'owe', 'owed'
 
     useEffect(() => {
         loadAllSettlements();
@@ -76,6 +77,13 @@ export function Settlements() {
             }
 
             setAllSettlements(allDebts);
+
+            try {
+                const summaryRes = await api.get('/settlements/global/summary');
+                setGlobalSummary(summaryRes.data);
+            } catch {
+                setGlobalSummary(null);
+            }
         } catch (error) {
             toast.error('Couldn\'t load settlements', 'Please check your connection');
         }
@@ -86,25 +94,27 @@ export function Settlements() {
     const myDebts = allSettlements.filter(s => isSameId(s.from, user?._id));
     const owedToMe = allSettlements.filter(s => isSameId(s.to, user?._id));
 
-    // Calculate totals
-    const totalIOwe = myDebts.reduce((sum, d) => sum + d.amount, 0);
-    const totalOwedToMe = owedToMe.reduce((sum, d) => sum + d.amount, 0);
-    const netBalance = totalOwedToMe - totalIOwe;
+    const totalIOwe = globalSummary?.totalIOwe ?? myDebts.reduce((sum, d) => sum + d.amount, 0);
+    const totalOwedToMe = globalSummary?.totalOwedToMe ?? owedToMe.reduce((sum, d) => sum + d.amount, 0);
+    const netBalance = globalSummary?.netBalance ?? (totalOwedToMe - totalIOwe);
+    const byPerson = globalSummary?.byPerson || [];
 
-    // Get filtered settlements based on active tab
     const getFilteredSettlements = () => {
         switch (activeTab) {
             case 'owe':
                 return myDebts;
             case 'owed':
                 return owedToMe;
+            case 'people':
+                return [];
             default:
                 return [...myDebts, ...owedToMe];
         }
     };
 
     const tabs = [
-        { id: 'all', label: 'All', count: myDebts.length + owedToMe.length },
+        { id: 'people', label: 'By Person', count: byPerson.length },
+        { id: 'all', label: 'All Debts', count: myDebts.length + owedToMe.length },
         { id: 'owe', label: 'I Owe', count: myDebts.length, color: '#dc2626' },
         { id: 'owed', label: 'Owed to Me', count: owedToMe.length, color: '#16a34a' },
     ];
@@ -150,10 +160,10 @@ export function Settlements() {
                     </div>
                     <div>
                         <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#EDEAE4', margin: 0 }}>
-                            Settlements
+                            What I Owe
                         </h1>
                         <p style={{ fontSize: '15px', color: '#8A8680', margin: '4px 0 0 0' }}>
-                            All your debts and credits across groups
+                            Your balances with everyone — groups and friends
                         </p>
                     </div>
                 </div>
@@ -274,7 +284,63 @@ export function Settlements() {
 
             {/* Settlements List */}
             <motion.div variants={itemVariants}>
-                {getFilteredSettlements().length === 0 ? (
+                {activeTab === 'people' ? (
+                    byPerson.length === 0 ? (
+                        <Card hover={false} style={{ padding: 48, textAlign: 'center', backgroundColor: '#f0fdf4', border: '2px solid #bbf7d0' }}>
+                            <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
+                            <h3 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 700, color: '#16a34a' }}>All settled up!</h3>
+                            <p style={{ margin: 0, color: '#15803d' }}>You don&apos;t owe anyone and no one owes you.</p>
+                        </Card>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            {byPerson.map((person, index) => (
+                                <Card key={person.personId} hover={false} style={{ padding: 20, border: '1px solid #252530' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 12 }}>
+                                        <Avatar name={person.name} size="lg" />
+                                        <div style={{ flex: 1 }}>
+                                            <p style={{ margin: 0, fontWeight: 700, fontSize: 17, color: '#EDEAE4' }}>
+                                                {person.name}
+                                                {person.isPending && (
+                                                    <span style={{ marginLeft: 8, fontSize: 11, color: '#f59e0b', fontWeight: 600 }}>⏳ waiting to join</span>
+                                                )}
+                                            </p>
+                                            {person.phone && <p style={{ margin: '2px 0 0', fontSize: 13, color: '#8A8680' }}>{person.phone}</p>}
+                                        </div>
+                                        <div style={{ textAlign: 'right' }}>
+                                            {person.youOwe > 0.01 && (
+                                                <p style={{ margin: 0, color: '#dc2626', fontWeight: 800 }}>You owe {formatCurrency(person.youOwe)}</p>
+                                            )}
+                                            {person.theyOwe > 0.01 && (
+                                                <p style={{ margin: 0, color: '#16a34a', fontWeight: 800 }}>Owes you {formatCurrency(person.theyOwe)}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {person.items?.map((item, i) => (
+                                        <button
+                                            key={i}
+                                            type="button"
+                                            onClick={() => {
+                                                if (item.type === 'friend') navigate(`/friends?friend=${item.friendshipId}`);
+                                                else navigate(`/groups/${item.groupId}`);
+                                            }}
+                                            style={{
+                                                width: '100%', textAlign: 'left', padding: '10px 12px',
+                                                marginTop: 6, borderRadius: 10, border: '1px solid #252530',
+                                                background: '#1A1A1F', cursor: 'pointer', color: '#B0ADA8', fontSize: 13,
+                                            }}
+                                        >
+                                            {item.type === 'friend' ? '💬 Direct' : `${item.groupIcon || '👥'} ${item.groupName}`}
+                                            {' — '}
+                                            <span style={{ color: item.direction === 'owe' ? '#dc2626' : '#16a34a', fontWeight: 600 }}>
+                                                {formatCurrency(item.amount)}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </Card>
+                            ))}
+                        </div>
+                    )
+                ) : getFilteredSettlements().length === 0 ? (
                     <Card hover={false} style={{
                         padding: '48px',
                         textAlign: 'center',
@@ -298,7 +364,7 @@ export function Settlements() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         <AnimatePresence>
                             {getFilteredSettlements().map((settlement, index) => {
-                                const isIOwe = settlement.from._id === user?._id;
+                                const isIOwe = isSameId(settlement.from, user?._id);
 
                                 return (
                                     <motion.div
