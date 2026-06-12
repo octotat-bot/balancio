@@ -1,12 +1,24 @@
+/** Normalize MongoDB ObjectId / populated user to a comparable string id */
+export const getId = (entity) => {
+    if (entity == null) return '';
+    if (typeof entity === 'string') return entity;
+    const id = entity._id ?? entity;
+    return id?.toString?.() ?? String(id);
+};
+
+/** Compare two user/entity ids safely */
+export const isSameId = (a, b) => getId(a) === getId(b);
+
 // Format currency with symbol
 export const formatCurrency = (amount, currency = 'INR') => {
+    const value = amount == null || Number.isNaN(Number(amount)) ? 0 : Number(amount);
     const formatter = new Intl.NumberFormat('en-IN', {
         style: 'currency',
         currency,
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
     });
-    return formatter.format(amount);
+    return formatter.format(value);
 };
 
 // Format date to readable string

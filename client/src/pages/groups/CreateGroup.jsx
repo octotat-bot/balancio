@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Ca
 import { useGroupStore } from '../../stores/groupStore';
 import { useToast } from '../../components/ui/Toast';
 import { useAuthStore } from '../../stores/authStore';
+import { phonesMatch } from '../../utils/phone';
 
 const createGroupSchema = z.object({
     name: z.string().min(1, 'Group name is required').max(50, 'Group name must be 50 characters or less'),
@@ -86,7 +87,7 @@ export function CreateGroup() {
         // Filter out empty members
         const members = data.members
             .filter((m) => m.name && m.phone)
-            .filter((m) => m.phone !== user.phone); // Don't add yourself
+            .filter((m) => !phonesMatch(m.phone, user?.phone)); // Don't add yourself
 
         const result = await createGroup({
             name: data.name,

@@ -12,15 +12,14 @@ import { useToast } from '../../components/ui/Toast';
 
 const loginSchema = z.object({
     identifier: z.string().min(1, 'Email or phone is required'),
-    password: z.string().min(6, 'Password must be at least 6 characters'),
-    rememberMe: z.boolean().optional(),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
 const signupSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
     email: z.string().email('Invalid email address'),
     phone: z.string().min(10, 'Phone number must be at least 10 digits'),
-    password: z.string().min(6, 'Password must be at least 6 characters'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
     confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
@@ -51,7 +50,7 @@ export function AuthPage() {
 
     const loginForm = useForm({
         resolver: zodResolver(loginSchema),
-        defaultValues: { identifier: '', password: '', rememberMe: false },
+        defaultValues: { identifier: '', password: '' },
         mode: 'onChange'
     });
 
@@ -63,7 +62,7 @@ export function AuthPage() {
 
     const handleLogin = async (data) => {
         const isEmail = data.identifier.includes('@');
-        const result = await login(data.identifier, data.password, data.rememberMe, isEmail ? 'email' : 'phone');
+        const result = await login(data.identifier, data.password, isEmail ? 'email' : 'phone');
         if (result.success) {
             toast.success('👋 Welcome back!', 'Great to see you again');
             navigate('/dashboard');
@@ -234,12 +233,6 @@ export function AuthPage() {
                                         >
                                             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                         </button>
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                                            <input type="checkbox" {...loginForm.register('rememberMe')} style={{ width: '18px', height: '18px' }} />
-                                            <span style={{ fontSize: '14px', color: '#B0ADA8' }}>Remember me</span>
-                                        </label>
                                     </div>
                                     <Button type="submit" loading={isLoading} icon={ArrowRight} iconPosition="right" style={{ width: '100%', padding: '14px' }}>
                                         Sign In
@@ -645,20 +638,6 @@ export function AuthPage() {
                                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                             </button>
                                         </div>
-                                    </motion.div>
-
-                                    <motion.div variants={itemVariants} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                                            <input
-                                                type="checkbox"
-                                                {...loginForm.register('rememberMe')}
-                                                style={{ width: '18px', height: '18px', accentcolor: '#EDEAE4' }}
-                                            />
-                                            <span style={{ fontSize: '14px', color: '#B0ADA8' }}>Remember me</span>
-                                        </label>
-                                        <a href="#" style={{ fontSize: '14px', color: '#EDEAE4', fontWeight: '500', textDecoration: 'none' }}>
-                                            Forgot password?
-                                        </a>
                                     </motion.div>
 
                                     <motion.div variants={itemVariants}>

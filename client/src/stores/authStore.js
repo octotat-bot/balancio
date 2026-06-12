@@ -16,7 +16,7 @@ export const useAuthStore = create(
                 set({ _hasHydrated: state });
             },
 
-            login: async (identifier, password, rememberMe = false, type = 'email') => {
+            login: async (identifier, password, type = 'email') => {
                 set({ isLoading: true, error: null });
                 try {
                     const response = await api.post('/auth/login', { identifier, password, type });
@@ -89,6 +89,38 @@ export const useAuthStore = create(
                 }
             },
 
+            changePassword: async (currentPassword, newPassword) => {
+                set({ isLoading: true });
+                try {
+                    await api.put('/auth/password', { currentPassword, newPassword });
+                    set({ isLoading: false });
+                    return { success: true };
+                } catch (error) {
+                    set({ isLoading: false });
+                    return { success: false, message: error.response?.data?.message || 'Password change failed' };
+                }
+            },
+
+            deleteAccount: async () => {
+                set({ isLoading: true });
+                try {
+                    await api.delete('/auth/account');
+                    set({
+                        user: null,
+                        token: null,
+                        isAuthenticated: false,
+                        isLoading: false,
+                    });
+                    delete api.defaults.headers.common['Authorization'];
+                    localStorage.removeItem('auth-storage');
+                    sessionStorage.removeItem('auth-storage');
+                    return { success: true };
+                } catch (error) {
+                    set({ isLoading: false });
+                    return { success: false, message: error.response?.data?.message || 'Failed to delete account' };
+                }
+            },
+
             clearError: () => set({ error: null }),
 
             initAuth: () => {
@@ -102,13 +134,15 @@ export const useAuthStore = create(
             name: 'auth-storage',
             storage: {
                 getItem: (name) => {
-                    const str = sessionStorage.getItem(name);
+                    const str = localStorage.getItem(name) || sessionStorage.getItem(name);
                     return str ? JSON.parse(str) : null;
                 },
                 setItem: (name, value) => {
+                    localStorage.setItem(name, JSON.stringify(value));
                     sessionStorage.setItem(name, JSON.stringify(value));
                 },
                 removeItem: (name) => {
+                    localStorage.removeItem(name);
                     sessionStorage.removeItem(name);
                 },
             },

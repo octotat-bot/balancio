@@ -2,7 +2,7 @@ import User from '../models/User.js';
 import Group from '../models/Group.js';
 import Expense from '../models/Expense.js';
 import { generateToken } from '../middleware/auth.js';
-import { normalizePhone } from '../utils/phone.js';
+import { normalizePhone, phonesMatch, phoneLookupVariants } from '../utils/phone.js';
 
 export const signup = async (req, res, next) => {
     try {
@@ -11,14 +11,14 @@ export const signup = async (req, res, next) => {
         const normalizedPhone = normalizePhone(phone);
 
         const existingUser = await User.findOne({
-            $or: [{ email }, { phone: normalizedPhone }]
+            $or: [{ email }, { phone: { $in: phoneLookupVariants(phone) } }]
         });
 
         if (existingUser) {
             if (existingUser.email === email) {
                 return res.status(400).json({ message: 'Email already registered' });
             }
-            if (existingUser.phone === normalizedPhone) {
+            if (phonesMatch(existingUser.phone, normalizedPhone)) {
                 return res.status(400).json({ message: 'Phone number already registered' });
             }
         }
@@ -131,8 +131,7 @@ export const login = async (req, res, next) => {
 
         let user;
         if (type === 'phone' || !identifier.includes('@')) {
-            const normalizedPhone = normalizePhone(identifier);
-            user = await User.findOne({ phone: normalizedPhone }).select('+password');
+            user = await User.findOne({ phone: { $in: phoneLookupVariants(identifier) } }).select('+password');
         } else {
             user = await User.findOne({ email: identifier }).select('+password');
         }
@@ -182,9 +181,9 @@ export const updateProfile = async (req, res, next) => {
         }
         if (phone !== undefined) {
             const normalizedPhone = normalizePhone(phone);
-            if (normalizedPhone !== req.user.phone) {
-                const existingUser = await User.findOne({ phone: normalizedPhone });
-                if (existingUser) {
+            if (!phonesMatch(normalizedPhone, req.user.phone)) {
+                const existingUser = await User.findOne({ phone: { $in: phoneLookupVariants(phone) } });
+                if (existingUser && existingUser._id.toString() !== req.userId.toString()) {
                     return res.status(400).json({ message: 'Phone number already registered' });
                 }
             }

@@ -125,8 +125,13 @@ app.use('/api/friends', friendRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/notifications', notificationRoutes);
 
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
     const dbState = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+    try {
+        await connectToDatabase();
+    } catch (_) {
+        // Report disconnected below
+    }
     res.json({
         status: 'ok',
         timestamp: new Date().toISOString(),

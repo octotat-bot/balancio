@@ -1,11 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Check, Wallet, UserPlus, Users } from 'lucide-react';
+import { X, Check, Wallet, UserPlus, Users, AlertCircle } from 'lucide-react';
 import useSettlementNotificationStore from '../../stores/settlementNotificationStore';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
 import { useToast } from '../ui/Toast';
 import { useAuthStore } from '../../stores/authStore';
+import api from '../../services/api';
 
 // Format currency
 const formatCurrency = (amount) => {
@@ -72,6 +73,19 @@ function NotificationCard({ notification, onConfirm, onReject, onDismiss }) {
                     amount: notification.amount,
                     confirmText: 'Confirm',
                     rejectText: 'Reject'
+                };
+            case 'budgetAlert':
+                return {
+                    icon: AlertCircle,
+                    iconBg: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                    title: 'Budget Alert',
+                    subtitle: notification.groupName || notification.payload?.groupName || 'Group spending',
+                    name: notification.payload?.category || 'Budget',
+                    message: notification.message || notification.payload?.message || 'Spending exceeded your limit',
+                    amount: notification.amount || notification.payload?.amount,
+                    confirmText: 'Got it',
+                    rejectText: 'Dismiss',
+                    isInfoOnly: true,
                 };
             default:
                 return {
@@ -284,6 +298,14 @@ export function SettlementNotifications() {
                     toast.success('✅ Payment Confirmed!', 'The group balance has been updated');
                 }
                 break;
+            case 'budgetAlert':
+                try {
+                    await api.post(`/notifications/${notification._id}/read`);
+                    result = { success: true };
+                } catch (error) {
+                    result = { success: false, message: 'Could not dismiss alert' };
+                }
+                break;
             default:
                 result = { success: false, message: 'Unknown notification type' };
         }
@@ -317,6 +339,14 @@ export function SettlementNotifications() {
                 result = await rejectGroupSettlement(notification.groupId, notification._id);
                 if (result.success) {
                     toast.success('❌ Payment Rejected', 'The payment has been declined');
+                }
+                break;
+            case 'budgetAlert':
+                try {
+                    await api.post(`/notifications/${notification._id}/read`);
+                    result = { success: true };
+                } catch (error) {
+                    result = { success: false, message: 'Could not dismiss alert' };
                 }
                 break;
             default:

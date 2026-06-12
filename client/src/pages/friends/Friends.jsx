@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Users,
@@ -41,6 +42,7 @@ import { useFriendStore } from '../../stores/friendStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useToast } from '../../components/ui/Toast';
 import { formatCurrency, formatDate } from '../../utils/helpers';
+import { useRefreshPolling } from '../../hooks/useRefreshPolling';
 import AddExpense from '../../components/expenses/AddExpense';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 
@@ -57,6 +59,7 @@ const itemVariants = {
 
 export function Friends() {
     const { user } = useAuthStore();
+    const [searchParams] = useSearchParams();
     const {
         friends,
         selectedFriend,
@@ -110,6 +113,19 @@ export function Friends() {
         fetchFriends();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    useEffect(() => {
+        const friendId = searchParams.get('friend');
+        if (!friendId || !friends?.accepted?.length) return;
+        const match = friends.accepted.find(f => f._id === friendId);
+        if (match) setSelectedFriend(match);
+    }, [searchParams, friends?.accepted, setSelectedFriend]);
+
+    useRefreshPolling(() => {
+        if (selectedFriend?._id) {
+            fetchMessages(selectedFriend._id);
+        }
+    }, 15000, Boolean(selectedFriend?._id));
 
     // Listen for real-time friend updates
     useEffect(() => {
@@ -463,6 +479,9 @@ export function Friends() {
                                 </h1>
                                 <p style={{ fontSize: '15px', color: '#8A8680', margin: 0 }}>
                                     {friendData.phone}
+                                </p>
+                                <p style={{ fontSize: '13px', color: '#8A8680', margin: '8px 0 0' }}>
+                                    Private expenses between you two — not shown in your main Groups list.
                                 </p>
                             </div>
                             <Badge variant={friendData.isRegistered ? 'success' : 'warning'}>

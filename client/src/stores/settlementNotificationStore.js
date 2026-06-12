@@ -59,6 +59,23 @@ const useSettlementNotificationStore = create((set, get) => ({
             }
 
             let allGroupSettlements = [];
+            let budgetAlerts = [];
+            try {
+                const notifResponse = await api.get('/notifications');
+                budgetAlerts = (notifResponse.data?.notifications || [])
+                    .filter(n => n.type === 'budget_alert')
+                    .map(n => ({
+                        ...n,
+                        notificationType: 'budgetAlert',
+                        _id: n._id,
+                        message: n.payload?.message || 'Budget limit exceeded',
+                        groupName: n.payload?.groupName,
+                        amount: n.payload?.amount,
+                    }));
+            } catch (e) {
+                // Skip
+            }
+
             try {
                 const groupsResponse = await api.get('/groups');
                 const groupsData = groupsResponse.data;
@@ -91,14 +108,14 @@ const useSettlementNotificationStore = create((set, get) => ({
                 pendingGroupSettlements: allGroupSettlements
             });
 
-            get().checkForNewNotifications(pendingRequests, allFriendSettlements, allGroupSettlements, userId);
+            get().checkForNewNotifications(pendingRequests, allFriendSettlements, allGroupSettlements, budgetAlerts, userId);
 
         } catch (error) {
             // Skip
         }
     },
 
-    checkForNewNotifications: (friendRequests, friendSettlements, groupSettlements, userId) => {
+    checkForNewNotifications: (friendRequests, friendSettlements, groupSettlements, budgetAlerts = [], userId) => {
         const { notifiedIds, activeNotifications } = get();
 
         if (!userId) return;
@@ -144,6 +161,18 @@ const useSettlementNotificationStore = create((set, get) => ({
             }
         });
 
+        budgetAlerts.forEach(alert => {
+            const baId = `ba-${alert._id}`;
+            if (!notifiedIds.has(baId)) {
+                newNotifications.push({
+                    ...alert,
+                    notificationId: `${baId}-${Date.now()}`,
+                    notificationType: 'budgetAlert'
+                });
+                newNotifiedIds.add(baId);
+            }
+        });
+
         if (newNotifications.length > 0) {
             set({
                 activeNotifications: [...activeNotifications, ...newNotifications],
@@ -153,7 +182,7 @@ const useSettlementNotificationStore = create((set, get) => ({
     },
 
     addRealtimeNotification: (type, data) => {
-        const allowedTypes = ['friendRequest', 'friendSettlement', 'groupSettlement'];
+        const allowedTypes = ['friendRequest', 'friendSettlement', 'groupSettlement', 'budgetAlert'];
 
         if (!allowedTypes.includes(type)) {
             return;
@@ -165,6 +194,7 @@ const useSettlementNotificationStore = create((set, get) => ({
         if (type === 'friendRequest') uniqueId = `fr-${data._id}`;
         else if (type === 'friendSettlement') uniqueId = `fs-${data._id}`;
         else if (type === 'groupSettlement') uniqueId = `gs-${data._id}`;
+        else if (type === 'budgetAlert') uniqueId = `ba-${data._id}`;
         else uniqueId = `n-${data._id || Date.now()}`;
 
         if (notifiedIds.has(uniqueId)) {

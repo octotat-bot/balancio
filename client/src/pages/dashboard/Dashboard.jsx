@@ -248,13 +248,13 @@ export default function Dashboard() {
   const { groups, fetchGroups } = useGroupStore();
   const { friends, fetchFriends } = useFriendStore();
   
-  const [activeDock, setActiveDock] = useState("Home");
   const [activeFilter, setActiveFilter] = useState("This year");
   const [viewMode, setViewMode] = useState("classic");
-  const [time, setTime] = useState("");
   const [friendBalances, setFriendBalances] = useState({});
   const [analytics, setAnalytics] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const periodParam = { 'This year': 'year', '6 mo': '6mo', '3 mo': '3mo' }[activeFilter] || 'year';
 
   const acceptedFriends = friends?.accepted || [];
 
@@ -267,45 +267,33 @@ export default function Dashboard() {
 
   useEffect(() => {
     const fetchAllFriendBalances = async () => {
-      const balances = {};
-      for (const friend of acceptedFriends) {
-        try {
-          const response = await api.get(`/friends/${friend._id}/direct-balance`);
-          balances[friend._id] = response.data.balance || 0;
-        } catch (error) {
-          balances[friend._id] = 0;
-        }
+      if (acceptedFriends.length === 0) {
+        setFriendBalances({});
+        return;
       }
-      setFriendBalances(balances);
+      try {
+        const response = await api.get('/friends/balances');
+        setFriendBalances(response.data.balances || {});
+      } catch (error) {
+        const balances = {};
+        acceptedFriends.forEach(f => { balances[f._id] = 0; });
+        setFriendBalances(balances);
+      }
     };
-    if (acceptedFriends.length > 0) fetchAllFriendBalances();
+    fetchAllFriendBalances();
   }, [acceptedFriends]);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const res = await api.get('/users/analytics');
+        const res = await api.get(`/users/analytics?period=${periodParam}`);
         setAnalytics(res.data);
       } catch (error) {
         console.error("Error loading analytics");
       }
     };
-    const timeout = setTimeout(fetchAnalytics, 500);
-    return () => clearTimeout(timeout);
-  }, []);
-
-  useEffect(() => {
-    const fmt = () => {
-      const n = new Date();
-      let h = n.getHours(), m = n.getMinutes();
-      const ap = h >= 12 ? "PM" : "AM";
-      h = h % 12 || 12;
-      setTime(`${h}:${m < 10 ? "0" + m : m} ${ap}`);
-    };
-    fmt();
-    const id = setInterval(fmt, 30000);
-    return () => clearInterval(id);
-  }, []);
+    fetchAnalytics();
+  }, [periodParam]);
 
   // Compute Totals
   const groupTotals = (groups || []).reduce((acc, g) => {
@@ -323,19 +311,14 @@ export default function Dashboard() {
   const netBalance = totals.owed - totals.owes;
 
   // Compute Analytics Data for charts
-  const spendData = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  
-  if (analytics?.history) {
-    analytics.history.forEach((item, i) => {
-      if(i < 12) spendData[i] = item.amount;
-    });
-  }
-
+  const spendData = analytics?.history?.map(item => item.amount) || [];
+  const monthLabels = analytics?.history?.map(item => item.month.split(' ')[0]) || ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const categoryColors = ["#D4A853", "#D95555", "#45C285", "#3b82f6", "#8b5cf6"];
+
+  const categoryTotal = analytics?.totalSpend || 0;
   const categories = (analytics?.categories || []).slice(0, 3).map((c, i) => ({
     name: c.name,
-    pct: analytics.total ? Math.round((c.value / analytics.total) * 100) : 0,
+    pct: categoryTotal ? Math.round((c.value / categoryTotal) * 100) : 0,
     color: categoryColors[i % categoryColors.length]
   }));
 
@@ -364,52 +347,17 @@ export default function Dashboard() {
     return 'Good evening';
   };
 
-  const dockItems = [
-    { label: "Home",    href: "/dashboard", icon: <GridIcon size={16} color="currentColor" /> },
-    { label: "Groups",  href: "/groups",    icon: <Icon {...icons.groups}  size={16} /> },
-    { label: "Friends", href: "/friends",   icon: <Icon {...icons.friends} size={16} /> },
-    { label: "Settle",  href: "/settlements", icon: <Icon {...icons.settle}  size={16} /> },
-    { label: "Profile", href: "/profile",   icon: <Icon {...icons.profile} size={16} /> },
-  ];
+  const dockItems = [];
 
   // ── styles ──────────────────────────────────────────────────────────────────
   const s = {
     root: {
-      position: 'fixed',
-      inset: 0,
-      zIndex: 100,
-      overflowY: 'auto',
       fontFamily: "'Syne', sans-serif",
       background: "#0C0C0F",
       color: "#EDEAE4",
-      minHeight: "100vh",
-      display: "flex",
-      flexDirection: "column",
-    },
-    topbar: {
-      display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "14px 28px",
-      background: "rgba(19, 19, 22, 0.75)",
-      backdropFilter: "blur(16px)",
-      WebkitBackdropFilter: "blur(16px)",
-      borderBottom: "1px solid rgba(37, 37, 48, 0.5)",
-      position: "sticky", top: 0, zIndex: 50,
-    },
-    logoWrap: { display: "flex", alignItems: "center", gap: 10 },
-    logoMark: {
-      width: 32, height: 32, borderRadius: 8, background: "#D4A853",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      boxShadow: "0 4px 14px rgba(212, 168, 83, 0.2)",
-    },
-    logoName: { fontSize: 16, fontWeight: 800, letterSpacing: "0.02em" },
-    topRight: { display: "flex", alignItems: "center", gap: 10 },
-    timeText: { fontSize: 11, color: "#4A4845", fontFamily: "'JetBrains Mono', monospace" },
-    avatarCircle: {
-      width: 32, height: 32, borderRadius: "50%",
-      background: "#5C3A10", border: "1.5px solid #8A6520",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: 12, fontWeight: 700, color: "#F0C878", cursor: "pointer",
-      overflow: "hidden"
+      width: "100%",
+      margin: "0 -24px",
+      maxWidth: "calc(100% + 48px)",
     },
     hero: {
       display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
@@ -495,37 +443,6 @@ export default function Dashboard() {
       width: "100%", marginBottom: 8, transition: "all 0.15s",
     },
     emptyBox: { textAlign: "center", padding: "20px 0", borderBottom: "none" },
-    fabBar: {
-      display: "flex", alignItems: "center", justifyContent: "center",
-      padding: "14px 0 18px",
-      background: "rgba(19, 19, 22, 0.8)",
-      backdropFilter: "blur(16px)",
-      WebkitBackdropFilter: "blur(16px)",
-      borderTop: "1px solid rgba(37, 37, 48, 0.5)",
-      position: "sticky", bottom: 0, zIndex: 50,
-    },
-    fabInner: {
-      display: "flex", alignItems: "center", gap: 6,
-      background: "#1A1A1F", border: "1px solid #252530",
-      borderRadius: 999, padding: "6px 8px",
-      boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
-    },
-    fabItem: {
-      display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-      padding: "8px 22px", borderRadius: 999, cursor: "pointer", transition: "all 0.15s",
-      background: "transparent", border: "none", fontFamily: "'Syne', sans-serif",
-    },
-    fabSep: { width: 1, height: 32, background: "#252530" },
-    fabAdd: {
-      width: 46, height: 46, background: "#D4A853", borderRadius: "50%",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      cursor: "pointer", border: "none", flexShrink: 0, transition: "transform 0.15s, box-shadow 0.15s",
-      boxShadow: "0 4px 14px rgba(212, 168, 83, 0.3)",
-    },
-    fabLbl: {
-      fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase",
-      fontFamily: "'JetBrains Mono', monospace",
-    },
   };
 
   const [isMobile, setIsMobile] = useState(false);
@@ -573,27 +490,6 @@ export default function Dashboard() {
              zIndex: 0, pointerEvents: 'none', filter: 'blur(60px)'
            }}
         />
-
-        <header style={s.topbar}>
-          <div style={s.logoWrap}>
-            <motion.div style={s.logoMark} whileHover={{ rotate: 10, scale: 1.05 }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A0800" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" />
-              </svg>
-            </motion.div>
-            <span style={s.logoName}>Balancio</span>
-          </div>
-          <div style={s.topRight}>
-            <span style={s.timeText}>{time}</span>
-            <motion.div style={s.avatarCircle} onClick={() => navigate('/profile')} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.9 }}>
-              {user?.avatar ? (
-                <img src={user.avatar} alt="Profile" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-              ) : (
-                user?.name?.[0]?.toUpperCase() || 'M'
-              )}
-            </motion.div>
-          </div>
-        </header>
 
         <motion.section style={s.hero} variants={containerVariants} initial="hidden" animate="visible">
           <motion.div style={s.heroMain} variants={itemVariants}>
@@ -675,7 +571,7 @@ export default function Dashboard() {
                   {[...Array(12)].map((_, i) => <Skeleton key={i} width="100%" height={Math.random() * 80 + 20} style={{ flex: 1, borderRadius: '3px 3px 0 0' }} />)}
                 </div>
               ) : (
-                <BarChart data={spendData} labels={months} highlightIndex={4} />
+                <BarChart data={spendData.length ? spendData : [0]} labels={monthLabels} highlightIndex={Math.max(0, spendData.length - 1)} />
               )}
             </div>
 
@@ -756,7 +652,7 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   mappedFriends.map((f, i) => (
-                    <motion.div key={i} whileHover={{ backgroundColor: '#1A1A1F', x: 4 }} drag="x" dragConstraints={{ left: -60, right: 0 }} onClick={() => navigate('/friends')} style={{ ...s.listRow, position: 'relative', overflow: 'hidden', borderBottom: i < mappedFriends.length - 1 ? "1px solid rgba(37,37,48,0.4)" : "none" }}>
+                    <motion.div key={i} whileHover={{ backgroundColor: '#1A1A1F', x: 4 }} drag="x" dragConstraints={{ left: -60, right: 0 }} onClick={() => navigate(`/friends?friend=${f._id}`)} style={{ ...s.listRow, position: 'relative', overflow: 'hidden', borderBottom: i < mappedFriends.length - 1 ? "1px solid rgba(37,37,48,0.4)" : "none" }}>
                       <div style={s.lav}>{f.name[0].toUpperCase()}</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.name}</div>
@@ -845,63 +741,6 @@ export default function Dashboard() {
         </motion.div>
         )}
         </AnimatePresence>
-
-        <footer style={s.fabBar}>
-          <div style={s.fabInner}>
-            {dockItems.slice(0, 2).map(item => {
-              const isOn = activeDock === item.label;
-              return (
-                <motion.a key={item.label}
-                  whileTap={{ scale: 0.9 }}
-                  href={item.href}
-                  onClick={e => { e.preventDefault(); setActiveDock(item.label); navigate(item.href); }}
-                  style={{
-                    ...s.fabItem,
-                    textDecoration: "none",
-                    background: isOn ? "#2A2A32" : "transparent",
-                    color: isOn ? "#D4A853" : "#4A4845",
-                  }}>
-                  <span style={{ display: "flex", color: "inherit" }}>{item.icon}</span>
-                  <span style={{ ...s.fabLbl, color: "inherit" }}>{item.label}</span>
-                </motion.a>
-              );
-            })}
-
-            <div style={s.fabSep} />
-
-            <motion.button 
-              whileHover={{ scale: 1.1, rotate: 90 }} 
-              whileTap={{ scale: 0.9 }}
-              onClick={() => navigate('/groups/new')} style={s.fabAdd}
-              onMouseEnter={e => e.currentTarget.style.background = "#F0C878"}
-              onMouseLeave={e => e.currentTarget.style.background = "#D4A853"}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A0800" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-            </motion.button>
-
-            <div style={s.fabSep} />
-
-            {dockItems.slice(2).map(item => {
-              const isOn = activeDock === item.label;
-              return (
-                <motion.a key={item.label}
-                  whileTap={{ scale: 0.9 }}
-                  href={item.href}
-                  onClick={e => { e.preventDefault(); setActiveDock(item.label); navigate(item.href); }}
-                  style={{
-                    ...s.fabItem,
-                    textDecoration: "none",
-                    background: isOn ? "#2A2A32" : "transparent",
-                    color: isOn ? "#D4A853" : "#4A4845",
-                  }}>
-                  <span style={{ display: "flex", color: "inherit" }}>{item.icon}</span>
-                  <span style={{ ...s.fabLbl, color: "inherit" }}>{item.label}</span>
-                </motion.a>
-              );
-            })}
-          </div>
-        </footer>
       </div>
     </>
   );

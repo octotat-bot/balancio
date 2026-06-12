@@ -50,6 +50,10 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
 
     // Use allMembers if provided (includes pending), otherwise fall back to members
     const memberList = allMembers || members;
+    const registeredMembers = memberList.filter(m => !m.isPending);
+    const defaultPayerId = registeredMembers.find(m => m._id === user?._id)?._id
+        || registeredMembers[0]?._id
+        || user?._id;
 
     // Mode State: 'simple' | 'receipt'
     const [mode, setMode] = useState('simple');
@@ -76,12 +80,21 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
         defaultValues: {
             description: '',
             amount: '',
-            paidBy: user?._id || memberList[0]?._id,
+            paidBy: defaultPayerId,
             category: 'other',
             date: new Date().toISOString().split('T')[0],
             notes: '',
         },
     });
+
+    const paidByValue = watch('paidBy');
+
+    useEffect(() => {
+        const payer = memberList.find(m => m._id === paidByValue);
+        if (payer?.isPending && defaultPayerId) {
+            setValue('paidBy', defaultPayerId);
+        }
+    }, [memberList, paidByValue, defaultPayerId, setValue]);
 
     const watchAmount = watch('amount');
     const watchCategory = watch('category');
@@ -205,9 +218,11 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
             });
         }
 
-        // Check if paidBy is a pending member
-        const payer = getMemberById(data.paidBy);
-        const isPendingPayer = payer?.isPending;
+        // Payer must be a registered member
+        if (getMemberById(data.paidBy)?.isPending) {
+            toast.error('Invalid payer', 'Only registered members can pay for an expense. Pending members can still be included in the split.');
+            return;
+        }
 
         const expenseData = {
             description: data.description,
@@ -217,14 +232,8 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
             notes: data.notes,
             splitType, // 'itemized' if receipt mode
             splits,
+            paidBy: data.paidBy,
         };
-
-        // Set paidBy or paidByPending based on payer type
-        if (isPendingPayer) {
-            expenseData.paidByPending = data.paidBy;
-        } else {
-            expenseData.paidBy = data.paidBy;
-        }
 
         // Handle items for receipt mode - separate involved and involvedPending
         if (mode === 'receipt') {
@@ -324,8 +333,11 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
                                     cursor: !isAdmin ? 'not-allowed' : 'pointer'
                                 }}
                             >
-                                {memberList.map(m => <option key={m._id} value={m._id}>{m.name}{m.isPending ? ' (pending)' : ''}</option>)}
+                                {registeredMembers.map(m => <option key={m._id} value={m._id}>{m.name}{m._id === user?._id ? ' (you)' : ''}</option>)}
                             </select>
+                            <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#8A8680' }}>
+                                Pending members can be in the split, but cannot be the payer until they join.
+                            </p>
                         </div>
                     )}
 
@@ -526,13 +538,16 @@ export function AddExpense({ groupId, members, allMembers, onSuccess, onCancel, 
                                             opacity: !isAdmin ? 0.7 : 1
                                         }}
                                     >
-                                        {memberList.map((member) => (
+                                        {registeredMembers.map((member) => (
                                             <option key={member._id} value={member._id}>
-                                                {member.name} {member._id === user?._id ? '(you)' : ''}{member.isPending ? ' (pending)' : ''}
+                                                {member.name} {member._id === user?._id ? '(you)' : ''}
                                             </option>
                                         ))}
                                     </select>
                                 </div>
+                                <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#8A8680' }}>
+                                    Pending members can be in the split, but cannot pay until they join.
+                                </p>
                             </div>
                         )}
                         <Input label="Date" type="date" icon={Calendar} error={errors.date?.message} {...register('date')} />

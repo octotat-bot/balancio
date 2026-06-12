@@ -17,7 +17,8 @@ import { Avatar } from '../../components/ui/Avatar';
 import { useAuthStore } from '../../stores/authStore';
 import { useGroupStore } from '../../stores/groupStore';
 import { useToast } from '../../components/ui/Toast';
-import { formatCurrency } from '../../utils/helpers';
+import { formatCurrency, isSameId } from '../../utils/helpers';
+import { useRefreshPolling } from '../../hooks/useRefreshPolling';
 import api from '../../services/api';
 
 const containerVariants = {
@@ -43,6 +44,8 @@ export function Settlements() {
     useEffect(() => {
         loadAllSettlements();
     }, []);
+
+    useRefreshPolling(loadAllSettlements, 30000, true);
 
     const loadAllSettlements = async () => {
         setLoading(true);
@@ -80,8 +83,8 @@ export function Settlements() {
     };
 
     // Filter settlements involving the current user
-    const myDebts = allSettlements.filter(s => s.from._id === user?._id);
-    const owedToMe = allSettlements.filter(s => s.to._id === user?._id);
+    const myDebts = allSettlements.filter(s => isSameId(s.from, user?._id));
+    const owedToMe = allSettlements.filter(s => isSameId(s.to, user?._id));
 
     // Calculate totals
     const totalIOwe = myDebts.reduce((sum, d) => sum + d.amount, 0);

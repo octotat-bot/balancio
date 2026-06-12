@@ -44,7 +44,8 @@ import { useAuthStore } from '../../stores/authStore';
 import { useSettlementStore } from '../../stores/settlementStore';
 import { useChatStore } from '../../stores/chatStore';
 import { useToast } from '../../components/ui/Toast';
-import { formatCurrency, formatDate, simplifyDebts } from '../../utils/helpers';
+import { formatCurrency, formatDate, simplifyDebts, isSameId } from '../../utils/helpers';
+import { useRefreshPolling } from '../../hooks/useRefreshPolling';
 import AddExpense from '../../components/expenses/AddExpense';
 import EditExpense from '../../components/expenses/EditExpense';
 import EditGroup from '../../components/groups/EditGroup';
@@ -81,7 +82,7 @@ export function GroupDetail() {
     const navigate = useNavigate();
     const toast = useToast();
     const { user } = useAuthStore();
-    const { currentGroup, fetchGroup, deleteGroup, addMember, promoteToAdmin, removeMember, removePendingMember, isLoading: groupLoading } = useGroupStore();
+    const { currentGroup, fetchGroup, deleteGroup, addMember, promoteToAdmin, removeMember, removePendingMember, isLoading: groupLoading, error: groupError } = useGroupStore();
     const { expenses, fetchExpenses, deleteExpense, isLoading: expenseLoading } = useExpenseStore();
     const { messages, fetchMessages, sendMessage, joinGroup, leaveGroup, isConnected, socket } = useChatStore();
     const {
@@ -89,7 +90,8 @@ export function GroupDetail() {
         simplifiedDebts,
         balances: settlementBalances,
         fetchBalances,
-        fetchSettlements
+        fetchSettlements,
+        clearSettlements
     } = useSettlementStore();
 
     const [activeTab, setActiveTab] = useState('expenses');
@@ -113,7 +115,7 @@ export function GroupDetail() {
     useEffect(() => {
         const handleNudge = (e) => {
             const { toUserId, fromUserName } = e.detail;
-            if (user?._id === toUserId) {
+            if (isSameId(user?._id, toUserId)) {
                 toast.info('👋 Nudge!', `${fromUserName} is reminding you to settle up.`);
             }
         };
@@ -128,8 +130,9 @@ export function GroupDetail() {
             fetchGroup(groupId);
             fetchExpenses(groupId);
             fetchSettlements(groupId);
-            fetchBalances(groupId); // Uses store default/current state
+            fetchBalances(groupId);
         }
+        return () => clearSettlements();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [groupId]);
 
@@ -169,6 +172,17 @@ export function GroupDetail() {
             }
         }
     }, [groupId, isConnected, socket, user?._id, joinGroup, leaveGroup]);
+
+    useRefreshPolling(() => {
+        if (!groupId || isConnected) return;
+        fetchExpenses(groupId);
+        fetchSettlements(groupId);
+        fetchBalances(groupId);
+    }, 30000, Boolean(groupId) && !isConnected);
+
+    const registeredMemberCount = currentGroup?.members?.length || 0;
+    const pendingMemberCount = currentGroup?.pendingMembers?.length || 0;
+    const totalMemberCount = registeredMemberCount + pendingMemberCount;
 
     const handleDeleteGroup = async () => {
         const result = await deleteGroup(groupId);
@@ -229,8 +243,8 @@ export function GroupDetail() {
     // Use store data for debts - it respects the 'simplify' flag sent to backend
     const settlements = simplifiedDebts;
 
-    const isCreator = currentGroup?.creator?._id === user?._id || currentGroup?.creator === user?._id;
-    const isAdmin = currentGroup?.admins?.some(a => a._id === user?._id || a === user?._id);
+    const isCreator = isSameId(currentGroup?.creator, user?._id);
+    const isAdmin = currentGroup?.admins?.some(a => isSameId(a, user?._id));
 
     if (groupLoading) {
         return (
@@ -241,10 +255,18 @@ export function GroupDetail() {
     }
 
     if (!currentGroup) {
+        const isForbidden = groupError?.toLowerCase?.().includes('not a member');
         return (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column' }}>
-                <h2>Group not found</h2>
-                <Button onClick={() => navigate('/groups')} variant="secondary" style={{ marginTop: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', padding: '24px', textAlign: 'center' }}>
+                <h2 style={{ margin: '0 0 8px' }}>
+                    {isForbidden ? 'Access denied' : 'Group not found'}
+                </h2>
+                <p style={{ margin: '0 0 16px', color: '#737373', maxWidth: '320px' }}>
+                    {groupError || (isForbidden
+                        ? 'You are not a member of this group.'
+                        : 'This group may have been deleted or the link is invalid.')}
+                </p>
+                <Button onClick={() => navigate('/groups')} variant="secondary">
                     Back to Groups
                 </Button>
             </div>
@@ -284,7 +306,10 @@ export function GroupDetail() {
                         <Avatar name={currentGroup.name} size="lg" />
                         <div>
                             <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#EDEAE4', margin: '0 0 4px' }}>{currentGroup.name}</h1>
-                            <p style={{ fontSize: '15px', color: '#8A8680', margin: 0 }}>{currentGroup.members?.length || 0} members</p>
+                            <p style={{ fontSize: '15px', color: '#8A8680', margin: 0 }}>
+                                {totalMemberCount} member{totalMemberCount !== 1 ? 's' : ''}
+                                {pendingMemberCount > 0 ? ` (${pendingMemberCount} pending)` : ''}
+                            </p>
                         </div>
                     </div>
                     {currentGroup.description && (
@@ -1046,7 +1071,7 @@ export function GroupDetail() {
                                         ))}
                                     </div>
                                     <p style={{ fontSize: '13px', color: '#8A8680', marginTop: '12px', fontStyle: 'italic' }}>
-                                        💡 These members will be automatically added when they sign up with their phone number. You can add expenses with them in the meantime!
+                                        💡 Pending members auto-join when they sign up with the same phone number. Include them in expense splits — only registered members can be the payer.
                                     </p>
                                 </div>
                             )}

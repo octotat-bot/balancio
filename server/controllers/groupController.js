@@ -5,6 +5,7 @@ import User from '../models/User.js';
 import Settlement from '../models/Settlement.js';
 import Notification from '../models/Notification.js';
 import { getIO } from '../socket/index.js';
+import { normalizePhone, phonesMatch, phoneLookupVariants } from '../utils/phone.js';
 
 export const createGroup = async (req, res, next) => {
     try {
@@ -22,17 +23,25 @@ export const createGroup = async (req, res, next) => {
 
         if (members && members.length > 0) {
             for (const member of members) {
-                const user = await User.findOne({ phone: member.phone });
+                const normalizedPhone = normalizePhone(member.phone);
+                if (!normalizedPhone) continue;
+
+                const user = await User.findOne({ phone: { $in: phoneLookupVariants(member.phone) } });
 
                 if (user) {
-                    if (!group.members.includes(user._id)) {
+                    if (!group.members.some(id => id.toString() === user._id.toString())) {
                         group.members.push(user._id);
                     }
                 } else {
-                    group.pendingMembers.push({
-                        name: member.name,
-                        phone: member.phone,
-                    });
+                    const alreadyPending = group.pendingMembers.some(pm =>
+                        phonesMatch(pm.phone, normalizedPhone)
+                    );
+                    if (!alreadyPending) {
+                        group.pendingMembers.push({
+                            name: member.name,
+                            phone: normalizedPhone,
+                        });
+                    }
                 }
             }
             await group.save();
@@ -252,19 +261,26 @@ export const addMember = async (req, res, next) => {
             return res.status(403).json({ message: 'Only admins can add members' });
         }
 
-        const user = await User.findOne({ phone });
+        const normalizedPhone = normalizePhone(phone);
+        if (!normalizedPhone) {
+            return res.status(400).json({ message: 'Please enter a valid phone number' });
+        }
+
+        const user = await User.findOne({ phone: { $in: phoneLookupVariants(phone) } });
 
         if (user) {
-            if (group.members.includes(user._id)) {
+            if (group.members.some(id => id.toString() === user._id.toString())) {
                 return res.status(400).json({ message: 'User is already a member' });
             }
             group.members.push(user._id);
         } else {
-            const alreadyPending = group.pendingMembers.some(pm => pm.phone === phone);
+            const alreadyPending = group.pendingMembers.some(pm =>
+                phonesMatch(pm.phone, normalizedPhone)
+            );
             if (alreadyPending) {
                 return res.status(400).json({ message: 'User is already a pending member' });
             }
-            group.pendingMembers.push({ name, phone });
+            group.pendingMembers.push({ name, phone: normalizedPhone });
         }
 
         await group.save();
@@ -294,7 +310,7 @@ export const removeMember = async (req, res, next) => {
         }
 
         const memberId = req.params.memberId;
-        const memberIndex = group.members.indexOf(memberId);
+        const memberIndex = group.members.findIndex(id => id.toString() === memberId);
         if (memberIndex === -1) {
             return res.status(404).json({ message: 'Member not found in group' });
         }

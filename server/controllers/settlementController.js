@@ -82,7 +82,13 @@ export const createSettlement = async (req, res, next) => {
         const isFromMember = group.members.some(m => m.toString() === from.toString());
         const isToMember   = group.members.some(m => m.toString() === to.toString());
         if (!isFromMember || !isToMember) {
-            return res.status(400).json({ message: 'Both participants must be members of this group' });
+            return res.status(400).json({ message: 'Both participants must be registered members of this group' });
+        }
+
+        const isPayer = from.toString() === req.userId.toString();
+        const isRecipient = to.toString() === req.userId.toString();
+        if (!isPayer && !isRecipient) {
+            return res.status(403).json({ message: 'You must be the payer or recipient to record this payment' });
         }
 
         // Anti-collision check inside the transaction — the unique index is a
@@ -181,8 +187,16 @@ export const confirmSettlement = async (req, res, next) => {
             return res.status(404).json({ message: 'Settlement not found' });
         }
 
+        if (settlement.group.toString() !== req.params.groupId.toString()) {
+            return res.status(404).json({ message: 'Settlement not found in this group' });
+        }
+
         if (settlement.to.toString() !== req.userId.toString()) {
             return res.status(403).json({ message: 'Only the recipient can confirm this settlement' });
+        }
+
+        if (settlement.confirmedByRecipient) {
+            return res.status(400).json({ message: 'Settlement is already confirmed' });
         }
 
         settlement.confirmedByRecipient = true;
@@ -281,7 +295,10 @@ export const getBalances = async (req, res, next) => {
         const pairwiseMap = buildPairwiseMap(expenses, settlements);
 
         // ── PHASE 2: derive settlement edges ─────────────────────────────────
-        let settlementEdges = deriveSettlementEdges(pairwiseMap, memberInfo, shouldSimplify);
+        const rawEdges = deriveSettlementEdges(pairwiseMap, memberInfo, false);
+        let settlementEdges = shouldSimplify
+            ? deriveSettlementEdges(pairwiseMap, memberInfo, true)
+            : rawEdges;
 
         // Derive per-member totals from the pairwise map
         const memberTotals = computeMemberTotals(pairwiseMap);
@@ -312,9 +329,8 @@ export const getBalances = async (req, res, next) => {
         res.json({
             balances,
             simplifiedDebts: settlementEdges,
-            // detailedDebts kept for API shape compatibility — populated when
-            // simplify=false using the same edge list
-            detailedDebts: shouldSimplify ? [] : settlementEdges,
+            // Always return raw pairwise edges (simplify toggle only affects simplifiedDebts)
+            detailedDebts: rawEdges,
             isAdmin,
         });
     } catch (error) {

@@ -59,7 +59,7 @@ const cardVariants = {
 
 export function Profile() {
     const navigate = useNavigate();
-    const { user, logout, updateUser } = useAuthStore();
+    const { user, logout, updateUser, changePassword, deleteAccount } = useAuthStore();
     const { groups, fetchGroups } = useGroupStore();
     const { friends, fetchFriends } = useFriendStore();
     const toast = useToast();
@@ -142,9 +142,14 @@ export function Profile() {
     };
 
     const handlePasswordChange = async (data) => {
-        toast.success('🔒 Password changed!', 'Your account is now more secure');
-        setShowPasswordModal(false);
-        passwordForm.reset();
+        const result = await changePassword(data.currentPassword, data.newPassword);
+        if (result.success) {
+            toast.success('🔒 Password changed!', 'Your account is now more secure');
+            setShowPasswordModal(false);
+            passwordForm.reset();
+        } else {
+            toast.error('Password change failed', result.message || 'Please try again');
+        }
     };
 
     const handleLogout = () => {
@@ -153,9 +158,13 @@ export function Profile() {
     };
 
     const handleDeleteAccount = async () => {
-        toast.success('Account deleted', 'We\'re sad to see you go!');
-        logout();
-        navigate('/auth');
+        const result = await deleteAccount();
+        if (result.success) {
+            toast.success('Account deleted', 'We\'re sad to see you go!');
+            navigate('/auth');
+        } else {
+            toast.error('Could not delete account', result.message || 'Please try again');
+        }
     };
 
     const SettingRow = ({ icon: Icon, label, value, onClick, danger }) => (

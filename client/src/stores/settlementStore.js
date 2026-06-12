@@ -102,7 +102,14 @@ export const useSettlementStore = create((set, get) => ({
     },
 
     clearSettlements: () => {
-        set({ settlements: [], balances: [], simplifiedDebts: [] });
+        set({
+            settlements: [],
+            balances: [],
+            simplifiedDebts: [],
+            detailedDebts: [],
+            isSimplified: false,
+            error: null,
+        });
     },
 
     clearError: () => {

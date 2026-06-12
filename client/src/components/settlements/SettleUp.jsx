@@ -11,7 +11,8 @@ import { useSettlementStore } from '../../stores/settlementStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useToast } from '../ui/Toast';
 import { useChatStore } from '../../stores/chatStore';
-import { formatCurrency, formatDate } from '../../utils/helpers';
+import { formatCurrency, formatDate, getId, isSameId } from '../../utils/helpers';
+import { useRefreshPolling } from '../../hooks/useRefreshPolling';
 
 export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
     const { user } = useAuthStore();
@@ -22,6 +23,7 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
         isSimplified, toggleSimplify
     } = useSettlementStore();
     const toast = useToast();
+    const { isConnected } = useChatStore();
 
     const [activeTab, setActiveTab] = useState('settle');
     const [expandedDebt, setExpandedDebt] = useState(null);
@@ -32,9 +34,16 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
     const [isProcessing, setIsProcessing] = useState(false);
 
     useEffect(() => {
+        if (!groupId) return;
         fetchSettlements(groupId);
         fetchBalances(groupId);
-    }, [groupId]);
+    }, [groupId, fetchSettlements, fetchBalances]);
+
+    useRefreshPolling(() => {
+        if (!groupId || isConnected) return;
+        fetchSettlements(groupId);
+        fetchBalances(groupId);
+    }, 30000, Boolean(groupId) && !isConnected);
 
     // --- Handlers ---
 
@@ -42,7 +51,7 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
         if (isProcessing) return;
         setIsProcessing(true);
         const amount = isPartial ? parseFloat(paymentAmount) : debt.amount;
-        if (isPartial && (!amount || amount <= 0)) {
+        if (isPartial && (!amount || amount <= 0 || Number.isNaN(amount))) {
             toast.error('Invalid amount', 'Please enter a valid amount');
             setIsProcessing(false); return;
         }
@@ -51,7 +60,7 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
             setIsProcessing(false); return;
         }
         const result = await createSettlement(groupId, {
-            from: debt.from._id, to: debt.to._id, amount,
+            from: getId(debt.from), to: getId(debt.to), amount,
             note: note || (amount < debt.amount ? `Partial: ${formatCurrency(amount)}` : 'Payment sent'),
         });
         if (result.success) {
@@ -65,12 +74,15 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
         if (isProcessing) return;
         setIsProcessing(true);
         const result = await createSettlement(groupId, {
-            from: debt.from._id, to: debt.to._id, amount: debt.amount, note: 'Payment confirmed',
+            from: getId(debt.from), to: getId(debt.to), amount: debt.amount, note: 'Payment confirmed',
         });
         if (result.success) {
             const confirmResult = await confirmSettlement(groupId, result.settlement._id);
             if (confirmResult.success) {
                 toast.success('Payment confirmed!', 'Settlement complete');
+                fetchBalances(groupId); fetchSettlements(groupId);
+            } else {
+                toast.error('Confirm failed', confirmResult.message || 'Payment was recorded but could not be confirmed');
                 fetchBalances(groupId); fetchSettlements(groupId);
             }
         } else { toast.error('Failed', result.message || 'Please try again'); }
@@ -102,31 +114,49 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
     const resetForm = () => { setExpandedDebt(null); setPaymentAmount(''); setNote(''); setIsPartial(false); };
 
     const hasPendingSettlement = (fromUserId, toUserId) => {
-        return (settlements || []).some(s => s.from?._id === fromUserId && s.to?._id === toUserId && !s.confirmedByRecipient);
+        return (settlements || []).some(s =>
+            isSameId(s.from, fromUserId) &&
+            isSameId(s.to, toUserId) &&
+            !s.confirmedByRecipient
+        );
     };
 
-    const pendingConfirmations = (settlements || []).filter(s => s.to?._id === user?._id && !s.confirmedByRecipient);
-    const myPendingPayments = (settlements || []).filter(s => s.from?._id === user?._id && !s.confirmedByRecipient);
+    const pendingConfirmations = (settlements || []).filter(s =>
+        isSameId(s.to, user?._id) && !s.confirmedByRecipient
+    );
+    const myPendingPayments = (settlements || []).filter(s =>
+        isSameId(s.from, user?._id) && !s.confirmedByRecipient
+    );
 
-    // Build debts list
-    const sortedDebts = (detailedDebts || [])
-        .filter(pair => pair?.personA && pair?.personB && pair.netAmount > 0.01)
-        .map(pair => {
-            const debtor = pair.netDirection === 'AtoB' ? pair.personA : pair.personB;
-            const creditor = pair.netDirection === 'AtoB' ? pair.personB : pair.personA;
-            return { from: debtor, to: creditor, amount: pair.netAmount, pairKey: `${debtor._id}-${creditor._id}` };
-        })
-        .filter(d => (isAdmin && showAllSettlements) || d.from._id === user?._id || d.to._id === user?._id)
+    // Build debts list from API edges ({ from, to, amount })
+    const debtSource = isSimplified ? simplifiedDebts : (detailedDebts?.length ? detailedDebts : simplifiedDebts);
+    const sortedDebts = (debtSource || [])
+        .filter(edge => edge?.from && edge?.to && edge.amount > 0.01)
+        .map(edge => ({
+            from: edge.from,
+            to: edge.to,
+            amount: edge.amount,
+            pairKey: `${getId(edge.from)}-${getId(edge.to)}`,
+        }))
+        .filter(d =>
+            (isAdmin && showAllSettlements) ||
+            isSameId(d.from, user?._id) ||
+            isSameId(d.to, user?._id)
+        )
         .sort((a, b) => {
-            const aRank = a.from._id === user?._id ? 0 : a.to._id === user?._id ? 1 : 2;
-            const bRank = b.from._id === user?._id ? 0 : b.to._id === user?._id ? 1 : 2;
+            const aRank = isSameId(a.from, user?._id) ? 0 : isSameId(a.to, user?._id) ? 1 : 2;
+            const bRank = isSameId(b.from, user?._id) ? 0 : isSameId(b.to, user?._id) ? 1 : 2;
             return aRank - bRank;
         });
 
+    const canSettleDebt = (debt) => !debt.from?.isPending && !debt.to?.isPending;
+
     // Split debts into what you owe and what others owe you
-    const debtsYouOwe = sortedDebts.filter(d => d.from._id === user?._id);
-    const debtsOwedToYou = sortedDebts.filter(d => d.to._id === user?._id);
-    const otherDebts = sortedDebts.filter(d => d.from._id !== user?._id && d.to._id !== user?._id);
+    const debtsYouOwe = sortedDebts.filter(d => isSameId(d.from, user?._id));
+    const debtsOwedToYou = sortedDebts.filter(d => isSameId(d.to, user?._id));
+    const otherDebts = sortedDebts.filter(d =>
+        !isSameId(d.from, user?._id) && !isSameId(d.to, user?._id)
+    );
 
     const memberBalances = (balances || [])
         .filter(b => (isAdmin && showAllSettlements) || Math.abs(b.balance) > 0.01)
@@ -135,8 +165,8 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
     const maxAbsBalance = memberBalances.length > 0
         ? Math.max(...memberBalances.map(b => Math.abs(b.balance)), 1) : 1;
 
-    const totalOwed = sortedDebts.filter(d => d.to._id === user?._id).reduce((s, d) => s + d.amount, 0);
-    const totalIOwe = sortedDebts.filter(d => d.from._id === user?._id).reduce((s, d) => s + d.amount, 0);
+    const totalOwed = sortedDebts.filter(d => isSameId(d.to, user?._id)).reduce((s, d) => s + d.amount, 0);
+    const totalIOwe = sortedDebts.filter(d => isSameId(d.from, user?._id)).reduce((s, d) => s + d.amount, 0);
     const netBalance = totalOwed - totalIOwe;
 
     const tabItems = [
@@ -468,10 +498,10 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                                                 <DebtCard
                                                     key={debt.pairKey}
                                                     debt={debt}
-                                                    type="owe"
                                                     index={i}
                                                     isExpanded={expandedDebt === debt.pairKey}
-                                                    isPending={hasPendingSettlement(debt.from._id, debt.to._id)}
+                                                    isPending={hasPendingSettlement(debt.from, debt.to)}
+                                                    canSettle={canSettleDebt(debt)}
                                                     isProcessing={isProcessing}
                                                     paymentAmount={paymentAmount}
                                                     note={note}
@@ -502,13 +532,14 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                                                     key={debt.pairKey}
                                                     debt={debt}
                                                     index={i}
-                                                    isPending={hasPendingSettlement(debt.from._id, debt.to._id)}
+                                                    isPending={hasPendingSettlement(debt.from, debt.to)}
+                                                    canSettle={canSettleDebt(debt)}
                                                     isProcessing={isProcessing}
                                                     onConfirm={() => handleQuickConfirm(debt)}
                                                     onNudge={() => {
                                                         const { sendNudge, connect, isConnected } = useChatStore.getState();
                                                         if (!isConnected) connect();
-                                                        sendNudge(groupId, debt.from._id, user?.name);
+                                                        sendNudge(groupId, getId(debt.from), user?.name);
                                                         toast.success('Nudged!', `Reminded ${debt.from.name}`);
                                                     }}
                                                     cardStyle={cardStyle}
@@ -569,7 +600,7 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                         {memberBalances.length > 0 ? (
                             <div style={cardStyle}>
                                 {memberBalances.map((b, i) => {
-                                    const isMe = b.user?._id === user?._id;
+                                    const isMe = isSameId(b.user, user?._id);
                                     const isPositive = b.balance > 0;
                                     const isZero = Math.abs(b.balance) <= 0.01;
                                     const barWidth = isZero ? 0 : (Math.abs(b.balance) / maxAbsBalance) * 100;
@@ -738,8 +769,21 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
 }
 
 /* ── Debt Card (You owe someone) ── */
+function PendingSettleNotice({ member }) {
+    const phoneHint = member?.phone ? ` (${member.phone})` : '';
+    return (
+        <div style={{
+            flex: 1, padding: '9px 14px', borderRadius: '10px',
+            backgroundColor: '#fffbeb', border: '1px solid #fde68a',
+            fontSize: '12px', color: '#92400e', textAlign: 'center', fontWeight: '500',
+            lineHeight: 1.4,
+        }}>
+            {member?.name || 'They'} haven&apos;t joined yet. Ask them to sign up with their phone{phoneHint} to settle in the app.
+        </div>
+    );
+}
 function DebtCard({
-    debt, type, index, isExpanded, isPending, isProcessing,
+    debt, index, isExpanded, isPending, canSettle, isProcessing,
     paymentAmount, note, onPayFull, onTogglePartial, onPayPartial,
     onAmountChange, onNoteChange, cardStyle,
 }) {
@@ -786,7 +830,9 @@ function DebtCard({
 
                 {/* Action buttons */}
                 <div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}>
-                    {isPending ? (
+                    {!canSettle ? (
+                        <PendingSettleNotice member={debt.to?.isPending ? debt.to : debt.from} />
+                    ) : isPending ? (
                         <div style={{
                             flex: 1, padding: '9px 14px', borderRadius: '10px',
                             background: 'linear-gradient(135deg, #fffbeb, #fef3c7)',
@@ -917,7 +963,7 @@ function DebtCard({
 }
 
 /* ── Owed To You Card ── */
-function OwedToYouCard({ debt, index, isPending, isProcessing, onConfirm, onNudge, cardStyle }) {
+function OwedToYouCard({ debt, index, isPending, canSettle, isProcessing, onConfirm, onNudge, cardStyle }) {
     return (
         <motion.div
             initial={{ opacity: 0, y: 6 }}
@@ -961,7 +1007,9 @@ function OwedToYouCard({ debt, index, isPending, isProcessing, onConfirm, onNudg
 
                 {/* Actions */}
                 <div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}>
-                    {isPending ? (
+                    {!canSettle ? (
+                        <PendingSettleNotice member={debt.from?.isPending ? debt.from : debt.to} />
+                    ) : isPending ? (
                         <div style={{
                             flex: 1, padding: '9px 14px', borderRadius: '10px',
                             background: 'linear-gradient(135deg, #fffbeb, #fef3c7)',

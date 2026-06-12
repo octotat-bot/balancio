@@ -3,36 +3,72 @@ import DirectExpense from '../models/DirectExpense.js';
 import Friend from '../models/Friend.js';
 import mongoose from 'mongoose';
 
+const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+const getPeriodStart = (period, today = new Date()) => {
+    const end = new Date(today);
+    end.setHours(23, 59, 59, 999);
+
+    if (period === '3mo') {
+        const start = new Date(end);
+        start.setMonth(start.getMonth() - 2);
+        start.setDate(1);
+        start.setHours(0, 0, 0, 0);
+        return { start, end };
+    }
+
+    if (period === '6mo') {
+        const start = new Date(end);
+        start.setMonth(start.getMonth() - 5);
+        start.setDate(1);
+        start.setHours(0, 0, 0, 0);
+        return { start, end };
+    }
+
+    const start = new Date(end.getFullYear(), 0, 1);
+    start.setHours(0, 0, 0, 0);
+    return { start, end };
+};
+
+const buildMonthBuckets = (start, end) => {
+    const monthlyData = {};
+    const cursor = new Date(start);
+    cursor.setDate(1);
+    cursor.setHours(0, 0, 0, 0);
+
+    while (cursor <= end) {
+        const key = `${monthNames[cursor.getMonth()]} ${cursor.getFullYear()}`;
+        monthlyData[key] = 0;
+        cursor.setMonth(cursor.getMonth() + 1);
+    }
+
+    return monthlyData;
+};
+
 export const getAnalytics = async (req, res) => {
     try {
         const userId = req.user._id;
-        const today = new Date();
-        const startOfYear = new Date(today.getFullYear(), 0, 1);
+        const period = req.query.period || 'year';
+        const { start: startDate, end: endDate } = getPeriodStart(period);
 
         const groupExpenses = await Expense.find({
-            "splits.user": userId,
-            date: { $gte: startOfYear }
+            'splits.user': userId,
+            date: { $gte: startDate, $lte: endDate },
         }).select('amount date category splits paidBy');
 
         const friendships = await Friend.find({
-            $or: [{ requester: userId }, { recipient: userId }]
+            $or: [{ requester: userId }, { recipient: userId }],
         }).select('_id');
+
         const friendshipIds = friendships.map(f => f._id);
 
         const directExpenses = await DirectExpense.find({
             friendship: { $in: friendshipIds },
-            date: { $gte: startOfYear }
+            date: { $gte: startDate, $lte: endDate },
         }).select('amount date category payerShare friendShare paidBy');
 
-        const monthlyData = {};
+        const monthlyData = buildMonthBuckets(startDate, endDate);
         const categoryData = {};
-        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-        for (let i = 0; i < 12; i++) {
-            const d = new Date(today.getFullYear(), i, 1);
-            const key = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
-            monthlyData[key] = 0;
-        }
 
         const processExpense = (amount, category, date) => {
             const cat = category || 'General';
@@ -40,13 +76,16 @@ export const getAnalytics = async (req, res) => {
 
             const d = new Date(date);
             const key = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
-            if (monthlyData.hasOwnProperty(key)) {
+            if (Object.prototype.hasOwnProperty.call(monthlyData, key)) {
                 monthlyData[key] += amount;
             }
         };
 
         groupExpenses.forEach(exp => {
-            const mySplit = exp.splits.find(s => s.user.toString() === userId.toString());
+            const mySplit = exp.splits.find(s => {
+                const splitUserId = s.user?._id ?? s.user;
+                return splitUserId && splitUserId.toString() === userId.toString();
+            });
             if (mySplit) {
                 processExpense(mySplit.amount, exp.category, exp.date);
             }
@@ -66,15 +105,17 @@ export const getAnalytics = async (req, res) => {
             .map(([name, value]) => ({ name, value }))
             .sort((a, b) => b.value - a.value);
 
-        const totalGroupExpenses = await Expense.countDocuments({ "splits.user": userId });
+        const totalGroupExpenses = await Expense.countDocuments({ 'splits.user': userId });
         const totalDirectExpenses = await DirectExpense.countDocuments({ friendship: { $in: friendshipIds } });
+        const totalSpend = categories.reduce((sum, c) => sum + c.value, 0);
 
         res.json({
             history: Object.entries(monthlyData).map(([month, amount]) => ({ month, amount })),
             categories,
-            totalExpenses: totalGroupExpenses + totalDirectExpenses
+            totalExpenses: totalGroupExpenses + totalDirectExpenses,
+            totalSpend,
+            period,
         });
-
     } catch (error) {
         res.status(500).json({ message: 'Failed to fetch analytics' });
     }
@@ -88,31 +129,11 @@ export const searchUsers = async (req, res) => {
         const User = mongoose.model('User');
         const users = await User.find({
             email: { $regex: email, $options: 'i' },
-            _id: { $ne: req.user._id }
+            _id: { $ne: req.user._id },
         }).select('name email').limit(10);
 
         res.json({ users });
     } catch (error) {
         res.status(500).json({ message: 'Search failed' });
-    }
-};
-
-export const updateProfile = async (req, res) => {
-    try {
-        const { name, phone, avatar } = req.body;
-        const User = mongoose.model('User');
-        const user = await User.findById(req.user._id);
-
-        if (!user) return res.status(404).json({ message: 'User not found' });
-
-        if (name) user.name = name;
-        if (phone) user.phone = phone;
-        if (avatar) user.avatar = avatar;
-
-        await user.save();
-
-        res.json({ user });
-    } catch (error) {
-        res.status(500).json({ message: 'Failed to update profile' });
     }
 };

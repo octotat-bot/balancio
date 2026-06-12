@@ -15,6 +15,7 @@ import {
     addDirectExpense,
     getDirectExpenses,
     getDirectBalance,
+    getAllFriendBalances,
     deleteDirectExpense,
     settleFriendship,
     createDirectSettlement,
@@ -29,6 +30,7 @@ router.use(auth);
 
 router.post('/add', addFriend);
 router.get('/', getFriends);
+router.get('/balances', getAllFriendBalances);
 router.get('/pending', getPendingRequests);
 router.get('/unread', getUnreadCount);
 router.post('/:friendshipId/accept', acceptFriend);

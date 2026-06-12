@@ -1,5 +1,15 @@
 import axios from 'axios';
 
+const getStoredToken = () => {
+    try {
+        const raw = sessionStorage.getItem('auth-storage');
+        if (!raw) return null;
+        return JSON.parse(raw)?.state?.token ?? null;
+    } catch {
+        return null;
+    }
+};
+
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL || 'https://balancio-backend-six.vercel.app/api',
     headers: {
@@ -10,11 +20,13 @@ const api = axios.create({
 
 api.interceptors.request.use(
     (config) => {
+        const token = getStoredToken();
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
         return config;
     },
-    (error) => {
-        return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
 );
 
 api.interceptors.response.use(

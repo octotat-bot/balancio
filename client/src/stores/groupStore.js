@@ -21,15 +21,15 @@ export const useGroupStore = create((set, get) => ({
     },
 
     fetchGroup: async (groupId) => {
-        set({ isLoading: true, error: null });
+        set({ isLoading: true, error: null, currentGroup: null });
         try {
             const response = await api.get(`/groups/${groupId}`);
             set({ currentGroup: response.data.group, isLoading: false });
             return { success: true, group: response.data.group };
         } catch (error) {
             const message = error.response?.data?.message || 'Failed to fetch group';
-            set({ isLoading: false, error: message });
-            return { success: false, message };
+            set({ isLoading: false, error: message, currentGroup: null });
+            return { success: false, message, status: error.response?.status };
         }
     },
 

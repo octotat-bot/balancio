@@ -5,6 +5,7 @@ import { Send } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
 import { formatDate } from '../../utils/helpers';
+import { useRefreshPolling } from '../../hooks/useRefreshPolling';
 
 export function GroupChat({ groupId }) {
     const { user } = useAuthStore();
@@ -17,6 +18,7 @@ export function GroupChat({ groupId }) {
         typingUsers,
         connect,
         disconnect,
+        fetchMessages,
         isConnected,
         isLoading
     } = useChatStore();
@@ -39,11 +41,13 @@ export function GroupChat({ groupId }) {
         }
     }, [isConnected, groupId, user?._id]); // Re-join if connection resets or group changes
 
-    // Auto-scroll to bottom of list (which is actually top physically if we use flex-col-reverse, 
-    // but usually easier to assume standard order and scrollIntoView)
-    // Actually, store appends new messages to TOP, so we might want flex-col-reverse.
-    // "messages: [message, ...state.messages]" -> Newest first.
-    // So we should iterate messages in reverse or use flex-col-reverse.
+    useRefreshPolling(() => {
+        if (groupId && !isConnected) {
+            fetchMessages(groupId);
+        }
+    }, 15000, Boolean(groupId) && !isConnected);
+
+    // Auto-scroll to bottom of list
 
     const handleSend = (e) => {
         e.preventDefault();

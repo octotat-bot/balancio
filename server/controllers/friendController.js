@@ -630,6 +630,74 @@ export const deleteDirectExpense = async (req, res) => {
 
 // ─── Direct Balance ────────────────────────────────────────────────────────────
 
+const computeDirectBalance = async (friendship, userId) => {
+    const requesterId = friendship.requester._id?.toString() || friendship.requester.toString();
+    const recipientId = friendship.recipient?._id?.toString() || friendship.recipient?.toString();
+
+    if (!recipientId) return 0;
+
+    const friendId = requesterId === userId.toString() ? recipientId : requesterId;
+    let balance = 0;
+
+    if (friendship.linkedGroup) {
+        const groupExpenses = await Expense.find({ group: friendship.linkedGroup });
+        const groupSettlements = await Settlement.find({
+            group: friendship.linkedGroup,
+            confirmedByRecipient: true,
+        });
+
+        for (const exp of groupExpenses) {
+            const mySplit = exp.splits.find(s => s.user?.toString() === userId.toString());
+            const friendSplit = exp.splits.find(s => s.user?.toString() === friendId);
+
+            if (!mySplit && !friendSplit) continue;
+
+            if (exp.paidBy?.toString() === userId.toString()) {
+                balance += friendSplit?.amount || 0;
+            } else if (exp.paidBy?.toString() === friendId) {
+                balance -= mySplit?.amount || 0;
+            }
+        }
+
+        for (const s of groupSettlements) {
+            if (s.from.toString() === userId.toString() && s.to.toString() === friendId) {
+                balance += s.amount;
+            } else if (s.from.toString() === friendId && s.to.toString() === userId.toString()) {
+                balance -= s.amount;
+            }
+        }
+    }
+
+    return Math.round(balance * 100) / 100;
+};
+
+/**
+ * GET /api/friends/balances
+ * Batch balance lookup for dashboard (avoids N+1 requests).
+ */
+export const getAllFriendBalances = async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        const friendships = await Friend.find({
+            $or: [{ requester: userId }, { recipient: userId }],
+            status: 'accepted',
+        })
+            .populate('requester', 'name email')
+            .populate('recipient', 'name email');
+
+        const balances = {};
+        for (const friendship of friendships) {
+            balances[friendship._id.toString()] = await computeDirectBalance(friendship, userId);
+        }
+
+        res.json({ balances });
+    } catch (error) {
+        console.error('Get all friend balances error:', error);
+        res.status(500).json({ message: 'Failed to fetch friend balances' });
+    }
+};
+
 /**
  * GET /api/friends/:friendshipId/direct-balance
  * Computes the net balance between two friends using the unified Group + Expense
@@ -659,44 +727,14 @@ export const getDirectBalance = async (req, res) => {
             ? friendship.recipient._id
             : friendship.requester._id;
 
-        let balance = 0;
-        let youOwe  = 0;
+        const balance = await computeDirectBalance(friendship, userId);
+
+        let youOwe = 0;
         let theyOwe = 0;
-
-        if (friendship.linkedGroup) {
-            const groupExpenses    = await Expense.find({ group: friendship.linkedGroup });
-            const groupSettlements = await Settlement.find({ group: friendship.linkedGroup, confirmedByRecipient: true });
-
-            for (const exp of groupExpenses) {
-                const mySplit     = exp.splits.find(s => s.user?.toString() === userId.toString());
-                const friendSplit = exp.splits.find(s => s.user?.toString() === friendId.toString());
-
-                if (!mySplit && !friendSplit) continue;
-
-                if (exp.paidBy?.toString() === userId.toString()) {
-                    balance += friendSplit?.amount || 0;
-                } else if (exp.paidBy?.toString() === friendId.toString()) {
-                    balance -= mySplit?.amount || 0;
-                }
-            }
-
-            for (const s of groupSettlements) {
-                if (s.from.toString() === userId.toString() && s.to.toString() === friendId.toString()) {
-                    balance += s.amount;
-                } else if (s.from.toString() === friendId.toString() && s.to.toString() === userId.toString()) {
-                    balance -= s.amount;
-                }
-            }
-        }
-        // No linkedGroup → balance stays 0 (no data to compute from)
-
-        balance = Math.round(balance * 100) / 100;
         if (balance > 0) {
             theyOwe = balance;
-            youOwe  = 0;
         } else if (balance < 0) {
-            youOwe  = Math.abs(balance);
-            theyOwe = 0;
+            youOwe = Math.abs(balance);
         }
 
         res.json({
