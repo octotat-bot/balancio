@@ -13,8 +13,8 @@ export const useFriendStore = create((set, get) => ({
     error: null,
     unreadCount: 0,
 
-    fetchFriends: async () => {
-        set({ isLoading: true, error: null });
+    fetchFriends: async ({ silent = false } = {}) => {
+        if (!silent) set({ isLoading: true, error: null });
         try {
             const response = await api.get('/friends');
             set({

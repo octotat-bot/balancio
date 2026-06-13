@@ -12,8 +12,6 @@ import { useAuthStore } from '../../stores/authStore';
 import { useToast } from '../ui/Toast';
 import { useChatStore } from '../../stores/chatStore';
 import { formatCurrency, formatDate, getId, isSameId } from '../../utils/helpers';
-import { REALTIME_POLL_FAST_MS } from '../../constants/realtime';
-import { useRefreshPolling } from '../../hooks/useRefreshPolling';
 
 export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
     const { user } = useAuthStore();
@@ -24,7 +22,6 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
         isSimplified, toggleSimplify
     } = useSettlementStore();
     const toast = useToast();
-    const { isConnected } = useChatStore();
 
     const [activeTab, setActiveTab] = useState('settle');
     const [expandedDebt, setExpandedDebt] = useState(null);
@@ -36,15 +33,11 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
 
     useEffect(() => {
         if (!groupId) return;
-        fetchSettlements(groupId);
-        fetchBalances(groupId);
+        const { activeGroupId } = useSettlementStore.getState();
+        if (activeGroupId === groupId) return;
+        fetchSettlements(groupId, { silent: true });
+        fetchBalances(groupId, null, { silent: true });
     }, [groupId, fetchSettlements, fetchBalances]);
-
-    useRefreshPolling(() => {
-        if (!groupId || isConnected) return;
-        fetchSettlements(groupId);
-        fetchBalances(groupId);
-    }, REALTIME_POLL_FAST_MS, Boolean(groupId) && !isConnected);
 
     // --- Handlers ---
 
@@ -169,6 +162,24 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
     const totalOwed = sortedDebts.filter(d => isSameId(d.to, user?._id)).reduce((s, d) => s + d.amount, 0);
     const totalIOwe = sortedDebts.filter(d => isSameId(d.from, user?._id)).reduce((s, d) => s + d.amount, 0);
     const netBalance = totalOwed - totalIOwe;
+    const hasOutstandingDebts = totalIOwe > 0.01 || totalOwed > 0.01;
+    const isFullySettled = !hasOutstandingDebts;
+    const isNetEven = Math.abs(netBalance) <= 0.01 && hasOutstandingDebts;
+
+    const heroTone = isFullySettled
+        ? 'settled'
+        : netBalance > 0.01
+            ? 'positive'
+            : netBalance < -0.01
+                ? 'negative'
+                : 'even';
+
+    const heroLabel = {
+        settled: 'All settled',
+        positive: "You're owed",
+        negative: 'You owe',
+        even: 'Net even',
+    }[heroTone];
 
     const tabItems = [
         { id: 'settle', label: 'Settle Up', icon: Send },
@@ -179,9 +190,8 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
     // Shared styles
     const cardStyle = {
         borderRadius: '16px',
-        backgroundColor: '#131316',
-        border: '1px solid rgba(0,0,0,0.06)',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02)',
+        backgroundColor: 'var(--bg-elevated, #131316)',
+        border: '1px solid var(--border-subtle, #252530)',
         overflow: 'hidden',
     };
 
@@ -194,6 +204,37 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
         marginBottom: '10px',
     };
 
+    const heroStyles = {
+        settled: {
+            bg: 'var(--bg-surface, #1A1A1F)',
+            border: '1px solid var(--border-subtle, #252530)',
+            accent: 'var(--text-muted, #8A8680)',
+            amount: 'var(--text-muted, #8A8680)',
+            glow: 'rgba(138, 134, 128, 0.12)',
+        },
+        positive: {
+            bg: 'var(--success-muted, rgba(69, 194, 133, 0.12))',
+            border: '1px solid rgba(69, 194, 133, 0.25)',
+            accent: 'var(--success, #45C285)',
+            amount: 'var(--success, #45C285)',
+            glow: 'rgba(69, 194, 133, 0.15)',
+        },
+        negative: {
+            bg: 'var(--danger-muted, rgba(217, 85, 85, 0.12))',
+            border: '1px solid rgba(217, 85, 85, 0.25)',
+            accent: 'var(--danger, #D95555)',
+            amount: 'var(--danger, #D95555)',
+            glow: 'rgba(217, 85, 85, 0.15)',
+        },
+        even: {
+            bg: 'var(--warning-muted, rgba(212, 168, 83, 0.12))',
+            border: '1px solid rgba(212, 168, 83, 0.25)',
+            accent: 'var(--accent, #D4A853)',
+            amount: 'var(--text-primary, #EDEAE4)',
+            glow: 'rgba(212, 168, 83, 0.12)',
+        },
+    }[heroTone];
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
@@ -203,83 +244,76 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4 }}
                 style={{
-                    padding: '24px',
-                    borderRadius: '20px',
-                    background: netBalance > 0
-                        ? 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)'
-                        : netBalance < 0
-                            ? 'linear-gradient(135deg, #fef2f2 0%, #fecaca40 100%)'
-                            : 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-                    border: netBalance > 0
-                        ? '1px solid #a7f3d0'
-                        : netBalance < 0
-                            ? '1px solid #fecaca'
-                            : '1px solid #e2e8f0',
+                    padding: '20px 22px',
+                    borderRadius: '16px',
+                    background: heroStyles.bg,
+                    border: heroStyles.border,
                     position: 'relative',
                     overflow: 'hidden',
                 }}
             >
-                {/* Background decorative circle */}
                 <div style={{
-                    position: 'absolute', top: '-20px', right: '-20px',
-                    width: '120px', height: '120px', borderRadius: '50%',
-                    background: netBalance > 0
-                        ? 'rgba(16,185,129,0.08)'
-                        : netBalance < 0
-                            ? 'rgba(239,68,68,0.06)'
-                            : 'rgba(148,163,184,0.08)',
+                    position: 'absolute', top: '-24px', right: '-24px',
+                    width: '100px', height: '100px', borderRadius: '50%',
+                    background: heroStyles.glow,
                 }} />
                 <div style={{ position: 'relative', zIndex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                        {netBalance > 0 ? (
-                            <TrendingUp size={16} color="#059669" />
-                        ) : netBalance < 0 ? (
-                            <TrendingDown size={16} color="#dc2626" />
+                        {heroTone === 'positive' ? (
+                            <TrendingUp size={16} color={heroStyles.accent} />
+                        ) : heroTone === 'negative' ? (
+                            <TrendingDown size={16} color={heroStyles.accent} />
+                        ) : heroTone === 'even' ? (
+                            <Sparkles size={16} color={heroStyles.accent} />
                         ) : (
-                            <CheckCircle size={16} color="#64748b" />
+                            <CheckCircle size={16} color={heroStyles.accent} />
                         )}
                         <span style={{
                             fontSize: '12px', fontWeight: '700', textTransform: 'uppercase',
-                            letterSpacing: '0.06em',
-                            color: netBalance > 0 ? '#059669' : netBalance < 0 ? '#dc2626' : '#64748b',
+                            letterSpacing: '0.06em', color: heroStyles.accent,
                         }}>
-                            {netBalance > 0 ? 'You\'re owed' : netBalance < 0 ? 'You owe' : 'All settled'}
+                            {heroLabel}
                         </span>
                     </div>
                     <p style={{
-                        margin: 0, fontSize: '32px', fontWeight: '800',
-                        color: netBalance > 0 ? '#065f46' : netBalance < 0 ? '#991b1b' : '#64748b',
-                        letterSpacing: '-0.02em',
-                        lineHeight: 1.1,
+                        margin: 0, fontSize: '30px', fontWeight: '800',
+                        color: heroStyles.amount,
+                        letterSpacing: '-0.02em', lineHeight: 1.1,
                     }}>
                         {formatCurrency(Math.abs(netBalance))}
                     </p>
+                    {isNetEven && (
+                        <p style={{ margin: '8px 0 0', fontSize: '13px', color: 'var(--text-muted, #8A8680)' }}>
+                            Your debts cancel out — settle individual payments below.
+                        </p>
+                    )}
                 </div>
 
-                {/* Sub-stats */}
-                <div style={{
-                    display: 'flex', gap: '16px', marginTop: '16px', paddingTop: '14px',
-                    borderTop: `1px solid ${netBalance > 0 ? 'rgba(16,185,129,0.15)' : netBalance < 0 ? 'rgba(239,68,68,0.12)' : 'rgba(148,163,184,0.15)'}`,
-                    position: 'relative', zIndex: 1,
-                }}>
-                    <div style={{ flex: 1 }}>
-                        <span style={{ fontSize: '11px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                            You owe
-                        </span>
-                        <p style={{ margin: '2px 0 0', fontSize: '16px', fontWeight: '700', color: totalIOwe > 0 ? '#ef4444' : '#94a3b8' }}>
-                            {formatCurrency(totalIOwe)}
-                        </p>
+                {!isFullySettled && (
+                    <div style={{
+                        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px',
+                        marginTop: '16px', paddingTop: '14px',
+                        borderTop: '1px solid var(--border-subtle, #252530)',
+                        position: 'relative', zIndex: 1,
+                    }}>
+                        <div>
+                            <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                You owe
+                            </span>
+                            <p style={{ margin: '2px 0 0', fontSize: '16px', fontWeight: '700', color: totalIOwe > 0 ? 'var(--danger)' : 'var(--text-faint)' }}>
+                                {formatCurrency(totalIOwe)}
+                            </p>
+                        </div>
+                        <div>
+                            <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                You&apos;re owed
+                            </span>
+                            <p style={{ margin: '2px 0 0', fontSize: '16px', fontWeight: '700', color: totalOwed > 0 ? 'var(--success)' : 'var(--text-faint)' }}>
+                                {formatCurrency(totalOwed)}
+                            </p>
+                        </div>
                     </div>
-                    <div style={{ width: '1px', backgroundColor: netBalance > 0 ? 'rgba(16,185,129,0.15)' : netBalance < 0 ? 'rgba(239,68,68,0.12)' : 'rgba(148,163,184,0.15)' }} />
-                    <div style={{ flex: 1 }}>
-                        <span style={{ fontSize: '11px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                            You're owed
-                        </span>
-                        <p style={{ margin: '2px 0 0', fontSize: '16px', fontWeight: '700', color: totalOwed > 0 ? '#16a34a' : '#94a3b8' }}>
-                            {formatCurrency(totalOwed)}
-                        </p>
-                    </div>
-                </div>
+                )}
             </motion.div>
 
             {/* ── Pending Confirmations ── */}
@@ -293,23 +327,22 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                     >
                         <div style={{
                             ...cardStyle,
-                            border: '1px solid #fde68a',
-                            background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+                            border: '1px solid rgba(212, 168, 83, 0.3)',
+                            background: 'var(--warning-muted)',
                         }}>
                             <div style={{
                                 padding: '12px 16px',
                                 display: 'flex', alignItems: 'center', gap: '10px',
-                                borderBottom: '1px solid rgba(253,230,138,0.5)',
+                                borderBottom: '1px solid rgba(212, 168, 83, 0.2)',
                             }}>
                                 <div style={{
                                     width: '28px', height: '28px', borderRadius: '8px',
-                                    background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                                    background: 'var(--accent)',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    boxShadow: '0 2px 4px rgba(245,158,11,0.2)',
                                 }}>
-                                    <AlertCircle size={14} color="#fff" />
+                                    <AlertCircle size={14} color="var(--accent-ink)" />
                                 </div>
-                                <span style={{ fontSize: '13px', fontWeight: '700', color: '#92400e' }}>
+                                <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--accent)' }}>
                                     {pendingConfirmations.length} pending confirmation{pendingConfirmations.length > 1 ? 's' : ''}
                                 </span>
                             </div>
@@ -317,27 +350,27 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                                 <div key={s._id} style={{
                                     display: 'flex', alignItems: 'center', gap: '12px',
                                     padding: '14px 16px',
-                                    backgroundColor: 'rgba(255,255,255,0.7)',
-                                    backdropFilter: 'blur(8px)',
-                                    borderBottom: i < pendingConfirmations.length - 1 ? '1px solid rgba(253,230,138,0.3)' : 'none',
+                                    backgroundColor: 'var(--bg-surface)',
+                                    borderBottom: i < pendingConfirmations.length - 1 ? '1px solid var(--border-subtle)' : 'none',
+                                    flexWrap: 'wrap',
                                 }}>
                                     <Avatar name={s.from?.name} size="sm" />
                                     <div style={{ flex: 1, minWidth: 0 }}>
-                                        <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#EDEAE4' }}>{s.from?.name}</p>
-                                        <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#78716c' }}>
-                                            paid you <strong style={{ color: '#059669' }}>{formatCurrency(s.amount)}</strong>
+                                        <p style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)' }}>{s.from?.name}</p>
+                                        <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                                            paid you <strong style={{ color: 'var(--success)' }}>{formatCurrency(s.amount)}</strong>
                                         </p>
                                     </div>
-                                    <div style={{ display: 'flex', gap: '6px' }}>
+                                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                                         <motion.button
                                             whileHover={{ scale: 1.02 }}
                                             whileTap={{ scale: 0.95 }}
                                             onClick={() => handleReject(s._id)}
                                             style={{
                                                 padding: '7px 14px', borderRadius: '10px',
-                                                border: '1px solid #e5e7eb', backgroundColor: '#131316',
-                                                fontSize: '13px', fontWeight: '600', color: '#6b7280', cursor: 'pointer',
-                                                transition: 'all 0.15s',
+                                                border: '1px solid var(--border-subtle)',
+                                                backgroundColor: 'var(--bg-elevated)',
+                                                fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', cursor: 'pointer',
                                             }}
                                         >Decline</motion.button>
                                         <motion.button
@@ -347,9 +380,8 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                                             style={{
                                                 padding: '7px 16px', borderRadius: '10px',
                                                 border: 'none',
-                                                background: 'linear-gradient(135deg, #059669, #10b981)',
+                                                background: 'var(--success)',
                                                 fontSize: '13px', fontWeight: '600', color: '#fff', cursor: 'pointer',
-                                                boxShadow: '0 2px 6px rgba(5,150,105,0.25)',
                                             }}
                                         >Confirm</motion.button>
                                     </div>
@@ -369,13 +401,13 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                         exit={{ opacity: 0, y: -4 }}
                         style={{
                             padding: '10px 14px', borderRadius: '12px',
-                            background: 'linear-gradient(135deg, #fef2f2, #fff1f2)',
-                            border: '1px solid #fecaca',
+                            background: 'var(--danger-muted)',
+                            border: '1px solid rgba(217, 85, 85, 0.25)',
                             display: 'flex', alignItems: 'center', gap: '8px',
                         }}
                     >
-                        <Clock size={14} color="#ef4444" />
-                        <span style={{ fontSize: '13px', color: '#b91c1c', fontWeight: '500' }}>
+                        <Clock size={14} color="var(--danger)" />
+                        <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' }}>
                             {myPendingPayments.length} payment{myPendingPayments.length > 1 ? 's' : ''} awaiting confirmation
                         </span>
                     </motion.div>
@@ -384,8 +416,12 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
 
             {/* ── Tab Bar ── */}
             <div style={{
-                display: 'flex', backgroundColor: '#f4f4f5',
-                padding: '4px', borderRadius: '14px', gap: '2px',
+                display: 'flex',
+                backgroundColor: 'var(--bg-surface, #1A1A1F)',
+                padding: '4px',
+                borderRadius: '14px',
+                gap: '2px',
+                border: '1px solid var(--border-subtle, #252530)',
             }}>
                 {tabItems.map(tab => {
                     const isActive = activeTab === tab.id;
@@ -398,13 +434,12 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                             style={{
                                 flex: 1, padding: '10px 8px', borderRadius: '11px',
                                 border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                backgroundColor: isActive ? '#fff' : 'transparent',
+                                backgroundColor: isActive ? 'var(--bg-hover, #2A2A32)' : 'transparent',
                                 fontWeight: isActive ? '600' : '500',
                                 fontSize: '13px',
-                                color: isActive ? '#0a0a0a' : '#71717a',
+                                color: isActive ? 'var(--accent, #D4A853)' : 'var(--text-muted, #8A8680)',
                                 cursor: 'pointer',
-                                boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)' : 'none',
-                                transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+                                transition: 'all 0.2s ease',
                             }}
                         >
                             <Icon size={14} />
@@ -414,26 +449,7 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                 })}
             </div>
 
-            {/* Admin toggle */}
-            {isAdmin && activeTab !== 'history' && (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 2px' }}>
-                    <motion.button
-                        whileTap={{ scale: 0.96 }}
-                        onClick={() => setShowAllSettlements(!showAllSettlements)}
-                        style={{
-                            padding: '5px 14px', borderRadius: '20px',
-                            border: showAllSettlements ? '1px solid #93c5fd' : '1px solid #e5e5e5',
-                            backgroundColor: showAllSettlements ? '#eff6ff' : '#fff',
-                            fontSize: '12px', fontWeight: '500',
-                            color: showAllSettlements ? '#2563eb' : '#737373',
-                            cursor: 'pointer', transition: 'all 0.15s',
-                        }}
-                    >
-                        {showAllSettlements ? 'All members' : 'Show all'}
-                    </motion.button>
-                </div>
-            )}
-
+            {/* Admin toggle moved into settle tab toolbar */}
             <AnimatePresence mode="wait">
 
                 {/* ==================== SETTLE UP TAB ==================== */}
@@ -446,44 +462,65 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                         transition={{ duration: 0.2 }}
                         style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
                     >
-                        {/* Simplify toggle */}
-                        <motion.div
-                            whileTap={{ scale: 0.99 }}
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: '12px',
-                                padding: '12px 16px', borderRadius: '14px',
-                                backgroundColor: isSimplified ? '#f0fdf4' : '#fafafa',
-                                border: isSimplified ? '1px solid #bbf7d0' : '1px solid #f0f0f0',
-                                cursor: 'pointer', transition: 'all 0.2s',
-                                userSelect: 'none',
-                            }}
-                            onClick={() => toggleSimplify(groupId)}
-                        >
-                            <div style={{
-                                width: '40px', height: '22px', borderRadius: '11px',
-                                backgroundColor: isSimplified ? '#16a34a' : '#d4d4d8',
-                                position: 'relative', transition: 'background-color 0.25s ease', flexShrink: 0,
-                            }}>
-                                <motion.div
-                                    animate={{ left: isSimplified ? '20px' : '2px' }}
-                                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                                    style={{
-                                        width: '18px', height: '18px', borderRadius: '50%', backgroundColor: '#131316',
-                                        position: 'absolute', top: '2px',
-                                        boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
-                                    }}
-                                />
-                            </div>
-                            <div style={{ flex: 1 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <Sparkles size={13} color={isSimplified ? '#16a34a' : '#a1a1aa'} />
-                                    <span style={{ fontSize: '13px', color: '#EDEAE4', fontWeight: '600' }}>Simplify debts</span>
+                        {/* Simplify toggle + admin controls */}
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            flexWrap: 'wrap',
+                        }}>
+                            <motion.div
+                                whileTap={{ scale: 0.99 }}
+                                style={{
+                                    flex: 1,
+                                    minWidth: '220px',
+                                    display: 'flex', alignItems: 'center', gap: '12px',
+                                    padding: '12px 16px', borderRadius: '14px',
+                                    backgroundColor: 'var(--bg-surface, #1A1A1F)',
+                                    border: `1px solid ${isSimplified ? 'rgba(69, 194, 133, 0.3)' : 'var(--border-subtle, #252530)'}`,
+                                    cursor: 'pointer', transition: 'all 0.2s',
+                                    userSelect: 'none',
+                                }}
+                                onClick={() => toggleSimplify(groupId)}
+                            >
+                                <div style={{
+                                    width: '40px', height: '22px', borderRadius: '11px',
+                                    backgroundColor: isSimplified ? 'var(--success, #45C285)' : 'var(--border-default, #3f3f46)',
+                                    position: 'relative', transition: 'background-color 0.25s ease', flexShrink: 0,
+                                }}>
+                                    <motion.div
+                                        animate={{ left: isSimplified ? '20px' : '2px' }}
+                                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                                        style={{
+                                            width: '18px', height: '18px', borderRadius: '50%',
+                                            backgroundColor: 'var(--text-primary, #EDEAE4)',
+                                            position: 'absolute', top: '2px',
+                                            boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+                                        }}
+                                    />
                                 </div>
-                                <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#a1a1aa' }}>
-                                    {isSimplified ? 'Minimized number of payments' : 'Showing all individual debts'}
-                                </p>
-                            </div>
-                        </motion.div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <Sparkles size={13} color={isSimplified ? 'var(--success)' : 'var(--text-muted)'} />
+                                        <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: '600' }}>Simplify debts</span>
+                                    </div>
+                                    <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--text-muted, #8A8680)' }}>
+                                        {isSimplified ? 'Minimized number of payments' : 'Showing all individual debts'}
+                                    </p>
+                                </div>
+                            </motion.div>
+
+                            {isAdmin && (
+                                <motion.button
+                                    whileTap={{ scale: 0.96 }}
+                                    onClick={() => setShowAllSettlements(!showAllSettlements)}
+                                    className={showAllSettlements ? 'chip chip-active' : 'chip'}
+                                    style={{ fontSize: '12px', padding: '10px 16px' }}
+                                >
+                                    {showAllSettlements ? 'All members' : 'Show all'}
+                                </motion.button>
+                            )}
+                        </div>
 
                         {sortedDebts.length > 0 ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -491,7 +528,7 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                                 {/* ── You Owe Section ── */}
                                 {debtsYouOwe.length > 0 && (
                                     <div>
-                                        <p style={{ ...sectionLabelStyle, color: '#ef4444' }}>
+                                        <p style={{ ...sectionLabelStyle, color: 'var(--danger, #D95555)' }}>
                                             You owe ({debtsYouOwe.length})
                                         </p>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -524,7 +561,7 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                                 {/* ── Owed To You Section ── */}
                                 {debtsOwedToYou.length > 0 && (
                                     <div>
-                                        <p style={{ ...sectionLabelStyle, color: '#16a34a' }}>
+                                        <p style={{ ...sectionLabelStyle, color: 'var(--success, #45C285)' }}>
                                             Owed to you ({debtsOwedToYou.length})
                                         </p>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -553,7 +590,7 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                                 {/* ── Other Debts (Admin view) ── */}
                                 {otherDebts.length > 0 && (
                                     <div>
-                                        <p style={{ ...sectionLabelStyle, color: '#71717a' }}>
+                                        <p style={{ ...sectionLabelStyle, color: 'var(--text-muted)' }}>
                                             Other debts ({otherDebts.length})
                                         </p>
                                         <div style={{ ...cardStyle }}>
@@ -561,20 +598,20 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                                                 <div key={debt.pairKey} style={{
                                                     display: 'flex', alignItems: 'center', gap: '12px',
                                                     padding: '14px 16px',
-                                                    borderBottom: i < otherDebts.length - 1 ? '1px solid #f5f5f5' : 'none',
+                                                    borderBottom: i < otherDebts.length - 1 ? '1px solid var(--border-subtle)' : 'none',
                                                 }}>
                                                     <Avatar name={debt.from.name} size="sm" />
                                                     <div style={{ flex: 1, minWidth: 0 }}>
                                                         <p style={{
-                                                            margin: 0, fontSize: '14px', fontWeight: '500', color: '#3f3f46',
+                                                            margin: 0, fontSize: '14px', fontWeight: '500', color: 'var(--text-primary)',
                                                             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                                                         }}>
                                                             {debt.from.name}
-                                                            <span style={{ color: '#a1a1aa', fontWeight: '400' }}> owes </span>
+                                                            <span style={{ color: 'var(--text-muted)', fontWeight: '400' }}> owes </span>
                                                             {debt.to.name}
                                                         </p>
                                                     </div>
-                                                    <span style={{ fontSize: '14px', fontWeight: '700', color: '#52525b', flexShrink: 0 }}>
+                                                    <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-secondary)', flexShrink: 0 }}>
                                                         {formatCurrency(debt.amount)}
                                                     </span>
                                                 </div>
@@ -615,8 +652,8 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                                             style={{
                                                 display: 'flex', alignItems: 'center', gap: '14px',
                                                 padding: '16px 18px',
-                                                borderBottom: i < memberBalances.length - 1 ? '1px solid #f4f4f5' : 'none',
-                                                backgroundColor: isMe ? '#fafaff' : 'transparent',
+                                                borderBottom: i < memberBalances.length - 1 ? '1px solid var(--border-subtle)' : 'none',
+                                                backgroundColor: isMe ? 'rgba(212, 168, 83, 0.08)' : 'transparent',
                                                 transition: 'background-color 0.15s',
                                             }}
                                         >
@@ -624,7 +661,7 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                                             <div style={{ flex: 1, minWidth: 0 }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                     <p style={{
-                                                        margin: 0, fontSize: '14px', fontWeight: isMe ? '600' : '500', color: '#18181b',
+                                                        margin: 0, fontSize: '14px', fontWeight: isMe ? '600' : '500', color: 'var(--text-primary)',
                                                         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                                                     }}>
                                                         {b.user?.name}
@@ -633,14 +670,14 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                                                         <span style={{
                                                             fontSize: '10px', fontWeight: '600',
                                                             padding: '2px 6px', borderRadius: '6px',
-                                                            backgroundColor: '#ede9fe', color: '#7c3aed',
+                                                            backgroundColor: 'rgba(212, 168, 83, 0.15)', color: 'var(--accent)',
                                                         }}>you</span>
                                                     )}
                                                     {b.isPending && (
                                                         <span style={{
                                                             fontSize: '10px', fontWeight: '600',
                                                             padding: '2px 6px', borderRadius: '6px',
-                                                            backgroundColor: '#fef3c7', color: '#d97706',
+                                                            backgroundColor: 'var(--warning-muted)', color: 'var(--accent)',
                                                         }}>pending</span>
                                                     )}
                                                 </div>
@@ -648,7 +685,7 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                                                 {!isZero && (
                                                     <div style={{
                                                         marginTop: '8px', height: '4px',
-                                                        backgroundColor: '#f4f4f5', borderRadius: '2px', overflow: 'hidden',
+                                                        backgroundColor: 'var(--bg-hover)', borderRadius: '2px', overflow: 'hidden',
                                                     }}>
                                                         <motion.div
                                                             initial={{ width: 0 }}
@@ -657,8 +694,8 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                                                             style={{
                                                                 height: '100%', borderRadius: '2px',
                                                                 background: isPositive
-                                                                    ? 'linear-gradient(90deg, #4ade80, #22c55e)'
-                                                                    : 'linear-gradient(90deg, #fca5a5, #ef4444)',
+                                                                    ? 'linear-gradient(90deg, #45C285, #69d49a)'
+                                                                    : 'linear-gradient(90deg, #D95555, #e57373)',
                                                             }}
                                                         />
                                                     </div>
@@ -669,12 +706,12 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                                                     <span style={{
                                                         fontSize: '12px', fontWeight: '600',
                                                         padding: '4px 10px', borderRadius: '8px',
-                                                        backgroundColor: '#f4f4f5', color: '#a1a1aa',
+                                                        backgroundColor: 'var(--bg-surface)', color: 'var(--text-muted)',
                                                     }}>settled</span>
                                                 ) : (
                                                     <p style={{
                                                         margin: 0, fontSize: '15px', fontWeight: '700',
-                                                        color: isPositive ? '#059669' : '#dc2626',
+                                                        color: isPositive ? 'var(--success)' : 'var(--danger)',
                                                     }}>
                                                         {isPositive ? '+' : ''}{formatCurrency(b.balance)}
                                                     </p>
@@ -716,45 +753,45 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                                         style={{
                                             display: 'flex', alignItems: 'center', gap: '14px',
                                             padding: '16px 18px',
-                                            borderBottom: i < settlements.length - 1 ? '1px solid #f4f4f5' : 'none',
+                                            borderBottom: i < settlements.length - 1 ? '1px solid var(--border-subtle)' : 'none',
                                         }}
                                     >
                                         <div style={{
                                             width: '40px', height: '40px', borderRadius: '12px',
                                             background: s.confirmedByRecipient
-                                                ? 'linear-gradient(135deg, #d1fae5, #a7f3d0)'
-                                                : 'linear-gradient(135deg, #fef3c7, #fde68a)',
+                                                ? 'var(--success-muted)'
+                                                : 'var(--warning-muted)',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                                             flexShrink: 0,
                                         }}>
                                             {s.confirmedByRecipient
-                                                ? <CheckCircle size={18} color="#059669" />
-                                                : <Clock size={18} color="#d97706" />
+                                                ? <CheckCircle size={18} color="var(--success)" />
+                                                : <Clock size={18} color="var(--accent)" />
                                             }
                                         </div>
                                         <div style={{ flex: 1, minWidth: 0 }}>
                                             <p style={{
-                                                margin: 0, fontSize: '14px', fontWeight: '500', color: '#18181b',
+                                                margin: 0, fontSize: '14px', fontWeight: '500', color: 'var(--text-primary)',
                                                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                                             }}>
-                                                {s.from?.name} <span style={{ color: '#a1a1aa', fontWeight: '400' }}>paid</span> {s.to?.name}
+                                                {s.from?.name} <span style={{ color: 'var(--text-muted)', fontWeight: '400' }}>paid</span> {s.to?.name}
                                             </p>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-                                                <span style={{ fontSize: '12px', color: '#a1a1aa' }}>
+                                                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                                                     {formatDate(s.createdAt, 'short')}
                                                 </span>
                                                 {!s.confirmedByRecipient && (
                                                     <span style={{
                                                         fontSize: '10px', fontWeight: '600',
                                                         padding: '2px 6px', borderRadius: '6px',
-                                                        backgroundColor: '#fef3c7', color: '#d97706',
+                                                        backgroundColor: 'var(--warning-muted)', color: 'var(--accent)',
                                                     }}>pending</span>
                                                 )}
                                             </div>
                                         </div>
                                         <span style={{
                                             fontSize: '15px', fontWeight: '700', flexShrink: 0,
-                                            color: s.confirmedByRecipient ? '#059669' : '#d97706',
+                                            color: s.confirmedByRecipient ? 'var(--success)' : 'var(--accent)',
                                         }}>
                                             {formatCurrency(s.amount)}
                                         </span>
@@ -774,9 +811,11 @@ function PendingSettleNotice({ member }) {
     const phoneHint = member?.phone ? ` (${member.phone})` : '';
     return (
         <div style={{
-            flex: 1, padding: '9px 14px', borderRadius: '10px',
-            backgroundColor: '#fffbeb', border: '1px solid #fde68a',
-            fontSize: '12px', color: '#92400e', textAlign: 'center', fontWeight: '500',
+            flex: '1 1 100%',
+            padding: '10px 14px', borderRadius: '10px',
+            backgroundColor: 'var(--warning-muted)',
+            border: '1px solid rgba(212, 168, 83, 0.3)',
+            fontSize: '12px', color: 'var(--text-secondary)', textAlign: 'center', fontWeight: '500',
             lineHeight: 1.4,
         }}>
             {member?.name || 'They'} haven&apos;t joined yet. Ask them to sign up with their phone{phoneHint} to settle in the app.
@@ -796,87 +835,89 @@ function DebtCard({
             style={{ ...cardStyle, overflow: 'hidden' }}
         >
             <div style={{ padding: '16px 18px' }}>
-                {/* Top row: avatar + info + amount */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ position: 'relative', flexShrink: 0 }}>
                         <Avatar name={debt.to.name} size="sm" />
                         <div style={{
                             position: 'absolute', bottom: '-3px', right: '-3px',
                             width: '16px', height: '16px', borderRadius: '50%',
-                            background: 'linear-gradient(135deg, #fecaca, #fca5a5)',
-                            border: '2px solid #fff',
+                            background: 'var(--danger)',
+                            border: '2px solid var(--bg-elevated)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>
-                            <ArrowUpRight size={8} color="#dc2626" />
+                            <ArrowUpRight size={8} color="#fff" />
                         </div>
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{
-                            margin: 0, fontSize: '15px', fontWeight: '600', color: '#18181b',
+                            margin: 0, fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)',
                             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                         }}>
-                            {debt.to.name}
+                            Pay {debt.to.name}
                         </p>
+                        <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>You owe</p>
                     </div>
                     <div style={{
-                        padding: '5px 12px', borderRadius: '10px',
-                        background: 'linear-gradient(135deg, #fef2f2, #fecaca30)',
-                        border: '1px solid #fecaca60',
+                        padding: '6px 12px', borderRadius: '10px',
+                        background: 'var(--danger-muted)',
+                        border: '1px solid rgba(217, 85, 85, 0.25)',
+                        flexShrink: 0,
                     }}>
-                        <span style={{ fontSize: '16px', fontWeight: '800', color: '#dc2626', letterSpacing: '-0.01em' }}>
+                        <span style={{ fontSize: '16px', fontWeight: '800', color: 'var(--danger)', letterSpacing: '-0.01em' }}>
                             {formatCurrency(debt.amount)}
                         </span>
                     </div>
                 </div>
 
-                {/* Action buttons */}
-                <div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '14px', flexWrap: 'wrap' }}>
                     {!canSettle ? (
                         <PendingSettleNotice member={debt.to?.isPending ? debt.to : debt.from} />
                     ) : isPending ? (
                         <div style={{
-                            flex: 1, padding: '9px 14px', borderRadius: '10px',
-                            background: 'linear-gradient(135deg, #fffbeb, #fef3c7)',
-                            border: '1px solid #fde68a',
+                            flex: '1 1 100%',
+                            padding: '10px 14px', borderRadius: '10px',
+                            background: 'var(--warning-muted)',
+                            border: '1px solid rgba(212, 168, 83, 0.3)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                         }}>
-                            <Clock size={13} color="#d97706" />
-                            <span style={{ fontSize: '12px', color: '#92400e', fontWeight: '600' }}>
+                            <Clock size={13} color="var(--accent)" />
+                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600' }}>
                                 Pending confirmation
                             </span>
                         </div>
                     ) : (
                         <>
                             <motion.button
-                                whileHover={{ scale: 1.01, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
+                                whileHover={{ scale: 1.01 }}
                                 whileTap={{ scale: 0.97 }}
                                 disabled={isProcessing}
                                 onClick={onPayFull}
                                 style={{
-                                    flex: 1, padding: '10px 16px', borderRadius: '12px',
+                                    flex: '1 1 160px',
+                                    minWidth: 0,
+                                    padding: '11px 16px', borderRadius: '12px',
                                     border: 'none',
-                                    background: 'linear-gradient(135deg, #18181b, #27272a)',
-                                    color: '#fff',
-                                    fontSize: '13px', fontWeight: '600', cursor: 'pointer',
+                                    background: 'var(--accent)',
+                                    color: 'var(--accent-ink, #1A0800)',
+                                    fontSize: '13px', fontWeight: '700', cursor: 'pointer',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                    boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
                                     opacity: isProcessing ? 0.7 : 1,
-                                    transition: 'opacity 0.15s',
                                 }}
                             >
                                 <Send size={13} /> Pay {formatCurrency(debt.amount)}
                             </motion.button>
                             <motion.button
-                                whileHover={{ scale: 1.02, backgroundColor: '#f4f4f5' }}
+                                whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.97 }}
                                 onClick={onTogglePartial}
                                 style={{
-                                    padding: '10px 16px', borderRadius: '12px',
-                                    border: isExpanded ? '1px solid #a1a1aa' : '1px solid #e4e4e7',
-                                    backgroundColor: isExpanded ? '#f4f4f5' : '#fff',
+                                    flex: '0 1 auto',
+                                    padding: '11px 16px', borderRadius: '12px',
+                                    border: isExpanded ? '1px solid var(--accent)' : '1px solid var(--border-subtle)',
+                                    backgroundColor: isExpanded ? 'var(--bg-hover)' : 'var(--bg-surface)',
                                     fontSize: '12px', fontWeight: '600',
-                                    color: isExpanded ? '#18181b' : '#52525b',
-                                    cursor: 'pointer', transition: 'all 0.15s',
+                                    color: isExpanded ? 'var(--accent)' : 'var(--text-secondary)',
+                                    cursor: 'pointer',
                                 }}
                             >
                                 {isExpanded ? 'Cancel' : 'Partial'}
@@ -897,14 +938,14 @@ function DebtCard({
                         style={{ overflow: 'hidden' }}
                     >
                         <div style={{
-                            padding: '14px 18px', borderTop: '1px solid #f4f4f5',
-                            backgroundColor: '#16161B',
-                            display: 'flex', gap: '8px', alignItems: 'center',
+                            padding: '14px 18px', borderTop: '1px solid var(--border-subtle)',
+                            backgroundColor: 'var(--bg-surface)',
+                            display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap',
                         }}>
-                            <div style={{ position: 'relative', flex: 1 }}>
+                            <div style={{ position: 'relative', flex: '1 1 120px', minWidth: 0 }}>
                                 <span style={{
                                     position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)',
-                                    fontSize: '14px', fontWeight: '600', color: '#a1a1aa',
+                                    fontSize: '14px', fontWeight: '600', color: 'var(--text-muted)',
                                 }}>&#8377;</span>
                                 <input
                                     type="number"
@@ -914,13 +955,11 @@ function DebtCard({
                                     autoFocus
                                     style={{
                                         width: '100%', padding: '10px 10px 10px 28px',
-                                        borderRadius: '10px', border: '1.5px solid #e4e4e7',
+                                        borderRadius: '10px', border: '1.5px solid var(--border-subtle)',
                                         outline: 'none', fontSize: '14px',
-                                        backgroundColor: '#131316',
-                                        transition: 'border-color 0.15s',
+                                        backgroundColor: 'var(--bg-elevated)',
+                                        color: 'var(--text-primary)',
                                     }}
-                                    onFocus={(e) => e.target.style.borderColor = '#a1a1aa'}
-                                    onBlur={(e) => e.target.style.borderColor = '#e4e4e7'}
                                 />
                             </div>
                             <input
@@ -929,28 +968,24 @@ function DebtCard({
                                 value={note}
                                 onChange={onNoteChange}
                                 style={{
-                                    width: '110px', padding: '10px 12px',
-                                    borderRadius: '10px', border: '1.5px solid #e4e4e7',
+                                    flex: '1 1 100px', minWidth: 0, padding: '10px 12px',
+                                    borderRadius: '10px', border: '1.5px solid var(--border-subtle)',
                                     outline: 'none', fontSize: '14px',
-                                    backgroundColor: '#131316',
-                                    transition: 'border-color 0.15s',
+                                    backgroundColor: 'var(--bg-elevated)',
+                                    color: 'var(--text-primary)',
                                 }}
-                                onFocus={(e) => e.target.style.borderColor = '#a1a1aa'}
-                                onBlur={(e) => e.target.style.borderColor = '#e4e4e7'}
                             />
                             <motion.button
                                 whileTap={{ scale: 0.95 }}
                                 disabled={isProcessing || !paymentAmount}
                                 onClick={onPayPartial}
                                 style={{
+                                    flex: '0 1 auto',
                                     padding: '10px 20px', borderRadius: '10px',
                                     border: 'none',
-                                    background: (!paymentAmount || isProcessing)
-                                        ? '#d4d4d8'
-                                        : 'linear-gradient(135deg, #18181b, #27272a)',
-                                    color: '#fff',
-                                    fontSize: '13px', fontWeight: '600', cursor: 'pointer',
-                                    transition: 'background 0.15s',
+                                    background: (!paymentAmount || isProcessing) ? 'var(--border-default)' : 'var(--accent)',
+                                    color: (!paymentAmount || isProcessing) ? 'var(--text-muted)' : 'var(--accent-ink)',
+                                    fontSize: '13px', fontWeight: '700', cursor: 'pointer',
                                 }}
                             >
                                 Pay
@@ -973,89 +1008,90 @@ function OwedToYouCard({ debt, index, isPending, canSettle, isProcessing, onConf
             style={{ ...cardStyle, overflow: 'hidden' }}
         >
             <div style={{ padding: '16px 18px' }}>
-                {/* Top row */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ position: 'relative', flexShrink: 0 }}>
                         <Avatar name={debt.from.name} size="sm" />
                         <div style={{
                             position: 'absolute', bottom: '-3px', right: '-3px',
                             width: '16px', height: '16px', borderRadius: '50%',
-                            background: 'linear-gradient(135deg, #bbf7d0, #86efac)',
-                            border: '2px solid #fff',
+                            background: 'var(--success)',
+                            border: '2px solid var(--bg-elevated)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>
-                            <ArrowDownLeft size={8} color="#16a34a" />
+                            <ArrowDownLeft size={8} color="#fff" />
                         </div>
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{
-                            margin: 0, fontSize: '15px', fontWeight: '600', color: '#18181b',
+                            margin: 0, fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)',
                             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                         }}>
                             {debt.from.name}
                         </p>
+                        <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>Owes you</p>
                     </div>
                     <div style={{
-                        padding: '5px 12px', borderRadius: '10px',
-                        background: 'linear-gradient(135deg, #f0fdf4, #bbf7d020)',
-                        border: '1px solid #bbf7d060',
+                        padding: '6px 12px', borderRadius: '10px',
+                        background: 'var(--success-muted)',
+                        border: '1px solid rgba(69, 194, 133, 0.25)',
+                        flexShrink: 0,
                     }}>
-                        <span style={{ fontSize: '16px', fontWeight: '800', color: '#059669', letterSpacing: '-0.01em' }}>
+                        <span style={{ fontSize: '16px', fontWeight: '800', color: 'var(--success)', letterSpacing: '-0.01em' }}>
                             {formatCurrency(debt.amount)}
                         </span>
                     </div>
                 </div>
 
-                {/* Actions */}
-                <div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '14px', flexWrap: 'wrap' }}>
                     {!canSettle ? (
                         <PendingSettleNotice member={debt.from?.isPending ? debt.from : debt.to} />
                     ) : isPending ? (
                         <div style={{
-                            flex: 1, padding: '9px 14px', borderRadius: '10px',
-                            background: 'linear-gradient(135deg, #fffbeb, #fef3c7)',
-                            border: '1px solid #fde68a',
+                            flex: '1 1 100%',
+                            padding: '10px 14px', borderRadius: '10px',
+                            background: 'var(--warning-muted)',
+                            border: '1px solid rgba(212, 168, 83, 0.3)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                         }}>
-                            <Clock size={13} color="#d97706" />
-                            <span style={{ fontSize: '12px', color: '#92400e', fontWeight: '600' }}>
+                            <Clock size={13} color="var(--accent)" />
+                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600' }}>
                                 Pending confirmation
                             </span>
                         </div>
                     ) : (
                         <>
                             <motion.button
-                                whileHover={{ scale: 1.01, boxShadow: '0 4px 12px rgba(22,163,74,0.2)' }}
+                                whileHover={{ scale: 1.01 }}
                                 whileTap={{ scale: 0.97 }}
                                 disabled={isProcessing}
                                 onClick={onConfirm}
                                 style={{
-                                    flex: 1, padding: '10px 16px', borderRadius: '12px',
+                                    flex: '1 1 160px',
+                                    minWidth: 0,
+                                    padding: '11px 16px', borderRadius: '12px',
                                     border: 'none',
-                                    background: 'linear-gradient(135deg, #059669, #10b981)',
+                                    background: 'var(--success)',
                                     color: '#fff',
-                                    fontSize: '13px', fontWeight: '600', cursor: 'pointer',
+                                    fontSize: '13px', fontWeight: '700', cursor: 'pointer',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                    boxShadow: '0 2px 8px rgba(16,163,74,0.2)',
                                     opacity: isProcessing ? 0.7 : 1,
-                                    transition: 'opacity 0.15s',
                                 }}
                             >
                                 <Check size={14} /> Mark Received
                             </motion.button>
                             <motion.button
-                                whileHover={{ scale: 1.05, backgroundColor: '#fef3c7' }}
+                                whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={onNudge}
                                 style={{
-                                    padding: '10px 14px', borderRadius: '12px',
-                                    border: '1px solid #fde68a', backgroundColor: '#fffbeb',
+                                    padding: '11px 14px', borderRadius: '12px',
+                                    border: '1px solid var(--border-subtle)',
+                                    backgroundColor: 'var(--bg-surface)',
                                     cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
-                                    transition: 'all 0.15s',
                                 }}
                                 title={`Remind ${debt.from.name}`}
                             >
-                                <Bell size={14} color="#d97706" />
+                                <Bell size={14} color="var(--accent)" />
                             </motion.button>
                         </>
                     )}
@@ -1074,62 +1110,51 @@ function SettledEmptyState() {
             transition={{ duration: 0.3 }}
             style={{
                 textAlign: 'center', padding: '48px 28px',
-                borderRadius: '20px',
-                background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #d1fae5 100%)',
-                border: '1px solid #a7f3d0',
-                position: 'relative', overflow: 'hidden',
+                borderRadius: '16px',
+                background: 'var(--success-muted)',
+                border: '1px solid rgba(69, 194, 133, 0.25)',
             }}
         >
-            <div style={{
-                position: 'absolute', top: '-30px', right: '-30px',
-                width: '120px', height: '120px', borderRadius: '50%',
-                background: 'rgba(16,185,129,0.08)',
-            }} />
-            <div style={{
-                position: 'absolute', bottom: '-20px', left: '-20px',
-                width: '80px', height: '80px', borderRadius: '50%',
-                background: 'rgba(16,185,129,0.06)',
-            }} />
             <motion.div
-                animate={{ scale: [1, 1.1, 1] }}
+                animate={{ scale: [1, 1.08, 1] }}
                 transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
                 style={{
                     width: '56px', height: '56px', borderRadius: '16px',
-                    background: 'linear-gradient(135deg, #d1fae5, #a7f3d0)',
+                    background: 'rgba(69, 194, 133, 0.2)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    margin: '0 auto 16px', position: 'relative', zIndex: 1,
+                    margin: '0 auto 16px',
                 }}
             >
-                <CheckCircle size={28} color="#059669" />
+                <CheckCircle size={28} color="var(--success)" />
             </motion.div>
-            <p style={{ margin: 0, fontSize: '17px', fontWeight: '700', color: '#065f46', position: 'relative', zIndex: 1 }}>
+            <h3 style={{ margin: '0 0 8px', fontSize: '20px', fontWeight: '700', color: 'var(--success)' }}>
                 All settled up!
-            </p>
-            <p style={{ margin: '6px 0 0', fontSize: '13px', color: '#6ee7b7', fontWeight: '500', position: 'relative', zIndex: 1 }}>
-                No pending debts in this group
+            </h3>
+            <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-muted)' }}>
+                No one owes anyone in this group.
             </p>
         </motion.div>
     );
 }
 
 /* ── Generic Empty State ── */
-function EmptyState({ icon: Icon, title, subtitle, color = '#a1a1aa' }) {
+function EmptyState({ icon: Icon, title, subtitle, color = 'var(--text-muted)' }) {
     return (
         <div style={{
             textAlign: 'center', padding: '48px 24px',
-            borderRadius: '16px', backgroundColor: '#16161B',
-            border: '1px dashed #e4e4e7',
+            borderRadius: '16px', backgroundColor: 'var(--bg-elevated)',
+            border: '1px dashed var(--border-default)',
         }}>
             <div style={{
                 width: '48px', height: '48px', borderRadius: '14px',
-                backgroundColor: '#f4f4f5', display: 'flex',
+                backgroundColor: 'var(--bg-surface)', display: 'flex',
                 alignItems: 'center', justifyContent: 'center',
                 margin: '0 auto 14px',
             }}>
                 <Icon size={22} color={color} />
             </div>
-            <p style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#52525b' }}>{title}</p>
-            <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#a1a1aa' }}>{subtitle}</p>
+            <p style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)' }}>{title}</p>
+            <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>{subtitle}</p>
         </div>
     );
 }

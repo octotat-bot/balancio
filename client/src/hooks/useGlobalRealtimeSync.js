@@ -24,8 +24,8 @@ export function useGlobalRealtimeSync() {
         if (!user?._id) return;
 
         await Promise.allSettled([
-            fetchGroups(),
-            fetchFriends(),
+            fetchGroups({ silent: true }),
+            fetchFriends({ silent: true }),
             fetchUnreadCount(),
             fetchAllPendingItems(),
         ]);

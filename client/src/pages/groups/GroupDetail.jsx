@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
     ArrowLeft,
     Receipt,
@@ -160,12 +160,12 @@ export function GroupDetail() {
                 const handleUpdate = (data) => {
                     // console.log('Realtime Update:', data);
                     if (data.type.includes('EXPENSE')) {
-                        fetchExpenses(groupId);
-                        fetchBalances(groupId);
+                        fetchExpenses(groupId, { silent: true });
+                        fetchBalances(groupId, null, { silent: true });
                     }
                     if (data.type.includes('SETTLEMENT')) {
-                        fetchSettlements(groupId);
-                        fetchBalances(groupId);
+                        fetchSettlements(groupId, { silent: true });
+                        fetchBalances(groupId, null, { silent: true });
                     }
                 };
 
@@ -189,9 +189,9 @@ export function GroupDetail() {
 
     useRefreshPolling(() => {
         if (!groupId || isConnected) return;
-        fetchExpenses(groupId);
-        fetchSettlements(groupId);
-        fetchBalances(groupId);
+        fetchExpenses(groupId, { silent: true });
+        fetchSettlements(groupId, { silent: true });
+        fetchBalances(groupId, null, { silent: true });
     }, REALTIME_POLL_FAST_MS, Boolean(groupId) && !isConnected);
 
     const registeredMemberCount = currentGroup?.members?.length || 0;
@@ -358,14 +358,7 @@ export function GroupDetail() {
             </motion.div>
 
             {/* Tab Content */}
-            <AnimatePresence mode="wait">
-                <motion.div
-                    key={activeTab}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                >
+            <div>
                     {/* Expenses Tab */}
                     {/* Expenses Tab - Redesigned */}
                     {activeTab === 'expenses' && (() => {
@@ -1159,14 +1152,11 @@ export function GroupDetail() {
                             </div>
                         </div>
                     )}
-                    {/* Chat Tab */}
-                    {activeTab === 'chat' && (
-                        <div style={{ height: '100%' }}>
-                            <GroupChat groupId={groupId} />
-                        </div>
-                    )}
-                </motion.div>
-            </AnimatePresence>
+                    {/* Chat Tab — keep mounted to avoid socket/message reload on tab switch */}
+                    <div style={{ display: activeTab === 'chat' ? 'block' : 'none', height: activeTab === 'chat' ? '100%' : 0, overflow: 'hidden' }}>
+                        <GroupChat groupId={groupId} />
+                    </div>
+            </div>
 
             {/* Add Expense Modal */}
             <Modal

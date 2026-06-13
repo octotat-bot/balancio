@@ -42,7 +42,7 @@ import { useFriendStore } from '../../stores/friendStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useToast } from '../../components/ui/Toast';
 import { formatCurrency, formatDate } from '../../utils/helpers';
-import { REALTIME_POLL_FAST_MS, GLOBAL_SYNC_EVENT } from '../../constants/realtime';
+import { REALTIME_POLL_ACTIVE_MS, GLOBAL_SYNC_EVENT } from '../../constants/realtime';
 import { useRefreshPolling } from '../../hooks/useRefreshPolling';
 import AddExpense from '../../components/expenses/AddExpense';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
@@ -126,7 +126,7 @@ export function Friends() {
         if (selectedFriend?._id) {
             fetchMessages(selectedFriend._id);
         }
-    }, REALTIME_POLL_FAST_MS, Boolean(selectedFriend?._id));
+    }, REALTIME_POLL_ACTIVE_MS, Boolean(selectedFriend?._id));
 
     // Listen for real-time friend updates
     useEffect(() => {

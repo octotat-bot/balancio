@@ -7,8 +7,8 @@ export const useExpenseStore = create((set, get) => ({
     isLoading: false,
     error: null,
 
-    fetchExpenses: async (groupId) => {
-        set({ isLoading: true, error: null });
+    fetchExpenses: async (groupId, { silent = false } = {}) => {
+        if (!silent) set({ isLoading: true, error: null });
         try {
             const response = await api.get(`/groups/${groupId}/expenses`);
             set({ expenses: response.data.expenses, isLoading: false });

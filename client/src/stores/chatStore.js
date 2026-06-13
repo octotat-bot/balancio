@@ -15,6 +15,7 @@ const getSocketUrl = () => {
 
 export const useChatStore = create((set, get) => ({
     messages: [],
+    messagesGroupId: null,
     socket: null,
     isConnected: false,
     isLoading: false,
@@ -90,47 +91,47 @@ export const useChatStore = create((set, get) => ({
 
         socket.on('expense_added', (expense) => {
             const groupId = typeof expense.group === 'object' ? expense.group._id : expense.group;
-            useExpenseStore.getState().fetchExpenses(groupId);
-            useSettlementStore.getState().fetchBalances(groupId);
-            useGroupStore.getState().fetchGroups().then(notifyGlobalSync);
+            useExpenseStore.getState().fetchExpenses(groupId, { silent: true });
+            useSettlementStore.getState().fetchBalances(groupId, null, { silent: true });
+            useGroupStore.getState().fetchGroups({ silent: true }).then(notifyGlobalSync);
         });
 
         socket.on('expense_updated', (expense) => {
             const groupId = typeof expense.group === 'object' ? expense.group._id : expense.group;
-            useExpenseStore.getState().fetchExpenses(groupId);
-            useSettlementStore.getState().fetchBalances(groupId);
-            useGroupStore.getState().fetchGroups().then(notifyGlobalSync);
+            useExpenseStore.getState().fetchExpenses(groupId, { silent: true });
+            useSettlementStore.getState().fetchBalances(groupId, null, { silent: true });
+            useGroupStore.getState().fetchGroups({ silent: true }).then(notifyGlobalSync);
         });
 
         socket.on('expense_deleted', (expenseId) => {
             const currentGroup = useGroupStore.getState().currentGroup;
             if (currentGroup) {
-                useExpenseStore.getState().fetchExpenses(currentGroup._id);
-                useSettlementStore.getState().fetchBalances(currentGroup._id);
-                useGroupStore.getState().fetchGroups().then(notifyGlobalSync);
+                useExpenseStore.getState().fetchExpenses(currentGroup._id, { silent: true });
+                useSettlementStore.getState().fetchBalances(currentGroup._id, null, { silent: true });
+                useGroupStore.getState().fetchGroups({ silent: true }).then(notifyGlobalSync);
             }
         });
 
         socket.on('settlement_added', (settlement) => {
             const groupId = typeof settlement.group === 'object' ? settlement.group._id : settlement.group;
-            useSettlementStore.getState().fetchSettlements(groupId);
-            useSettlementStore.getState().fetchBalances(groupId);
-            useGroupStore.getState().fetchGroups().then(notifyGlobalSync);
+            useSettlementStore.getState().fetchSettlements(groupId, { silent: true });
+            useSettlementStore.getState().fetchBalances(groupId, null, { silent: true });
+            useGroupStore.getState().fetchGroups({ silent: true }).then(notifyGlobalSync);
         });
 
         socket.on('settlement_confirmed', (settlement) => {
             const groupId = typeof settlement.group === 'object' ? settlement.group._id : settlement.group;
-            useSettlementStore.getState().fetchSettlements(groupId);
-            useSettlementStore.getState().fetchBalances(groupId);
-            useGroupStore.getState().fetchGroups().then(notifyGlobalSync);
+            useSettlementStore.getState().fetchSettlements(groupId, { silent: true });
+            useSettlementStore.getState().fetchBalances(groupId, null, { silent: true });
+            useGroupStore.getState().fetchGroups({ silent: true }).then(notifyGlobalSync);
         });
 
         socket.on('settlement_deleted', (settlementId) => {
             const currentGroup = useGroupStore.getState().currentGroup;
             if (currentGroup) {
-                useSettlementStore.getState().fetchSettlements(currentGroup._id);
-                useSettlementStore.getState().fetchBalances(currentGroup._id);
-                useGroupStore.getState().fetchGroups().then(notifyGlobalSync);
+                useSettlementStore.getState().fetchSettlements(currentGroup._id, { silent: true });
+                useSettlementStore.getState().fetchBalances(currentGroup._id, null, { silent: true });
+                useGroupStore.getState().fetchGroups({ silent: true }).then(notifyGlobalSync);
             }
         });
 
@@ -171,10 +172,12 @@ export const useChatStore = create((set, get) => ({
     },
 
     joinGroup: (groupId, userId) => {
-        const { socket } = get();
+        const { socket, messagesGroupId } = get();
         if (socket && groupId) {
             socket.emit('join_group', { groupId, userId });
-            get().fetchMessages(groupId);
+            if (messagesGroupId !== groupId) {
+                get().fetchMessages(groupId, { silent: messagesGroupId != null });
+            }
         }
     },
 
@@ -190,14 +193,14 @@ export const useChatStore = create((set, get) => ({
         if (socket) {
             socket.emit('leave_group', { groupId });
         }
-        set({ messages: [], typingUsers: {} });
+        set({ typingUsers: {} });
     },
 
-    fetchMessages: async (groupId) => {
-        set({ isLoading: true });
+    fetchMessages: async (groupId, { silent = false } = {}) => {
+        if (!silent) set({ isLoading: true });
         try {
             const response = await api.get(`/messages/group/${groupId}`);
-            set({ messages: response.data.messages, isLoading: false });
+            set({ messages: response.data.messages, messagesGroupId: groupId, isLoading: false });
         } catch (error) {
             set({ error: error.message, isLoading: false });
         }

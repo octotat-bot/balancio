@@ -6,8 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { SkeletonList } from '../../components/ui/Skeleton';
 import api from '../../services/api';
 import { formatCurrency, formatDate } from '../../utils/helpers';
-import { REALTIME_POLL_FAST_MS } from '../../constants/realtime';
-import { useRefreshPolling } from '../../hooks/useRefreshPolling';
+import { GLOBAL_SYNC_EVENT } from '../../constants/realtime';
 
 const typeMeta = {
     budget_alert: { icon: AlertCircle, color: '#f59e0b', label: 'Budget alert' },
@@ -34,7 +33,8 @@ export function Notifications() {
     const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(true);
 
-    const load = async () => {
+    const load = async ({ silent = false } = {}) => {
+        if (!silent) setLoading(true);
         try {
             const res = await api.get('/notifications', { params: { all: 'true' } });
             setNotifications(res.data.notifications || []);
@@ -46,7 +46,12 @@ export function Notifications() {
     };
 
     useEffect(() => { load(); }, []);
-    useRefreshPolling(load, REALTIME_POLL_FAST_MS, true);
+
+    useEffect(() => {
+        const onGlobalSync = () => load({ silent: true });
+        window.addEventListener(GLOBAL_SYNC_EVENT, onGlobalSync);
+        return () => window.removeEventListener(GLOBAL_SYNC_EVENT, onGlobalSync);
+    }, []);
 
     const markRead = async (id) => {
         await api.post(`/notifications/${id}/read`);

@@ -7,14 +7,15 @@ export const useSettlementStore = create((set, get) => ({
     simplifiedDebts: [],
     detailedDebts: [],
     isSimplified: false,
+    activeGroupId: null,
     isLoading: false,
     error: null,
 
-    fetchSettlements: async (groupId) => {
-        set({ isLoading: true, error: null });
+    fetchSettlements: async (groupId, { silent = false } = {}) => {
+        if (!silent) set({ isLoading: true, error: null });
         try {
             const response = await api.get(`/settlements/${groupId}/settlements`);
-            set({ settlements: response.data.settlements, isLoading: false });
+            set({ settlements: response.data.settlements, activeGroupId: groupId, isLoading: false });
             return { success: true };
         } catch (error) {
             const message = error.response?.data?.message || 'Failed to fetch settlements';
@@ -23,8 +24,8 @@ export const useSettlementStore = create((set, get) => ({
         }
     },
 
-    fetchBalances: async (groupId, simplify = null) => {
-        set({ isLoading: true, error: null });
+    fetchBalances: async (groupId, simplify = null, { silent = false } = {}) => {
+        if (!silent) set({ isLoading: true, error: null });
         const shouldSimplify = simplify !== null ? simplify : get().isSimplified;
 
         try {
@@ -34,6 +35,7 @@ export const useSettlementStore = create((set, get) => ({
                 simplifiedDebts: response.data.simplifiedDebts,
                 detailedDebts: response.data.detailedDebts || [],
                 isSimplified: shouldSimplify,
+                activeGroupId: groupId,
                 isLoading: false
             });
             return { success: true };
@@ -108,6 +110,7 @@ export const useSettlementStore = create((set, get) => ({
             simplifiedDebts: [],
             detailedDebts: [],
             isSimplified: false,
+            activeGroupId: null,
             error: null,
         });
     },

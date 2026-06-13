@@ -49,7 +49,7 @@ export function Settlements() {
             setLoading(true);
         }
         try {
-            await fetchGroups();
+            await fetchGroups({ silent: true });
 
             const groupsData = useGroupStore.getState().groups;
             const allDebts = [];

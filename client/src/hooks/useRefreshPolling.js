@@ -1,7 +1,15 @@
 import { useEffect, useRef } from 'react';
 
-/** Poll on an interval and when the tab becomes visible again. */
-export function useRefreshPolling(callback, intervalMs = 8000, enabled = true) {
+/**
+ * Poll on an interval when the tab is visible.
+ * Does not run on mount by default — pages should load once in their own useEffect.
+ */
+export function useRefreshPolling(
+    callback,
+    intervalMs = 60000,
+    enabled = true,
+    { runOnMount = false, refreshOnVisible = true, minHiddenBeforeRefreshMs = 60000 } = {}
+) {
     const savedCallback = useRef(callback);
 
     useEffect(() => {
@@ -11,19 +19,31 @@ export function useRefreshPolling(callback, intervalMs = 8000, enabled = true) {
     useEffect(() => {
         if (!enabled) return undefined;
 
-        const run = () => savedCallback.current();
+        const run = () => {
+            if (document.visibilityState !== 'visible') return;
+            savedCallback.current();
+        };
 
-        run();
+        if (runOnMount) run();
+
         const id = setInterval(run, intervalMs);
 
-        const onVisible = () => {
-            if (document.visibilityState === 'visible') run();
+        let hiddenAt = null;
+        const onVisibilityChange = () => {
+            if (document.visibilityState === 'hidden') {
+                hiddenAt = Date.now();
+                return;
+            }
+            if (!refreshOnVisible || hiddenAt === null) return;
+            const awayMs = Date.now() - hiddenAt;
+            hiddenAt = null;
+            if (awayMs >= minHiddenBeforeRefreshMs) run();
         };
-        document.addEventListener('visibilitychange', onVisible);
+        document.addEventListener('visibilitychange', onVisibilityChange);
 
         return () => {
             clearInterval(id);
-            document.removeEventListener('visibilitychange', onVisible);
+            document.removeEventListener('visibilitychange', onVisibilityChange);
         };
-    }, [intervalMs, enabled]);
+    }, [intervalMs, enabled, runOnMount, refreshOnVisible, minHiddenBeforeRefreshMs]);
 }

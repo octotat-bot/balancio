@@ -5,7 +5,7 @@ import { Send } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
 import { formatDate } from '../../utils/helpers';
-import { REALTIME_POLL_FAST_MS } from '../../constants/realtime';
+import { REALTIME_POLL_ACTIVE_MS } from '../../constants/realtime';
 import { useRefreshPolling } from '../../hooks/useRefreshPolling';
 
 export function GroupChat({ groupId }) {
@@ -17,8 +17,6 @@ export function GroupChat({ groupId }) {
         sendMessage,
         sendTyping,
         typingUsers,
-        connect,
-        disconnect,
         fetchMessages,
         isConnected,
         isLoading
@@ -29,24 +27,19 @@ export function GroupChat({ groupId }) {
     const messagesEndRef = useRef(null);
 
     useEffect(() => {
-        connect();
-        return () => disconnect();
-    }, []); // Run once on mount
-
-    useEffect(() => {
         if (isConnected && groupId && user) {
             joinGroup(groupId, user._id);
             return () => {
                 leaveGroup(groupId);
             };
         }
-    }, [isConnected, groupId, user?._id]); // Re-join if connection resets or group changes
+    }, [isConnected, groupId, user?._id, joinGroup, leaveGroup]);
 
     useRefreshPolling(() => {
         if (groupId && !isConnected) {
-            fetchMessages(groupId);
+            fetchMessages(groupId, { silent: true });
         }
-    }, REALTIME_POLL_FAST_MS, Boolean(groupId) && !isConnected);
+    }, REALTIME_POLL_ACTIVE_MS, Boolean(groupId) && !isConnected);
 
     // Auto-scroll to bottom of list
 

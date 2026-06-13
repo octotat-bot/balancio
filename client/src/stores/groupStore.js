@@ -7,8 +7,8 @@ export const useGroupStore = create((set, get) => ({
     isLoading: false,
     error: null,
 
-    fetchGroups: async () => {
-        set({ isLoading: true, error: null });
+    fetchGroups: async ({ silent = false } = {}) => {
+        if (!silent) set({ isLoading: true, error: null });
         try {
             const response = await api.get('/groups');
             set({ groups: response.data.groups, isLoading: false });
@@ -20,8 +20,12 @@ export const useGroupStore = create((set, get) => ({
         }
     },
 
-    fetchGroup: async (groupId) => {
-        set({ isLoading: true, error: null, currentGroup: null });
+    fetchGroup: async (groupId, { silent = false } = {}) => {
+        if (!silent) {
+            set({ isLoading: true, error: null, currentGroup: null });
+        } else {
+            set({ error: null });
+        }
         try {
             const response = await api.get(`/groups/${groupId}`);
             set({ currentGroup: response.data.group, isLoading: false });

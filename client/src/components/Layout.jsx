@@ -59,7 +59,7 @@ export function Layout() {
 
     useEffect(() => {
         if (user?._id) fetchUnreadCount();
-    }, [user?._id, fetchUnreadCount, location.pathname]);
+    }, [user?._id, fetchUnreadCount]);
 
     useGlobalRealtimeSync();
 
