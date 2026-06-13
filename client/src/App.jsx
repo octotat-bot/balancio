@@ -13,6 +13,7 @@ import FriendDetail from './pages/friends/FriendDetail';
 import Onboarding from './pages/onboarding/Onboarding';
 import Notifications from './pages/notifications/Notifications';
 import Profile from './pages/profile/Profile';
+import Analytics from './pages/analytics/Analytics';
 import Layout from './components/Layout';
 import SettlementNotifications from './components/notifications/SettlementNotifications';
 import FirstTimeExperience from './components/first-time/FirstTimeExperience';
@@ -102,6 +103,7 @@ function App() {
           >
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<DashboardWithTour />} />
+            <Route path="analytics" element={<Analytics />} />
             <Route path="groups" element={<GroupList />} />
             <Route path="groups/new" element={<CreateGroup />} />
             <Route path="groups/:groupId" element={<GroupDetail />} />

@@ -13,6 +13,7 @@ import {
     Trash2,
     Camera,
     ChevronRight,
+    TrendingUp,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -366,6 +367,23 @@ export function Profile() {
                 </form>
             </motion.div>
 
+
+            {/* Insights */}
+            <motion.div variants={itemVariants} style={{ marginBottom: '24px' }}>
+                <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#6A6763', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Insights
+                </h3>
+                <div
+                    style={{
+                        backgroundColor: '#131316',
+                        borderRadius: '16px',
+                        border: '1px solid #252530',
+                        overflow: 'hidden',
+                    }}
+                >
+                    <SettingRow icon={TrendingUp} label="Spending insights" value="Trends & categories" onClick={() => navigate('/analytics')} />
+                </div>
+            </motion.div>
 
             {/* Security */}
             <motion.div variants={itemVariants} style={{ marginBottom: '24px' }}>
