@@ -4,7 +4,7 @@ import {
     ArrowRight, Check, DollarSign,
     FileText, Clock, CheckCircle, AlertCircle,
     Send, ChevronDown, ChevronUp, Wallet, ArrowUpRight, ArrowDownLeft, Bell,
-    Sparkles, TrendingDown, TrendingUp, X
+    TrendingDown, TrendingUp, X
 } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import { useSettlementStore } from '../../stores/settlementStore';
@@ -16,10 +16,9 @@ import { formatCurrency, formatDate, getId, isSameId } from '../../utils/helpers
 export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
     const { user } = useAuthStore();
     const {
-        settlements, simplifiedDebts, detailedDebts, balances,
+        settlements, simplifiedDebts, balances,
         fetchSettlements, fetchBalances, createSettlement,
         confirmSettlement, deleteSettlement, isLoading,
-        isSimplified, toggleSimplify
     } = useSettlementStore();
     const toast = useToast();
 
@@ -123,8 +122,7 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
     );
 
     // Build debts list from API edges ({ from, to, amount })
-    const debtSource = isSimplified ? simplifiedDebts : (detailedDebts?.length ? detailedDebts : simplifiedDebts);
-    const sortedDebts = (debtSource || [])
+    const sortedDebts = (simplifiedDebts || [])
         .filter(edge => edge?.from && edge?.to && edge.amount > 0.01)
         .map(edge => ({
             from: edge.from,
@@ -462,55 +460,8 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                         transition={{ duration: 0.2 }}
                         style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
                     >
-                        {/* Simplify toggle + admin controls */}
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '12px',
-                            flexWrap: 'wrap',
-                        }}>
-                            <motion.div
-                                whileTap={{ scale: 0.99 }}
-                                style={{
-                                    flex: 1,
-                                    minWidth: '220px',
-                                    display: 'flex', alignItems: 'center', gap: '12px',
-                                    padding: '12px 16px', borderRadius: '14px',
-                                    backgroundColor: 'var(--bg-surface, #1A1A1F)',
-                                    border: `1px solid ${isSimplified ? 'rgba(69, 194, 133, 0.3)' : 'var(--border-subtle, #252530)'}`,
-                                    cursor: 'pointer', transition: 'all 0.2s',
-                                    userSelect: 'none',
-                                }}
-                                onClick={() => toggleSimplify(groupId)}
-                            >
-                                <div style={{
-                                    width: '40px', height: '22px', borderRadius: '11px',
-                                    backgroundColor: isSimplified ? 'var(--success, #45C285)' : 'var(--border-default, #3f3f46)',
-                                    position: 'relative', transition: 'background-color 0.25s ease', flexShrink: 0,
-                                }}>
-                                    <motion.div
-                                        animate={{ left: isSimplified ? '20px' : '2px' }}
-                                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                                        style={{
-                                            width: '18px', height: '18px', borderRadius: '50%',
-                                            backgroundColor: 'var(--text-primary, #EDEAE4)',
-                                            position: 'absolute', top: '2px',
-                                            boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
-                                        }}
-                                    />
-                                </div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <Sparkles size={13} color={isSimplified ? 'var(--success)' : 'var(--text-muted)'} />
-                                        <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: '600' }}>Simplify debts</span>
-                                    </div>
-                                    <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--text-muted, #8A8680)' }}>
-                                        {isSimplified ? 'Minimized number of payments' : 'Showing all individual debts'}
-                                    </p>
-                                </div>
-                            </motion.div>
-
-                            {isAdmin && (
+                        {isAdmin && (
+                            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                                 <motion.button
                                     whileTap={{ scale: 0.96 }}
                                     onClick={() => setShowAllSettlements(!showAllSettlements)}
@@ -519,8 +470,8 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
                                 >
                                     {showAllSettlements ? 'All members' : 'Show all'}
                                 </motion.button>
-                            )}
-                        </div>
+                            </div>
+                        )}
 
                         {sortedDebts.length > 0 ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>

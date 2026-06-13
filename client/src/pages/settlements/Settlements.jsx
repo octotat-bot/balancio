@@ -57,8 +57,9 @@ export function Settlements() {
             for (const group of groupsData) {
                 try {
                     const response = await api.get(`/settlements/${group._id}/balances`);
-                    if (response.data.simplifiedDebts) {
-                        const debtsWithGroup = response.data.simplifiedDebts.map(debt => ({
+                    const debts = response.data.debts || response.data.simplifiedDebts;
+                    if (debts) {
+                        const debtsWithGroup = debts.map(debt => ({
                             ...debt,
                             groupId: group._id,
                             groupName: group.name,

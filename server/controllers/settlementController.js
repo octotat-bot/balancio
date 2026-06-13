@@ -276,7 +276,6 @@ export const getBalances = async (req, res, next) => {
         }
 
         const isAdmin       = group.admins.some(adminId => adminId.toString() === req.userId.toString());
-        const shouldSimplify = req.query.simplify === 'true';
 
         // Fetch raw records
         const expenses    = await Expense.find({ group: req.params.groupId }).populate('paidBy', 'name');
@@ -296,11 +295,8 @@ export const getBalances = async (req, res, next) => {
         // ── PHASE 1: build pairwise map ───────────────────────────────────────
         const pairwiseMap = buildPairwiseMap(expenses, settlements);
 
-        // ── PHASE 2: derive settlement edges ─────────────────────────────────
-        const rawEdges = deriveSettlementEdges(pairwiseMap, memberInfo, false);
-        let settlementEdges = shouldSimplify
-            ? deriveSettlementEdges(pairwiseMap, memberInfo, true)
-            : rawEdges;
+        // Individual debts between each pair (no min-cash-flow simplification)
+        let settlementEdges = deriveSettlementEdges(pairwiseMap, memberInfo, false);
 
         // Derive per-member totals from the pairwise map
         const memberTotals = computeMemberTotals(pairwiseMap);
@@ -330,9 +326,9 @@ export const getBalances = async (req, res, next) => {
 
         res.json({
             balances,
+            debts: settlementEdges,
             simplifiedDebts: settlementEdges,
-            // Always return raw pairwise edges (simplify toggle only affects simplifiedDebts)
-            detailedDebts: rawEdges,
+            detailedDebts: settlementEdges,
             isAdmin,
         });
     } catch (error) {
@@ -367,7 +363,7 @@ export const getGlobalSummary = async (req, res, next) => {
             });
 
             const pairwiseMap = buildPairwiseMap(expenses, settlements);
-            const edges = deriveSettlementEdges(pairwiseMap, memberInfo, true).filter(edge => {
+            const edges = deriveSettlementEdges(pairwiseMap, memberInfo, false).filter(edge => {
                 const fromId = (edge.from._id || edge.from).toString();
                 const toId = (edge.to._id || edge.to).toString();
                 return fromId === userId || toId === userId;

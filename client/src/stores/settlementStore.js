@@ -6,7 +6,6 @@ export const useSettlementStore = create((set, get) => ({
     balances: [],
     simplifiedDebts: [],
     detailedDebts: [],
-    isSimplified: false,
     activeGroupId: null,
     isLoading: false,
     error: null,
@@ -24,17 +23,15 @@ export const useSettlementStore = create((set, get) => ({
         }
     },
 
-    fetchBalances: async (groupId, simplify = null, { silent = false } = {}) => {
+    fetchBalances: async (groupId, _simplify = null, { silent = false } = {}) => {
         if (!silent) set({ isLoading: true, error: null });
-        const shouldSimplify = simplify !== null ? simplify : get().isSimplified;
 
         try {
-            const response = await api.get(`/settlements/${groupId}/balances?simplify=${shouldSimplify}`);
+            const response = await api.get(`/settlements/${groupId}/balances`);
             set({
                 balances: response.data.balances,
-                simplifiedDebts: response.data.simplifiedDebts,
-                detailedDebts: response.data.detailedDebts || [],
-                isSimplified: shouldSimplify,
+                simplifiedDebts: response.data.debts,
+                detailedDebts: response.data.debts,
                 activeGroupId: groupId,
                 isLoading: false
             });
@@ -44,11 +41,6 @@ export const useSettlementStore = create((set, get) => ({
             set({ isLoading: false, error: message });
             return { success: false, message };
         }
-    },
-
-    toggleSimplify: (groupId) => {
-        const current = get().isSimplified;
-        get().fetchBalances(groupId, !current);
     },
 
     createSettlement: async (groupId, settlementData) => {
@@ -109,7 +101,6 @@ export const useSettlementStore = create((set, get) => ({
             balances: [],
             simplifiedDebts: [],
             detailedDebts: [],
-            isSimplified: false,
             activeGroupId: null,
             error: null,
         });

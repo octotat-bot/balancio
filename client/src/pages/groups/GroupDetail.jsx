@@ -44,7 +44,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useSettlementStore } from '../../stores/settlementStore';
 import { useChatStore } from '../../stores/chatStore';
 import { useToast } from '../../components/ui/Toast';
-import { formatCurrency, formatDate, simplifyDebts, isSameId } from '../../utils/helpers';
+import { formatCurrency, formatDate, isSameId } from '../../utils/helpers';
 import { REALTIME_POLL_FAST_MS } from '../../constants/realtime';
 import { useRefreshPolling } from '../../hooks/useRefreshPolling';
 import AddExpense from '../../components/expenses/AddExpense';
@@ -254,7 +254,7 @@ export function GroupDetail() {
         }))
         : []; // Fallback empty if loading
 
-    // Use store data for debts - it respects the 'simplify' flag sent to backend
+    // Use store data for individual debts between members
     const settlements = simplifiedDebts;
 
     const isCreator = isSameId(currentGroup?.creator, user?._id);
