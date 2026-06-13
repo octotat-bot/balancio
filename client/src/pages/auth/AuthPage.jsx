@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -38,8 +38,10 @@ export function AuthPage() {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 900);
     const navigate = useNavigate();
-    const { login, signup, isLoading } = useAuthStore();
+    const [searchParams] = useSearchParams();
+    const { login, signup, logout, isLoading, isAuthenticated } = useAuthStore();
     const toast = useToast();
+    const switchedAccount = searchParams.get('switch') === '1';
 
     // Listen to window resize for mobile detection
     React.useEffect(() => {
@@ -47,6 +49,15 @@ export function AuthPage() {
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
+
+    React.useEffect(() => {
+        const wantsSignup = searchParams.get('signup') === '1';
+        const wantsSwitch = searchParams.get('switch') === '1';
+        if (wantsSignup) setIsLogin(false);
+        if ((wantsSwitch || wantsSignup) && isAuthenticated) {
+            logout();
+        }
+    }, [searchParams, isAuthenticated, logout]);
 
     const loginForm = useForm({
         resolver: zodResolver(loginSchema),
@@ -137,6 +148,22 @@ export function AuthPage() {
         }
     };
 
+    const AuthSessionHint = ({ style = {} }) => (
+        <div style={{ marginBottom: 16, ...style }}>
+            {switchedAccount && (
+                <p style={{ textAlign: 'center', fontSize: 13, color: 'var(--success, #45C285)', margin: '0 0 8px' }}>
+                    You were signed out. Log in or create a new account below.
+                </p>
+            )}
+            <p style={{ textAlign: 'center', fontSize: 13, color: '#8A8680', margin: 0 }}>
+                Using a shared device?{' '}
+                <Link to="/auth?switch=1&signup=1" style={{ color: '#D4A853', fontWeight: 600 }}>
+                    Create a different account
+                </Link>
+            </p>
+        </div>
+    );
+
     // Mobile Layout - Vertical Stack
     if (isMobile) {
         return (
@@ -192,6 +219,7 @@ export function AuthPage() {
                         backgroundColor: '#131316',
                     }}
                 >
+                    <AuthSessionHint />
                     <AnimatePresence mode="wait">
                         {isLogin ? (
                             <motion.div
@@ -578,6 +606,7 @@ export function AuthPage() {
                     justifyContent: 'center',
                     minHeight: '650px',
                 }}>
+                    <AuthSessionHint />
                     <AnimatePresence mode="wait">
                         {isLogin && (
                             <motion.div

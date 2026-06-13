@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ToastProvider } from './components/ui/Toast';
 import { useAuthStore } from './stores/authStore';
 import AuthPage from './pages/auth/AuthPage';
@@ -40,8 +40,11 @@ function ProtectedRoute({ children }) {
 // Public Route wrapper (redirects to dashboard if already authenticated)
 function PublicRoute({ children }) {
   const { isAuthenticated } = useAuthStore();
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const wantsNewSession = params.get('switch') === '1' || params.get('signup') === '1';
 
-  if (isAuthenticated) {
+  if (isAuthenticated && !wantsNewSession) {
     return <Navigate to="/dashboard" replace />;
   }
 

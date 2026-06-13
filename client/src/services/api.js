@@ -1,8 +1,9 @@
 import axios from 'axios';
+import { AUTH_STORAGE_KEY, clearAuthStorage } from '../utils/authStorage';
 
 const getStoredToken = () => {
     try {
-        const raw = sessionStorage.getItem('auth-storage');
+        const raw = sessionStorage.getItem(AUTH_STORAGE_KEY);
         if (!raw) return null;
         return JSON.parse(raw)?.state?.token ?? null;
     } catch {
@@ -40,7 +41,7 @@ api.interceptors.response.use(
             switch (error.response.status) {
                 case 401:
                     if (!window.location.pathname.includes('/auth')) {
-                        sessionStorage.removeItem('auth-storage');
+                        clearAuthStorage();
                         window.location.href = '/auth';
                     }
                     break;

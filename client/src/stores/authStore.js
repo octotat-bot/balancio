@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import api from '../services/api';
 import { FIRST_VISIT_KEY } from '../hooks/useFirstVisit';
+import { AUTH_STORAGE_KEY, clearAuthStorage } from '../utils/authStorage';
+
+export { AUTH_STORAGE_KEY, clearAuthStorage } from '../utils/authStorage';
 
 export const useAuthStore = create(
     persist(
@@ -78,7 +81,7 @@ export const useAuthStore = create(
                     error: null,
                 });
                 delete api.defaults.headers.common['Authorization'];
-                sessionStorage.removeItem('auth-storage');
+                clearAuthStorage();
             },
 
             updateUser: async (userData) => {
@@ -119,8 +122,7 @@ export const useAuthStore = create(
                         isLoading: false,
                     });
                     delete api.defaults.headers.common['Authorization'];
-                    localStorage.removeItem('auth-storage');
-                    sessionStorage.removeItem('auth-storage');
+                    clearAuthStorage();
                     return { success: true };
                 } catch (error) {
                     set({ isLoading: false });
@@ -138,19 +140,26 @@ export const useAuthStore = create(
             },
         }),
         {
-            name: 'auth-storage',
+            name: AUTH_STORAGE_KEY,
             storage: {
                 getItem: (name) => {
-                    const str = localStorage.getItem(name) || sessionStorage.getItem(name);
-                    return str ? JSON.parse(str) : null;
+                    const str = sessionStorage.getItem(name);
+                    if (str) return JSON.parse(str);
+                    const legacy = localStorage.getItem(name);
+                    if (legacy) {
+                        sessionStorage.setItem(name, legacy);
+                        localStorage.removeItem(name);
+                        return JSON.parse(legacy);
+                    }
+                    return null;
                 },
                 setItem: (name, value) => {
-                    localStorage.setItem(name, JSON.stringify(value));
                     sessionStorage.setItem(name, JSON.stringify(value));
+                    localStorage.removeItem(name);
                 },
                 removeItem: (name) => {
-                    localStorage.removeItem(name);
                     sessionStorage.removeItem(name);
+                    localStorage.removeItem(name);
                 },
             },
             partialize: (state) => ({

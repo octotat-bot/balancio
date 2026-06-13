@@ -154,7 +154,7 @@ export function Profile() {
 
     const handleLogout = () => {
         logout();
-        navigate('/auth');
+        navigate('/auth?switch=1', { replace: true });
     };
 
     const handleDeleteAccount = async () => {
