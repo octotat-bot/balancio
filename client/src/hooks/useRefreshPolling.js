@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 
-/** Poll a callback on an interval — used when Socket.io is unavailable (e.g. Vercel). */
-export function useRefreshPolling(callback, intervalMs = 30000, enabled = true) {
+/** Poll on an interval and when the tab becomes visible again. */
+export function useRefreshPolling(callback, intervalMs = 8000, enabled = true) {
     const savedCallback = useRef(callback);
 
     useEffect(() => {
@@ -11,8 +11,19 @@ export function useRefreshPolling(callback, intervalMs = 30000, enabled = true) 
     useEffect(() => {
         if (!enabled) return undefined;
 
-        savedCallback.current();
-        const id = setInterval(() => savedCallback.current(), intervalMs);
-        return () => clearInterval(id);
+        const run = () => savedCallback.current();
+
+        run();
+        const id = setInterval(run, intervalMs);
+
+        const onVisible = () => {
+            if (document.visibilityState === 'visible') run();
+        };
+        document.addEventListener('visibilitychange', onVisible);
+
+        return () => {
+            clearInterval(id);
+            document.removeEventListener('visibilitychange', onVisible);
+        };
     }, [intervalMs, enabled]);
 }

@@ -42,6 +42,7 @@ import { useFriendStore } from '../../stores/friendStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useToast } from '../../components/ui/Toast';
 import { formatCurrency, formatDate } from '../../utils/helpers';
+import { REALTIME_POLL_FAST_MS, GLOBAL_SYNC_EVENT } from '../../constants/realtime';
 import { useRefreshPolling } from '../../hooks/useRefreshPolling';
 import AddExpense from '../../components/expenses/AddExpense';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
@@ -125,7 +126,7 @@ export function Friends() {
         if (selectedFriend?._id) {
             fetchMessages(selectedFriend._id);
         }
-    }, 15000, Boolean(selectedFriend?._id));
+    }, REALTIME_POLL_FAST_MS, Boolean(selectedFriend?._id));
 
     // Listen for real-time friend updates
     useEffect(() => {
@@ -175,6 +176,17 @@ export function Friends() {
             window.removeEventListener('app:friend-balance-updated', handleBalanceUpdated);
         };
     }, [selectedFriend?._id, fetchFriends, fetchDirectExpenses, fetchDirectBalance, fetchSettlements]);
+
+    useEffect(() => {
+        const onGlobalSync = () => {
+            if (!selectedFriend?._id) return;
+            fetchDirectExpenses(selectedFriend._id);
+            fetchDirectBalance(selectedFriend._id);
+            fetchSettlements(selectedFriend._id);
+        };
+        window.addEventListener(GLOBAL_SYNC_EVENT, onGlobalSync);
+        return () => window.removeEventListener(GLOBAL_SYNC_EVENT, onGlobalSync);
+    }, [selectedFriend?._id, fetchDirectExpenses, fetchDirectBalance, fetchSettlements]);
 
     // Fetch friend data when selected
     useEffect(() => {

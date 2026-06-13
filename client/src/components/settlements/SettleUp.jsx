@@ -12,6 +12,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useToast } from '../ui/Toast';
 import { useChatStore } from '../../stores/chatStore';
 import { formatCurrency, formatDate, getId, isSameId } from '../../utils/helpers';
+import { REALTIME_POLL_FAST_MS } from '../../constants/realtime';
 import { useRefreshPolling } from '../../hooks/useRefreshPolling';
 
 export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
@@ -43,7 +44,7 @@ export function SettleUp({ groupId, members, isAdmin = false, onClose }) {
         if (!groupId || isConnected) return;
         fetchSettlements(groupId);
         fetchBalances(groupId);
-    }, 30000, Boolean(groupId) && !isConnected);
+    }, REALTIME_POLL_FAST_MS, Boolean(groupId) && !isConnected);
 
     // --- Handlers ---
 

@@ -45,6 +45,7 @@ import { useSettlementStore } from '../../stores/settlementStore';
 import { useChatStore } from '../../stores/chatStore';
 import { useToast } from '../../components/ui/Toast';
 import { formatCurrency, formatDate, simplifyDebts, isSameId } from '../../utils/helpers';
+import { REALTIME_POLL_FAST_MS } from '../../constants/realtime';
 import { useRefreshPolling } from '../../hooks/useRefreshPolling';
 import AddExpense from '../../components/expenses/AddExpense';
 import EditExpense from '../../components/expenses/EditExpense';
@@ -191,7 +192,7 @@ export function GroupDetail() {
         fetchExpenses(groupId);
         fetchSettlements(groupId);
         fetchBalances(groupId);
-    }, 30000, Boolean(groupId) && !isConnected);
+    }, REALTIME_POLL_FAST_MS, Boolean(groupId) && !isConnected);
 
     const registeredMemberCount = currentGroup?.members?.length || 0;
     const pendingMemberCount = currentGroup?.pendingMembers?.length || 0;

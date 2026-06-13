@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { SkeletonList } from '../../components/ui/Skeleton';
 import api from '../../services/api';
 import { formatCurrency, formatDate } from '../../utils/helpers';
+import { REALTIME_POLL_FAST_MS } from '../../constants/realtime';
 import { useRefreshPolling } from '../../hooks/useRefreshPolling';
 
 const typeMeta = {
@@ -45,7 +46,7 @@ export function Notifications() {
     };
 
     useEffect(() => { load(); }, []);
-    useRefreshPolling(load, 30000, true);
+    useRefreshPolling(load, REALTIME_POLL_FAST_MS, true);
 
     const markRead = async (id) => {
         await api.post(`/notifications/${id}/read`);

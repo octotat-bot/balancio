@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -18,6 +18,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useGroupStore } from '../../stores/groupStore';
 import { useToast } from '../../components/ui/Toast';
 import { formatCurrency, isSameId } from '../../utils/helpers';
+import { REALTIME_POLL_FAST_MS } from '../../constants/realtime';
 import { useRefreshPolling } from '../../hooks/useRefreshPolling';
 import api from '../../services/api';
 
@@ -41,20 +42,15 @@ export function Settlements() {
     const [globalSummary, setGlobalSummary] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('people'); // 'people', 'all', 'owe', 'owed'
+    const hasLoadedOnce = useRef(false);
 
-    useEffect(() => {
-        loadAllSettlements();
-    }, []);
-
-    useRefreshPolling(loadAllSettlements, 30000, true);
-
-    const loadAllSettlements = async () => {
-        setLoading(true);
+    const loadAllSettlements = useCallback(async ({ showSpinner = false } = {}) => {
+        if (showSpinner || !hasLoadedOnce.current) {
+            setLoading(true);
+        }
         try {
-            // Fetch all groups first
             await fetchGroups();
 
-            // Fetch settlements for each group
             const groupsData = useGroupStore.getState().groups;
             const allDebts = [];
 
@@ -62,7 +58,6 @@ export function Settlements() {
                 try {
                     const response = await api.get(`/settlements/${group._id}/balances`);
                     if (response.data.simplifiedDebts) {
-                        // Add group info to each debt
                         const debtsWithGroup = response.data.simplifiedDebts.map(debt => ({
                             ...debt,
                             groupId: group._id,
@@ -71,8 +66,8 @@ export function Settlements() {
                         }));
                         allDebts.push(...debtsWithGroup);
                     }
-                } catch (err) {
-                    // Skip
+                } catch {
+                    // Skip groups that fail to load
                 }
             }
 
@@ -84,11 +79,24 @@ export function Settlements() {
             } catch {
                 setGlobalSummary(null);
             }
-        } catch (error) {
+
+            hasLoadedOnce.current = true;
+        } catch {
             toast.error('Couldn\'t load settlements', 'Please check your connection');
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
-    };
+    }, [fetchGroups, toast]);
+
+    useEffect(() => {
+        loadAllSettlements({ showSpinner: true });
+    }, [loadAllSettlements]);
+
+    useRefreshPolling(
+        () => loadAllSettlements({ showSpinner: false }),
+        REALTIME_POLL_FAST_MS,
+        true
+    );
 
     // Filter settlements involving the current user
     const myDebts = allSettlements.filter(s => isSameId(s.from, user?._id));
@@ -445,7 +453,7 @@ export function Settlements() {
                 <Button
                     variant="secondary"
                     icon={RefreshCw}
-                    onClick={loadAllSettlements}
+                    onClick={() => loadAllSettlements({ showSpinner: true })}
                 >
                     Refresh Settlements
                 </Button>

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { io } from 'socket.io-client';
 import api from '../services/api';
+import { GLOBAL_SYNC_EVENT } from '../constants/realtime';
 import useGroupStore from './groupStore';
 import useExpenseStore from './expenseStore';
 import useSettlementStore from './settlementStore';
@@ -83,18 +84,22 @@ export const useChatStore = create((set, get) => ({
             useGroupStore.getState().addGroup(group);
         });
 
+        const notifyGlobalSync = () => {
+            window.dispatchEvent(new CustomEvent(GLOBAL_SYNC_EVENT));
+        };
+
         socket.on('expense_added', (expense) => {
             const groupId = typeof expense.group === 'object' ? expense.group._id : expense.group;
             useExpenseStore.getState().fetchExpenses(groupId);
             useSettlementStore.getState().fetchBalances(groupId);
-            useGroupStore.getState().fetchGroups();
+            useGroupStore.getState().fetchGroups().then(notifyGlobalSync);
         });
 
         socket.on('expense_updated', (expense) => {
             const groupId = typeof expense.group === 'object' ? expense.group._id : expense.group;
             useExpenseStore.getState().fetchExpenses(groupId);
             useSettlementStore.getState().fetchBalances(groupId);
-            useGroupStore.getState().fetchGroups();
+            useGroupStore.getState().fetchGroups().then(notifyGlobalSync);
         });
 
         socket.on('expense_deleted', (expenseId) => {
@@ -102,7 +107,7 @@ export const useChatStore = create((set, get) => ({
             if (currentGroup) {
                 useExpenseStore.getState().fetchExpenses(currentGroup._id);
                 useSettlementStore.getState().fetchBalances(currentGroup._id);
-                useGroupStore.getState().fetchGroups();
+                useGroupStore.getState().fetchGroups().then(notifyGlobalSync);
             }
         });
 
@@ -110,14 +115,14 @@ export const useChatStore = create((set, get) => ({
             const groupId = typeof settlement.group === 'object' ? settlement.group._id : settlement.group;
             useSettlementStore.getState().fetchSettlements(groupId);
             useSettlementStore.getState().fetchBalances(groupId);
-            useGroupStore.getState().fetchGroups();
+            useGroupStore.getState().fetchGroups().then(notifyGlobalSync);
         });
 
         socket.on('settlement_confirmed', (settlement) => {
             const groupId = typeof settlement.group === 'object' ? settlement.group._id : settlement.group;
             useSettlementStore.getState().fetchSettlements(groupId);
             useSettlementStore.getState().fetchBalances(groupId);
-            useGroupStore.getState().fetchGroups();
+            useGroupStore.getState().fetchGroups().then(notifyGlobalSync);
         });
 
         socket.on('settlement_deleted', (settlementId) => {
@@ -125,7 +130,7 @@ export const useChatStore = create((set, get) => ({
             if (currentGroup) {
                 useSettlementStore.getState().fetchSettlements(currentGroup._id);
                 useSettlementStore.getState().fetchBalances(currentGroup._id);
-                useGroupStore.getState().fetchGroups();
+                useGroupStore.getState().fetchGroups().then(notifyGlobalSync);
             }
         });
 

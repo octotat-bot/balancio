@@ -11,6 +11,7 @@ import { useFriendStore } from '../../stores/friendStore';
 import { useAuthStore } from '../../stores/authStore';
 import { formatCurrency } from '../../utils/helpers';
 import api from '../../services/api';
+import { GLOBAL_SYNC_EVENT } from '../../constants/realtime';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -56,6 +57,16 @@ export function GroupList() {
             setFriendBalances(res.data.balances || {});
         }).catch(() => {});
         // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    useEffect(() => {
+        const onGlobalSync = () => {
+            api.get('/friends/balances')
+                .then((res) => setFriendBalances(res.data.balances || {}))
+                .catch(() => {});
+        };
+        window.addEventListener(GLOBAL_SYNC_EVENT, onGlobalSync);
+        return () => window.removeEventListener(GLOBAL_SYNC_EVENT, onGlobalSync);
     }, []);
 
     const acceptedFriends = friends?.accepted || [];

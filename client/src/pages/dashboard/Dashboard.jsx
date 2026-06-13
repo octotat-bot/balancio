@@ -5,6 +5,7 @@ import { useAuthStore } from "../../stores/authStore";
 import { useGroupStore } from "../../stores/groupStore";
 import { useFriendStore } from "../../stores/friendStore";
 import api from "../../services/api";
+import { GLOBAL_SYNC_EVENT } from "../../constants/realtime";
 
 // ─── tiny SVG icon helpers ───────────────────────────────────────────────────
 const Icon = ({ d, size = 16, stroke = "currentColor", strokeWidth = 2, fill = "none", extra = "" }) => (
@@ -281,6 +282,17 @@ export default function Dashboard() {
       }
     };
     fetchAllFriendBalances();
+  }, [acceptedFriends]);
+
+  useEffect(() => {
+    const onGlobalSync = () => {
+      if (acceptedFriends.length === 0) return;
+      api.get('/friends/balances')
+        .then((res) => setFriendBalances(res.data.balances || {}))
+        .catch(() => {});
+    };
+    window.addEventListener(GLOBAL_SYNC_EVENT, onGlobalSync);
+    return () => window.removeEventListener(GLOBAL_SYNC_EVENT, onGlobalSync);
   }, [acceptedFriends]);
 
   useEffect(() => {

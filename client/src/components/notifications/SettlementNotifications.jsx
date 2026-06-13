@@ -241,20 +241,10 @@ export function SettlementNotifications() {
     } = useSettlementNotificationStore();
     const toast = useToast();
 
-    // Poll for new items every 30 seconds (reduced frequency since we have real-time now)
+    // Initial fetch — ongoing sync handled by useGlobalRealtimeSync in Layout
     useEffect(() => {
-        if (!user) {
-            return;
-        }
-
-        // Initial fetch
+        if (!user) return;
         fetchAllPendingItems();
-
-        // Set up polling as fallback - every 30 seconds
-        const interval = setInterval(() => {
-            fetchAllPendingItems();
-        }, 30000);
-        return () => clearInterval(interval);
     }, [user, fetchAllPendingItems]);
 
     // Listen for real-time notifications - directly add without API refetch

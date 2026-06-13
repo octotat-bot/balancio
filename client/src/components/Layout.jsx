@@ -4,7 +4,7 @@ import { Bell } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useChatStore } from '../stores/chatStore';
 import { useNotificationStore } from '../stores/notificationStore';
-import { useRefreshPolling } from '../hooks/useRefreshPolling';
+import { useGlobalRealtimeSync } from '../hooks/useGlobalRealtimeSync';
 
 // ─── tiny SVG icon helpers ───────────────────────────────────────────────────
 const Icon = ({ d, size = 16, stroke = "currentColor", strokeWidth = 2, fill = "none", extra = "" }) => (
@@ -61,7 +61,7 @@ export function Layout() {
         if (user?._id) fetchUnreadCount();
     }, [user?._id, fetchUnreadCount, location.pathname]);
 
-    useRefreshPolling(fetchUnreadCount, 30000, Boolean(user?._id));
+    useGlobalRealtimeSync();
 
     useEffect(() => {
         const fmt = () => {

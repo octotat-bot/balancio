@@ -5,6 +5,7 @@ import { Send } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
 import { formatDate } from '../../utils/helpers';
+import { REALTIME_POLL_FAST_MS } from '../../constants/realtime';
 import { useRefreshPolling } from '../../hooks/useRefreshPolling';
 
 export function GroupChat({ groupId }) {
@@ -45,7 +46,7 @@ export function GroupChat({ groupId }) {
         if (groupId && !isConnected) {
             fetchMessages(groupId);
         }
-    }, 15000, Boolean(groupId) && !isConnected);
+    }, REALTIME_POLL_FAST_MS, Boolean(groupId) && !isConnected);
 
     // Auto-scroll to bottom of list
 
