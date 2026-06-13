@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, TrendingUp, PieChart, Orbit } from 'lucide-react';
+import { TrendingUp, PieChart, Orbit } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { useFriendStore } from '../../stores/friendStore';
 import api from '../../services/api';
@@ -20,7 +19,6 @@ const card = {
 };
 
 export default function Analytics() {
-  const navigate = useNavigate();
   const { user } = useAuthStore();
   const { friends, fetchFriends } = useFriendStore();
   const [activeFilter, setActiveFilter] = useState('This year');
@@ -82,30 +80,9 @@ export default function Analytics() {
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', fontFamily: "'Syne', sans-serif" }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-        <button
-          type="button"
-          onClick={() => navigate('/dashboard')}
-          aria-label="Back to dashboard"
-          style={{
-            background: '#1A1A1F',
-            border: '1px solid #252530',
-            borderRadius: 10,
-            width: 40,
-            height: 40,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            color: '#EDEAE4',
-          }}
-        >
-          <ArrowLeft size={18} />
-        </button>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800 }}>Insights</h1>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: '#8A8680' }}>Spending trends and category breakdown</p>
-        </div>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800 }}>Insights</h1>
+        <p style={{ margin: '4px 0 0', fontSize: 13, color: '#8A8680' }}>Spending trends and category breakdown</p>
       </div>
 
       {!loading && analytics && (

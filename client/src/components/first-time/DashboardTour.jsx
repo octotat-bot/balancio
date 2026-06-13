@@ -5,7 +5,7 @@ const STEPS = [
     {
         target: 'navigation',
         title: 'Your command center',
-        body: 'Jump between Home, Groups, Friends, Settlements, and Profile from the bottom dock.',
+        body: 'Jump between Home, Groups, Friends, Insights, Settlements, and more from the bottom dock. Profile is in the top-right.',
     },
     {
         target: 'balance-summary',

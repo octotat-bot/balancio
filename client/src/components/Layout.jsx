@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Bell } from 'lucide-react';
+import { Bell, TrendingUp } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useChatStore } from '../stores/chatStore';
 import { useNotificationStore } from '../stores/notificationStore';
@@ -42,10 +42,12 @@ export function Layout() {
     const location = useLocation();
     
     // Derived state for bottom dock
-    const activeDock = location.pathname.includes('/groups') ? 'Groups' :
+    const activeDock = location.pathname.includes('/analytics') ? 'Insights' :
+                       location.pathname.includes('/groups') ? 'Groups' :
                        location.pathname.includes('/friends') ? 'Friends' :
                        location.pathname.includes('/settlements') ? 'Settle' :
-                       location.pathname.includes('/profile') ? 'Profile' : 'Home';
+                       location.pathname.includes('/profile') ? 'Profile' :
+                       location.pathname.includes('/dashboard') ? 'Home' : '';
 
     const [time, setTime] = useState("");
 
@@ -77,11 +79,11 @@ export function Layout() {
     }, []);
 
     const dockItems = [
-        { label: "Home",    href: "/dashboard", icon: <GridIcon size={16} color="currentColor" /> },
-        { label: "Groups",  href: "/groups",    icon: <Icon {...icons.groups}  size={16} /> },
-        { label: "Friends", href: "/friends",   icon: <Icon {...icons.friends} size={16} /> },
-        { label: "Settle",  href: "/settlements", icon: <Icon {...icons.settle}  size={16} /> },
-        { label: "Profile", href: "/profile",   icon: <Icon {...icons.profile} size={16} /> },
+        { label: "Home",     href: "/dashboard",    icon: <GridIcon size={16} color="currentColor" /> },
+        { label: "Groups",   href: "/groups",       icon: <Icon {...icons.groups} size={16} /> },
+        { label: "Friends",  href: "/friends",      icon: <Icon {...icons.friends} size={16} /> },
+        { label: "Insights", href: "/analytics",    icon: <TrendingUp size={16} strokeWidth={2} /> },
+        { label: "Settle",   href: "/settlements",  icon: <Icon {...icons.settle} size={16} /> },
     ];
 
     const s = {
@@ -136,15 +138,18 @@ export function Layout() {
             position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50,
         },
         fabInner: {
-            display: "flex", alignItems: "center", gap: 6,
+            display: "flex", alignItems: "center", gap: 4,
             background: "#1A1A1F", border: "1px solid #252530",
-            borderRadius: 999, padding: "6px 8px",
+            borderRadius: 999, padding: "6px 6px",
             boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
+            maxWidth: "min(100vw - 16px, 520px)",
+            overflowX: "auto",
         },
         fabItem: {
             display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-            padding: "8px 22px", borderRadius: 999, cursor: "pointer", transition: "all 0.15s",
+            padding: "8px 14px", borderRadius: 999, cursor: "pointer", transition: "all 0.15s",
             background: "transparent", border: "none", fontFamily: "'Syne', sans-serif",
+            minWidth: 0,
         },
         fabSep: { width: 1, height: 32, background: "#252530" },
         fabAdd: {
@@ -225,7 +230,7 @@ export function Layout() {
                                     color: isOn ? "#D4A853" : "#4A4845",
                                 }}>
                                 <span style={{ display: "flex", color: "inherit" }}>{item.icon}</span>
-                                <span style={{ ...s.fabLbl, color: "inherit" }}>{item.label}</span>
+                                <span style={{ ...s.fabLbl, color: "inherit", whiteSpace: "nowrap" }}>{item.label}</span>
                             </a>
                         );
                     })}
@@ -258,7 +263,7 @@ export function Layout() {
                                     color: isOn ? "#D4A853" : "#4A4845",
                                 }}>
                                 <span style={{ display: "flex", color: "inherit" }}>{item.icon}</span>
-                                <span style={{ ...s.fabLbl, color: "inherit" }}>{item.label}</span>
+                                <span style={{ ...s.fabLbl, color: "inherit", whiteSpace: "nowrap" }}>{item.label}</span>
                             </a>
                         );
                     })}
