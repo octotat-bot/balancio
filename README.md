@@ -1,6 +1,8 @@
-# Split Expense Application
+# Balancio
 
-A modern expense splitting application for tracking shared expenses with friends and groups.
+An expense splitting app for tracking shared costs with friends and groups, with real-time updates and member-to-member balances.
+
+**Live demo:** https://balancio-three.vercel.app
 
 ## Features
 
@@ -8,15 +10,18 @@ A modern expense splitting application for tracking shared expenses with friends
 - 📊 **Dashboard** - Overview of your balances and recent activity
 - 👥 **Groups** - Create and manage expense groups
 - 💰 **Expenses** - Add expenses with multiple split types
-- ⚖️ **Balances** - Track who owes whom with simplified debt calculation
+- ⚖️ **Balances** - Track who owes whom, member to member
+- 🤝 **Friends** - Friend requests, direct expenses and settlements outside groups
+- 💬 **Group chat and notifications** - Real-time updates over Socket.io
 - 👤 **Profile** - Manage your account settings
 
 ## Tech Stack
 
 **Frontend:**
 - React + Vite
-- Tailwind CSS
+- Framer Motion
 - Zustand (state management)
+- Socket.io client
 - React Router
 - React Hook Form + Zod
 
@@ -25,6 +30,7 @@ A modern expense splitting application for tracking shared expenses with friends
 - MongoDB + Mongoose
 - JWT Authentication
 - bcryptjs
+- Socket.io
 
 ## Getting Started
 
